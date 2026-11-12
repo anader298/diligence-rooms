@@ -1,0 +1,61 @@
+{
+  "POST /api/v1/people/match": {
+    "person": {
+      "id": "ap-jane-1",
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "name": "Jane Doe",
+      "title": "Chief Financial Officer",
+      "headline": "CFO at Acme Capital",
+      "linkedin_url": "http://www.linkedin.com/in/janedoe-example",
+      "twitter_url": "https://twitter.com/janedoe_example",
+      "email": "jane.doe@acme.example",
+      "email_status": "verified",
+      "personal_emails": ["jane.doe.home@gmail.com"],
+      "street_address": "12 Elm Street",
+      "postal_code": "02139",
+      "city": "Boston",
+      "state": "Massachusetts",
+      "country": "United States",
+      "seniority": "c_suite",
+      "departments": ["master_finance"],
+      "subdepartments": ["finance"],
+      "match_confidence": "high",
+      "organization_id": "ap-org-9",
+      "organization": { "name": "Acme Capital", "primary_domain": "acme.example" },
+      "contact": {
+        "phone_numbers": [
+          { "raw_number": "+1 617 555 0100", "sanitized_number": "+16175550100", "type_cd": "mobile" },
+          { "raw_number": "+1 617 555 0111", "sanitized_number": "+16175550111", "type_cd": "home" },
+          { "raw_number": "+1 617 555 0199", "sanitized_number": "+16175550199", "type_cd": "work_direct" }
+        ]
+      },
+      "employment_history": [
+        { "organization_name": "Acme Capital", "title": "Chief Financial Officer", "start_date": "2021-03-01", "end_date": null, "current": true },
+        { "organization_name": "Harbor Point Partners", "title": "Vice President, Finance", "start_date": "2016-06-01", "end_date": "2021-02-01", "current": false }
+      ]
+    }
+  },
+  "GET /api/v1/organizations/enrich": {
+    "organization": {
+      "id": "ap-org-9",
+      "name": "Acme Capital",
+      "website_url": "http://www.acme.example",
+      "primary_domain": "acme.example",
+      "industry": "investment management",
+      "estimated_num_employees": 240,
+      "annual_revenue": 45000000,
+      "annual_revenue_printed": "45M",
+      "raw_address": "1 Harbor Way, Boston, MA",
+      "technology_names": ["Salesforce", "Snowflake"],
+      "funding_events": [
+        { "id": "f1", "date": "2022-05-10T00:00:00.000+00:00", "type": "Series B", "investors": "North Fund, East Ventures", "amount": "30M", "currency": "$" }
+      ]
+    }
+  },
+  "GET /api/v1/organizations/ap-org-9/job_postings": {
+    "organization_job_postings": [
+      { "id": "j1", "title": "Head of Data", "url": "https://jobs.acme.example/1", "city": "Boston", "posted_at": "2026-10-01T00:00:00Z" }
+    ]
+  }
+}

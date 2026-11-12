@@ -1,0 +1,16 @@
+{
+  "name": "Your Name",
+  "organisation": "Your Organisation",
+  "factsFile": "config/facts.md",
+  "overlapHooks": [
+    "Schools you attended",
+    "Past employers",
+    "Cities and countries you have lived or worked in",
+    "Languages you speak"
+  ],
+  "publicHandles": [
+    "https://www.linkedin.com/in/your-handle",
+    "https://x.com/your-handle",
+    "https://your-site.example"
+  ]
+}

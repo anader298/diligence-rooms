@@ -1,0 +1,35 @@
+{
+  "sections": [
+    {
+      "id": "consultancy",
+      "title": "Cases and method",
+      "note": "Consultancy or services firm.",
+      "brief": {
+        "level": "Reference",
+        "bullets": [
+          "Every client case, in their own steps.",
+          "The method they sell and the words for it."
+        ],
+        "hold": "The case closest to our situation."
+      },
+      "pages": [
+        {
+          "id": "client-cases",
+          "title": "Client cases",
+          "blurb": "Every case, in their own steps."
+        },
+        {
+          "id": "method",
+          "title": "Method",
+          "blurb": "The method they sell, step by step."
+        },
+        {
+          "id": "insights-index",
+          "title": "Insights index",
+          "blurb": "Every paper and article, by topic."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

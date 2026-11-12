@@ -1,0 +1,35 @@
+{
+  "sections": [
+    {
+      "id": "asset-owner",
+      "title": "Mandate and accountability",
+      "note": "Asset owner, foundation, endowment, pension or faith investor.",
+      "brief": {
+        "level": "Reference",
+        "bullets": [
+          "What the mandate allows and screens out.",
+          "How they vote and what they report."
+        ],
+        "hold": "The screen most likely to apply to us."
+      },
+      "pages": [
+        {
+          "id": "mandate-and-screens",
+          "title": "Mandate and screens",
+          "blurb": "Investment mandate, screens, exclusions."
+        },
+        {
+          "id": "proxy-and-advocacy",
+          "title": "Proxy and advocacy",
+          "blurb": "Votes, resolutions, engagement campaigns."
+        },
+        {
+          "id": "accountability-reports",
+          "title": "Accountability reports",
+          "blurb": "What they report, to whom, and the numbers."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

@@ -1,0 +1,23 @@
+{
+  "POST /authenticate": { "jwt": "fake-jwt" },
+  "POST /enrich/contact": {
+    "success": true,
+    "data": { "result": [ { "matchStatus": "FULL_MATCH", "data": [ {
+      "id": 7001, "firstName": "Jane", "lastName": "Doe", "jobTitle": "CFO", "managementLevel": ["C-Level"],
+      "jobFunction": [{ "name": "Finance", "department": "Finance" }],
+      "email": "jane.doe@acme.example", "phone": "+1 617 555 0199", "mobilePhone": "+1 617 555 0100",
+      "street": "12 Elm Street", "city": "Boston",
+      "companyName": "Acme Capital",
+      "externalUrls": [{ "type": "linkedin.com", "url": "https://www.linkedin.com/in/janedoe-example" }],
+      "employmentHistory": [
+        { "jobTitle": "CFO", "fromDate": "2021-01-01", "toDate": null, "company": { "companyName": "Acme Capital" } },
+        { "jobTitle": "Vice President, Finance", "fromDate": "2016-06-01", "toDate": "2020-12-31", "company": { "companyName": "Harbor Point Partners" } }
+      ],
+      "education": [{ "school": "Boston College", "educationDegree": { "degree": "MBA", "areaOfStudy": "Finance" } }]
+    } ] } ] }
+  },
+  "POST /enrich/company": {
+    "success": true,
+    "data": { "result": [ { "data": [ { "id": 99, "name": "Acme Capital LLC", "website": "www.acme.example", "primaryIndustry": ["Finance"], "employeeCount": 410, "revenue": 52000, "street": "1 Harbor Way" } ] } ] }
+  }
+}

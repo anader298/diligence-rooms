@@ -1,0 +1,39 @@
+<!-- GATHER: __PERSON__'s financial footprint in public: companies they own or are an officer of, fund roles (GP, managing member, adviser), Form D, Form ADV and 990 filings that name them, real estate held by their companies (entity, county and parcel record; a residence only when it is a contact or business address of record, labelled as such), political donations, and disclosed compensation (proxy, 990 Part VII, public-sector salary databases).
+     FROM: OpenCorporates, state business registries, Companies House; EDGAR full-text search (Form D related persons, DEF 14A, 13D/G, Form 4); SEC IAPD and FINRA BrokerCheck; ProPublica Nonprofit Explorer (990 Part VII, Schedules J and L); county recorder and assessor records searched by company name; FEC, OpenSecrets and state campaign-finance databases; public salary databases; UCC searches.
+     CHECKLIST: every row of every table marked class="checklist" stays, in order. Never delete a row; add rows for anything extra.
+       Found: the finding, its grade and the source link. Weak (one unconfirmed source, or identity not confirmed): write it, graded weak.
+       Nothing: "None found", graded none, and in the last column what was searched (tool and exact query). Every row carries one grade.
+     READER: the build hides rows graded none from the reader (they stay in this file for lint). Log every check, found or not, in the OSINT log Checks table (person, page, row, result, what was searched).
+     Grade every fact line with one span, and link its source:
+       <span class="grade verified">Verified</span> <span class="grade partly">Partly verified</span> <span class="grade weak">Weak</span> <span class="grade inference">Inference</span> <span class="grade none">None found</span> <span class="grade not-public">Not public</span> <span class="grade unknown">Unknown</span>
+       <a class="src" href="https://...">label</a>
+     [FILL: question] for what only our side can answer. [A] after an assumed number.
+     Built COLD: do not read config/our-side.json, the facts file or any note about our side.
+     Keep every <h2> bare and under 40 characters. Delete this comment when the page is filled.
+     Log every search on osint-log (date, tool, exact query or URL, hits, kept).
+     Boundaries: public information only; no logging in to see non-public content; no fake or pretext accounts;
+     no connection or follow requests; no breached or leaked data; nothing on minors; no real-time location. A home address, personal email or phone appears only as a contact route of record, labelled as such. -->
+<p>Money that public records tie to __PERSON__ by name. Company-level numbers are on the public financials page.</p>
+<h2>Checklist</h2>
+<div class="tw"><table class="checklist"><tr><th>Item</th><th>Finding</th><th>Amount or size</th><th>Grade</th><th>Source, or what was searched</th></tr>
+<tr class="ck"><td>Companies owned</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Officer or director roles</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Fund roles (GP, managing member, adviser)</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Form D filings naming them</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Form ADV or BrokerCheck records</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>990s naming them (pay, board, related parties)</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Real estate held by their companies (a residence only if of record)</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Political donations</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Disclosed compensation</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Liens, judgments or UCC filings as debtor</td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<h2>What the money says</h2>
+<p></p>
+<h2>Connector findings</h2>
+<!-- CONNECTORS: from rooms/__SLUG__/work/connectors/merged.json (stage 2b, P2b). Leads, not facts: a connector value is graded partly; two providers agreeing is still partly; only a public source read in the research stage makes it verified (link that source, not the provider). Provider: every provider that gave the value; add "conflict" and the other value if conflicts.json lists one. No connector ran or nothing came back: Value "None found", Provider "none run" (or the providers tried), Grade none or unknown. Keep every row. -->
+<div class="tw"><table class="checklist"><tr><th>Field</th><th>Value</th><th>Provider</th><th>Grade</th></tr>
+<tr class="ck"><td>Founder, owner or officer titles</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Board roles listed by providers</td><td></td><td></td><td></td></tr>
+</table></div>
+<h2>Sources</h2>
+<ul><li></li></ul>

@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#ffffff">
+<title>{{pageTitle}} · {{roomTitle}}</title>
+<link rel="stylesheet" href="assets/room.css">
+<style>:root{--acc:{{accent}}}</style>
+</head>
+<body data-room="{{slug}}" data-pages="{{pageCount}}"{{demoAttrs}}>
+{{bar}}
+<main id="main" class="oc">
+<header class="oc-head">
+<p class="lbl"><span>The one card · read last</span><span>60-second read</span></p>
+<h1>{{heading}}</h1>
+{{when}}
+</header>
+{{notice}}
+{{body}}
+<p class="foot-note">Every line on this card traces to a page in the room. Nothing new is on it.</p>
+<footer class="endcap"><button class="readbtn" type="button" data-page-id="{{pageId}}" aria-pressed="false">Mark as read</button></footer>
+</main>
+<script src="assets/room.js"></script>
+</body></html>

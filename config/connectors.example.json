@@ -1,0 +1,19 @@
+{
+  "_note": "Copy to config/connectors.json (gitignored). 'enabled' is the default provider list for npm run enrich and the studio's Connectors panel, in priority order (the first provider wins a merged field; disagreements go to conflicts.json). Keys live in .env, never here. Every connector value is graded partly until a public source confirms it.",
+  "enabled": ["linkedin-export", "csv", "apollo"],
+  "maxCredits": 50,
+  "_revealPersonal": "true (default): ask providers that charge extra for personal emails and mobile or personal phones to return them (Apollo reveal_personal_emails; reveal_phone_number too when providers.apollo.webhookUrl is set, since Apollo delivers phones to a webhook; Lusha phones; ZoomInfo mobile). In owner-run firms these are often the business contact of record. The extra credits are in the estimate. false skips them.",
+  "revealPersonal": true,
+  "providers": {
+    "apollo": { "webhookUrl": "" },
+    "apollo-mcp": {},
+    "zoominfo": {},
+    "lusha": {},
+    "cognism": {},
+    "clay": { "creditsPerRow": 1 },
+    "crunchbase": {},
+    "pitchbook": {},
+    "linkedin-export": {},
+    "csv": {}
+  }
+}

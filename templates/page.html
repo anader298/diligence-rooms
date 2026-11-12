@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#ffffff">
+<title>{{pageTitle}} · {{roomTitle}}</title>
+<link rel="stylesheet" href="assets/room.css">
+<style>:root{--acc:{{accent}}}</style>
+</head>
+<body data-room="{{slug}}" data-pages="{{pageCount}}"{{demoAttrs}}>
+{{bar}}
+<div class="page">
+<header class="page-head"><p class="kicker">{{kicker}}</p><h1>{{pageTitle}}</h1><p class="blurb">{{blurb}}</p>
+<div class="page-meta"><span>As of {{asOfLong}}</span><span>{{minutes}} min read</span>{{sourcesSpan}}{{evSpan}}{{legend}}</div></header>
+{{tldr}}
+{{jumps}}
+<article class="doc" id="main">
+{{notice}}
+{{body}}
+</article>
+<footer class="endcap"><button class="readbtn" type="button" data-page-id="{{pageId}}" aria-pressed="false">Mark as read</button>{{pager}}</footer>
+</div>
+<script src="assets/room.js"></script>
+</body></html>

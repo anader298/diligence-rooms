@@ -1,0 +1,459 @@
+{
+  "slug": "__SLUG__",
+  "title": "__TITLE__",
+  "subtitle": "What the conversation is, with whom, and when",
+  "summary": "",
+  "asOf": "__DATE__",
+  "accent": "#0f3d5a",
+  "counterparty": "__COMPANY__",
+  "people": [],
+  "modes": [],
+  "orgType": "other",
+  "ourSide": "",
+  "notice": "",
+  "footer": "Nothing in this room is for sending. Public sources only. It is read before the conversation, not consulted during it.",
+  "meetings": [],
+  "deadlines": [],
+  "heroes": [
+    {
+      "page": "one-card",
+      "title": "The one card",
+      "cta": "Read last",
+      "warm": true,
+      "text": "Everything needed in the last ten minutes. Nothing new on it."
+    },
+    {
+      "page": "people-map",
+      "title": "People map",
+      "cta": "Who decides",
+      "text": "Who decides, who influences, how they connect, and the warm paths."
+    },
+    {
+      "page": "practice-bank",
+      "title": "Practice bank",
+      "cta": "Out loud",
+      "text": "Questions in their voices, push-back drills, the grading rule."
+    }
+  ],
+  "process": [
+    {
+      "status": "done",
+      "title": "Intake",
+      "detail": "Who, which company, what we want, and when."
+    },
+    {
+      "status": "next",
+      "title": "Research and OSINT",
+      "detail": "The company, the people, the mirror. Every search logged."
+    },
+    {
+      "status": "todo",
+      "title": "Meeting 1",
+      "detail": "__MEETING_DATE__. Length, format and who is in the room are in the meetings list."
+    },
+    {
+      "status": "todo",
+      "title": "Debrief",
+      "detail": "Within the hour. Into the reconciliation, the corrections log and the next meeting."
+    }
+  ],
+  "sections": [
+    {
+      "id": "start",
+      "title": "Start here",
+      "group": "start",
+      "brief": {
+        "level": "Read first",
+        "bullets": [
+          "The ask in one sentence, and who decides.",
+          "Where the process stands and what comes next."
+        ],
+        "hold": "The line."
+      },
+      "pages": [
+        {
+          "id": "one-card",
+          "title": "The one card",
+          "blurb": "The last page read before the conversation. Nothing new on it."
+        },
+        {
+          "id": "plain-words",
+          "title": "In plain words",
+          "blurb": "The whole situation for a smart 12-year-old, plus ten traps."
+        },
+        {
+          "id": "process",
+          "title": "The process",
+          "blurb": "Every step with dates, who is in each meeting, format and length."
+        }
+      ]
+    },
+    {
+      "id": "them",
+      "title": "Who they are, the money, the rules",
+      "group": "company",
+      "note": "Their own material first, then filings and registries.",
+      "brief": {
+        "level": "Know it",
+        "bullets": [
+          "What they do and how the money works.",
+          "What the rules let them agree to."
+        ],
+        "hold": "What the money most likely wants."
+      },
+      "pages": [
+        {
+          "id": "who-they-are",
+          "title": "Who they are",
+          "blurb": "Eight to ten chapters from their own material, each ending in open questions."
+        },
+        {
+          "id": "money",
+          "title": "The money",
+          "blurb": "Owners, funders, lenders, the revenue trace, and what the money wants."
+        },
+        {
+          "id": "public-financials",
+          "title": "Public financials",
+          "blurb": "Every public number about them, by filing and year."
+        },
+        {
+          "id": "rules",
+          "title": "The rules",
+          "blurb": "Regulator, mandate, screens, codes, and what they can and cannot do."
+        },
+        {
+          "id": "filings-bank",
+          "title": "Filings bank",
+          "blurb": "Every public instrument, graded, with an answer if they ask."
+        },
+        {
+          "id": "documents",
+          "title": "Their documents",
+          "blurb": "Everything they publish, indexed, with the phrases they repeat."
+        },
+        {
+          "id": "translation",
+          "title": "Translation",
+          "blurb": "Their terms, plain meaning, our closest true proof."
+        }
+      ]
+    },
+    {
+      "id": "outside",
+      "title": "Them, from the outside",
+      "group": "company",
+      "note": "Partners, reviews, forums, press and their web estate. Posts are evidence of what was said, not of what is true.",
+      "brief": {
+        "level": "Know it",
+        "bullets": [
+          "Who they work with, and what staff and customers say.",
+          "What their hiring and web history signal."
+        ],
+        "hold": "The pattern that keeps coming up."
+      },
+      "pages": [
+        {
+          "id": "partners",
+          "title": "Partners",
+          "blurb": "Customers, suppliers, co-investors, lenders, advisors, auditors, law firms, sponsors."
+        },
+        {
+          "id": "reviews",
+          "title": "Reviews",
+          "blurb": "Employer and customer reviews: counts, trends, themes, dated quotes."
+        },
+        {
+          "id": "forums",
+          "title": "Forums",
+          "blurb": "What staff, candidates, customers and rivals say in forums."
+        },
+        {
+          "id": "news",
+          "title": "News",
+          "blurb": "Five years of dated coverage, their releases kept apart."
+        },
+        {
+          "id": "domain-and-tech",
+          "title": "Domain and tech",
+          "blurb": "Domains, Wayback history, stack, and job posts as a strategy signal."
+        }
+      ]
+    },
+    {
+      "id": "people",
+      "title": "The people across the table",
+      "group": "company",
+      "note": "Public material only. The per-person pages are built cold, without sight of our side.",
+      "brief": {
+        "level": "Read first",
+        "bullets": [
+          "Who decides and who influences.",
+          "How the people in the room connect, and our warm paths."
+        ],
+        "hold": "The person whose yes matters most."
+      },
+      "pages": [
+        {
+          "id": "org-chart",
+          "title": "Org chart",
+          "blurb": "Every seat, name and tenure, and who held it before."
+        },
+        {
+          "id": "people-map",
+          "title": "People map",
+          "blurb": "Who decides, who influences, how they connect, warm paths."
+        }
+      ]
+    },
+    {
+      "id": "person",
+      "title": "Person by person",
+      "group": "person",
+      "perPerson": true,
+      "note": "Fourteen pages per person: __PERSON__, in two halves: Personal (life and interests, socials, partner socials, names, education, financials, their circles) and Professional (persona with the verdict and what drives them, LinkedIn, writing, own words, network, public record, timeline). Every page is built from public material only and never matched to our side. The reader sees findings; every check, including those that found nothing, is in the OSINT log.",
+      "brief": {
+        "level": "Read first",
+        "bullets": [
+          "Who each person is, in their own words and record, and the verdict on their claims.",
+          "What drives them, what each persona will probe and how it judges, and where they spend time."
+        ],
+        "hold": "The rapport hook to use, and the trap to avoid."
+      },
+      "pages": [
+        {
+          "id": "persona-__PERSON_SLUG__",
+          "title": "Persona: __PERSON__",
+          "part": "professional",
+          "blurb": "The verdict (Proven / Mixed / Unproven) and claims against the record, what drives them, then the eleven sections, built cold, to drill against."
+        },
+        {
+          "id": "interests-__PERSON_SLUG__",
+          "title": "Personal life and interests: __PERSON__",
+          "part": "personal",
+          "blurb": "Home and places, family, upbringing, clubs, sports, hobbies and weekends, with life photos and their sources. Findings only."
+        },
+        {
+          "id": "socials-__PERSON_SLUG__",
+          "title": "Socials: __PERSON__",
+          "part": "personal",
+          "blurb": "Every public account: handle, followers, last post, tone, how identity was confirmed."
+        },
+        {
+          "id": "partner-socials-__PERSON_SLUG__",
+          "title": "Partner socials: __PERSON__",
+          "part": "personal",
+          "blurb": "Spouse or partner and business partners: their public accounts and what they reveal."
+        },
+        {
+          "id": "linkedin-__PERSON_SLUG__",
+          "title": "LinkedIn: __PERSON__",
+          "part": "professional",
+          "blurb": "Career timeline, activity, who they engage with, endorsements."
+        },
+        {
+          "id": "education-__PERSON_SLUG__",
+          "title": "Education: __PERSON__",
+          "part": "personal",
+          "blurb": "Degrees, honours, dean's lists, scholarships, clubs, societies, athletics, theses."
+        },
+        {
+          "id": "writing-__PERSON_SLUG__",
+          "title": "Writing: __PERSON__",
+          "part": "professional",
+          "blurb": "White papers, articles, op-eds, posts, books, research, patents cross-referenced."
+        },
+        {
+          "id": "names-__PERSON_SLUG__",
+          "title": "Names: __PERSON__",
+          "part": "personal",
+          "blurb": "Alternative, maiden and married names, nicknames, usernames: used to widen every search."
+        },
+        {
+          "id": "own-words-__PERSON_SLUG__",
+          "title": "Own words: __PERSON__",
+          "part": "professional",
+          "blurb": "Timestamped transcripts, through-lines, phrases to use back."
+        },
+        {
+          "id": "network-__PERSON_SLUG__",
+          "title": "Network: __PERSON__",
+          "part": "professional",
+          "blurb": "Partners, co-investors, boards, colleagues, warm paths."
+        },
+        {
+          "id": "public-record-__PERSON_SLUG__",
+          "title": "Public record: __PERSON__",
+          "part": "professional",
+          "blurb": "Companies, courts, liens, donations, patents, licences, bio history."
+        },
+        {
+          "id": "financials-__PERSON_SLUG__",
+          "title": "Financials: __PERSON__",
+          "part": "personal",
+          "blurb": "Companies, fund roles, filings naming them, company property, donations, pay."
+        },
+        {
+          "id": "timeline-__PERSON_SLUG__",
+          "title": "Timeline: __PERSON__",
+          "part": "professional",
+          "blurb": "Everything found on __PERSON__, merged by date."
+        },
+        {
+          "id": "relate-__PERSON_SLUG__",
+          "title": "Their circles: __PERSON__",
+          "part": "personal",
+          "blurb": "The clubs, events, outings and conferences where they spend time, as findings."
+        }
+      ]
+    },
+    {
+      "id": "ask",
+      "title": "The ask",
+      "group": "role",
+      "note": "The mode pack adds its pages after this section.",
+      "brief": {
+        "level": "Know it",
+        "bullets": [
+          "Each line of the ask against our evidence.",
+          "The honest gaps, and how to say them."
+        ],
+        "hold": "Our strongest line."
+      },
+      "pages": [
+        {
+          "id": "duty-map",
+          "title": "The ask, line by line",
+          "blurb": "Each line of the ask against our evidence: Strong, Partial or Gap."
+        }
+      ]
+    },
+    {
+      "id": "meetings",
+      "title": "Meetings",
+      "group": "role",
+      "note": "One page per meeting: the brief before, the debrief within the hour after.",
+      "pages": [
+        {
+          "id": "companion",
+          "title": "The companion",
+          "blurb": "How to use the live companion: setup checklist, consent, what it shows."
+        },
+        {
+          "id": "meeting-1",
+          "title": "Meeting 1",
+          "blurb": "The brief before the meeting and the debrief within the hour after."
+        }
+      ]
+    },
+    {
+      "id": "drills",
+      "title": "Answers, drills and vocabulary",
+      "group": "role",
+      "brief": {
+        "level": "Drill",
+        "bullets": [
+          "Answers graded by someone other than the writer.",
+          "Push-backs and mocks in the personas' voices."
+        ],
+        "hold": "The answer to the question we fear most."
+      },
+      "pages": [
+        {
+          "id": "answer-bank",
+          "title": "Answer bank",
+          "blurb": "100 to 200 questions answered in the first person, graded independently."
+        },
+        {
+          "id": "practice-bank",
+          "title": "Practice bank",
+          "blurb": "Run sheet, questions in their voices, push-back drills, grading rule."
+        },
+        {
+          "id": "push-back-gym",
+          "title": "Push-back gym",
+          "blurb": "Vague prompts, push-backs and 'what else' moments, with a score sheet."
+        },
+        {
+          "id": "mock-transcripts",
+          "title": "Mock transcripts",
+          "blurb": "A short screen, the full meeting, the worst case, one-breath lines."
+        },
+        {
+          "id": "glossary",
+          "title": "Glossary",
+          "blurb": "Their vocabulary, translated."
+        }
+      ]
+    },
+    {
+      "id": "mirror",
+      "title": "Our side, as they will see it",
+      "group": "behind",
+      "note": "The same profile run on our side, by an agent that had not read this room.",
+      "brief": {
+        "level": "Know it",
+        "bullets": [
+          "What a cold search of us returns.",
+          "Where it conflicts with our facts, and the fix."
+        ],
+        "hold": "The thing they are most likely to bring up about us."
+      },
+      "pages": [
+        {
+          "id": "our-side",
+          "title": "Our side, as they see it",
+          "blurb": "What a cold search of us returns, against the facts file."
+        },
+        {
+          "id": "mirror-footprint",
+          "title": "Mirror: our footprint",
+          "blurb": "Our public accounts as a stranger sees them."
+        },
+        {
+          "id": "mirror-record",
+          "title": "Mirror: our record",
+          "blurb": "Our public record, network and timeline, as they will find it."
+        }
+      ]
+    },
+    {
+      "id": "record",
+      "title": "The record",
+      "group": "behind",
+      "note": "Corrections, reconciliation, what was sent, the data sources, every search and every check run (including those that found nothing), and the gap ledger.",
+      "pages": [
+        {
+          "id": "corrections-log",
+          "title": "Corrections log",
+          "blurb": "Every claim that changed, and why."
+        },
+        {
+          "id": "reconciliation",
+          "title": "Reconciliation",
+          "blurb": "After each meeting: confirmed, corrected, new, still open."
+        },
+        {
+          "id": "sent",
+          "title": "As sent",
+          "blurb": "Everything we sent them, and the claims to stay consistent with."
+        },
+        {
+          "id": "data-sources",
+          "title": "Data sources",
+          "blurb": "Which connectors ran, credits used, fields filled, and where providers disagreed."
+        },
+        {
+          "id": "osint-log",
+          "title": "OSINT log",
+          "blurb": "Every search run for this room, so it can be re-run before the next meeting."
+        },
+        {
+          "id": "sources",
+          "title": "Sources and gaps",
+          "blurb": "The gap ledger and the full source list."
+        }
+      ]
+    }
+  ]
+}

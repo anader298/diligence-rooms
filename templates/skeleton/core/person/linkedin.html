@@ -1,0 +1,57 @@
+<!-- GATHER: LinkedIn deep read for __PERSON__: career timeline with month and year (title changes inside one employer, gaps), certifications, volunteer roles; posts written, liked and commented on in the last 12 months (themes and counts); people they engage with most; endorsements and who gave them; groups; recommendations given and received. Education goes on the education page.
+     FROM: Their LinkedIn profile and activity tab (what any member can see under a real account; nothing restricted to connections), search snippets (site:linkedin.com/in, site:linkedin.com/posts), Wayback captures of the profile, the user's own LinkedIn export and licensed providers (work/connectors/merged.json, leads to confirm). Never scrape LinkedIn or use a third-party LinkedIn scraping API. Note: LinkedIn shows profile views unless private mode is on.
+     CHECKLIST: every row of every table marked class="checklist" stays, in order. Never delete a row; add rows for anything extra.
+       Found: the finding, its grade and the source link. Weak (one unconfirmed source, or identity not confirmed): write it, graded weak.
+       Nothing: "None found", graded none, and in the last column what was searched (tool and exact query). Every row carries one grade.
+     READER: the build hides rows graded none from the reader (they stay in this file for lint). Log every check, found or not, in the OSINT log Checks table (person, page, row, result, what was searched).
+     Grade every fact line with one span, and link its source:
+       <span class="grade verified">Verified</span> <span class="grade partly">Partly verified</span> <span class="grade weak">Weak</span> <span class="grade inference">Inference</span> <span class="grade none">None found</span> <span class="grade not-public">Not public</span> <span class="grade unknown">Unknown</span>
+       <a class="src" href="https://...">label</a>
+     [FILL: question] for what only our side can answer. [A] after an assumed number.
+     Built COLD: do not read config/our-side.json, the facts file or any note about our side.
+     Keep every <h2> bare and under 40 characters. Delete this comment when the page is filled.
+     Log every search on osint-log (date, tool, exact query or URL, hits, kept).
+     Boundaries: public information only; no logging in to see non-public content; no fake or pretext accounts;
+     no connection or follow requests; no breached or leaked data; nothing on minors; no real-time location. A home address, personal email or phone appears only as a contact route of record, labelled as such. -->
+<p>What __PERSON__'s professional profile and activity show.</p>
+<h2>Checklist</h2>
+<div class="tw"><table class="checklist"><tr><th>Item</th><th>Finding</th><th>Grade</th><th>Source, or what was searched</th></tr>
+<tr class="ck"><td>Profile found and confirmed</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Headline and about text</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Certifications</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Volunteer roles</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Posts written (12 months)</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Likes and comments (12 months)</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Endorsements</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Groups</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Recommendations given</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Recommendations received</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Profile history (Wayback)</td><td></td><td></td><td></td></tr>
+</table></div>
+<h2>Career timeline</h2>
+<div class="tw"><table><tr><th>From</th><th>To</th><th>Employer</th><th>Title</th><th>Grade</th><th>Source</th></tr></table></div>
+<h2>What they post</h2>
+<div class="tw"><table><tr><th>Theme</th><th>Posts</th><th>Example</th><th>Source</th></tr></table></div>
+<h2>What they like and comment on</h2>
+<div class="tw"><table><tr><th>Theme</th><th>Count</th><th>Example</th><th>Source</th></tr></table></div>
+<h2>Who they engage with</h2>
+<div class="tw"><table><tr><th>Person</th><th>Who they are</th><th>How often</th></tr></table></div>
+<h2>Connector findings</h2>
+<!-- CONNECTORS: from rooms/__SLUG__/work/connectors/merged.json (stage 2b, P2b). Leads, not facts: a connector value is graded partly; two providers agreeing is still partly; only a public source read in the research stage makes it verified (link that source, not the provider). Provider: every provider that gave the value; add "conflict" and the other value if conflicts.json lists one. No connector ran or nothing came back: Value "None found", Provider "none run" (or the providers tried), Grade none or unknown. Keep every row. -->
+<div class="tw"><table class="checklist"><tr><th>Field</th><th>Value</th><th>Provider</th><th>Grade</th></tr>
+<tr class="ck"><td>Current title and employer</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Career history (titles and dates)</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Seniority</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Departments</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>City</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Profile URLs (LinkedIn and others)</td><td></td><td></td><td></td></tr>
+</table></div>
+<h2>Contact routes</h2>
+<!-- CONTACTS: every email, phone and address for __PERSON__ from merged.json (fields.contacts) and from public sources. One row each.
+     Value: the email, phone or address. Kind: work, personal or unknown, plus the phone type (direct, office, mobile, home, other).
+     Business of record?: "Yes: <record>" with a link when sameAsBusiness is true (the company's website, state registry, SEC / Form ADV / Form D / 990, UCC or domain WHOIS shows the same value), else "No".
+     Label a residential address as such ("home address, also the registered office per the state registry"). Source: the provider or the public page. Grade: partly for a connector value, verified once a public record shows it.
+     Nothing on minors, no real-time location, no breached or leaked data. None found: one row "None found", graded none. -->
+<div class="tw"><table><tr><th>Value</th><th>Kind</th><th>Business of record?</th><th>Source</th><th>Grade</th></tr></table></div>
+<h2>Sources</h2>
+<ul><li></li></ul>

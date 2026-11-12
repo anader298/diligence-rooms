@@ -1,0 +1,35 @@
+{
+  "sections": [
+    {
+      "id": "public-company",
+      "title": "Segments and disclosures",
+      "note": "Listed company.",
+      "brief": {
+        "level": "Reference",
+        "bullets": [
+          "Which segment matters to this conversation.",
+          "What they tell investors and what they list as risks."
+        ],
+        "hold": "The number management repeats on every call."
+      },
+      "pages": [
+        {
+          "id": "segments",
+          "title": "Segments",
+          "blurb": "Segment results and trends."
+        },
+        {
+          "id": "earnings-language",
+          "title": "Earnings language",
+          "blurb": "What management says on calls."
+        },
+        {
+          "id": "risk-factors",
+          "title": "Risk factors",
+          "blurb": "10-K risk factors that touch this conversation."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

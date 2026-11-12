@@ -1,0 +1,35 @@
+{
+  "sections": [
+    {
+      "id": "private-equity",
+      "title": "Portfolio and funds",
+      "note": "PE, VC or family office.",
+      "brief": {
+        "level": "Reference",
+        "bullets": [
+          "What they own and how long they hold.",
+          "Fund sizes, vintages and who their LPs are."
+        ],
+        "hold": "Where we would sit in their portfolio."
+      },
+      "pages": [
+        {
+          "id": "portfolio",
+          "title": "Portfolio",
+          "blurb": "Every current holding."
+        },
+        {
+          "id": "fund-history",
+          "title": "Fund history",
+          "blurb": "Vintages, sizes, LPs."
+        },
+        {
+          "id": "exits",
+          "title": "Exits",
+          "blurb": "How and when they sell."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

@@ -1,0 +1,7 @@
+{
+  "GET /people/search": { "items": [ { "personId": "11111-22P" } ] },
+  "GET /people/11111-22P/bio": { "personId": "11111-22P", "fullName": "Jane Doe", "positions": [ { "title": "Chief Financial Officer", "entityName": "Acme Capital", "startDate": "2021-03-01", "isCurrent": true } ], "education": [ { "institution": "Boston College", "degree": "MBA", "graduationYear": "2012" } ], "email": "jane.doe@acme.example", "homePhone": "+1 617 555 0111", "officePhone": "+1 617 555 0150" },
+  "GET /companies/search": { "items": [ { "companyId": "51261-67" } ] },
+  "GET /companies/51261-67/bio": { "companyId": "51261-67", "companyName": "Acme Capital", "website": "acme.example", "employees": 230, "primaryIndustry": "Asset Management" },
+  "GET /companies/51261-67/deals": { "items": [ { "dealType": "Series B", "dealDate": "2022-05-10", "dealSize": { "amount": 32000000 }, "investors": [ { "investorName": "North Fund" } ] } ] }
+}

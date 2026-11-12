@@ -1,0 +1,35 @@
+{
+  "sections": [
+    {
+      "id": "government",
+      "title": "Authority, budget, procurement",
+      "note": "Agency, regulator or public body.",
+      "brief": {
+        "level": "Reference",
+        "bullets": [
+          "What the statute lets them do.",
+          "Their budget and how they buy."
+        ],
+        "hold": "The authority this conversation depends on."
+      },
+      "pages": [
+        {
+          "id": "statute-and-authority",
+          "title": "Statute and authority",
+          "blurb": "What the law lets them do."
+        },
+        {
+          "id": "budget",
+          "title": "Budget",
+          "blurb": "Budget lines, trends, who approves."
+        },
+        {
+          "id": "procurement-history",
+          "title": "Procurement history",
+          "blurb": "Past awards, vendors, rules."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

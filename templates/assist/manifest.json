@@ -1,0 +1,16 @@
+{
+  "name": "Companion: __TITLE__",
+  "short_name": "Companion",
+  "description": "Silent live companion for this room: facts, calculations, suggestions and notes on screen.",
+  "start_url": "assist.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "icons": [
+    { "src": "assist/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assist/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assist/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

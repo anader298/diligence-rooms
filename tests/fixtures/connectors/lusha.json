@@ -1,0 +1,17 @@
+{
+  "POST /v3/contacts/search": { "results": [ { "id": "lu-1", "clientReferenceId": "jane-doe" } ] },
+  "POST /v3/contacts/enrich": {
+    "requestId": "00000000-0000-0000-0000-000000000001",
+    "billing": { "creditsCharged": 1, "resultsReturned": 1, "lowBalance": false },
+    "results": [ {
+      "id": "lu-1", "firstName": "Jane", "lastName": "Doe", "fullName": "Jane Doe",
+      "jobTitle": { "title": "Chief Financial Officer", "departments": ["Finance"], "seniority": "C-Suite", "startDate": "2021-03" },
+      "location": { "country": "United States", "state": "Massachusetts", "city": "Boston", "coordinates": [-71.06, 42.36] },
+      "emails": [ { "email": "jane.doe@acme.example", "type": "work" }, { "email": "janed@gmail.com", "type": "private" } ],
+      "phones": [ { "number": "+1 617 555 0100", "type": "mobile" }, { "number": "+1 617 555 0199", "type": "direct" } ],
+      "company": { "id": "c1", "name": "Acme Capital", "domain": "acme.example", "industry": "Finance" },
+      "socialLinks": { "linkedin": "https://www.linkedin.com/in/janedoe-example" }
+    } ]
+  },
+  "GET /v2/company": { "data": { "id": "lc-1", "name": "Acme Capital", "domain": "acme.example", "mainIndustry": "Financial Services", "employees": "201-500", "address": "1 Harbor Way" } }
+}

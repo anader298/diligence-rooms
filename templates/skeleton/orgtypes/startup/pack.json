@@ -1,0 +1,35 @@
+{
+  "sections": [
+    {
+      "id": "startup",
+      "title": "Founders, rounds, traction",
+      "note": "Startup or venture-backed company.",
+      "brief": {
+        "level": "Reference",
+        "bullets": [
+          "Who founded it and who funds it.",
+          "What the product does and the traction signals."
+        ],
+        "hold": "The milestone their next round depends on."
+      },
+      "pages": [
+        {
+          "id": "founders",
+          "title": "Founders",
+          "blurb": "Founders' backgrounds and roles."
+        },
+        {
+          "id": "funding-rounds",
+          "title": "Funding rounds",
+          "blurb": "Every round, investor and amount."
+        },
+        {
+          "id": "product-and-traction",
+          "title": "Product and traction",
+          "blurb": "What it does, and the signals of growth."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

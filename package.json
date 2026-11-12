@@ -1,0 +1,29 @@
+{
+  "name": "diligence-rooms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Due diligence on a company and the people you are about to meet: a private, password-gated room per counterparty, built from graded public sources, with a live companion for the meeting.",
+  "license": "MIT",
+  "author": "Anthony Nader",
+  "type": "module",
+  "engines": {
+    "node": ">=23.6"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "serve": "node --env-file-if-exists=.env scripts/serve.mjs",
+    "preview": "node scripts/serve.mjs --no-gate",
+    "test": "node --test tests/*.test.ts tests/*.test.mjs",
+    "new-room": "node scripts/new-room.mjs",
+    "studio": "node --env-file-if-exists=.env scripts/studio.mjs",
+    "enrich": "node --env-file-if-exists=.env scripts/enrich.mjs",
+    "lint": "node scripts/lint.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
+    "@google/genai": "^2.30.0"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.0.3"
+  }
+}

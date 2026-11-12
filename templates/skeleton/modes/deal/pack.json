@@ -1,0 +1,55 @@
+{
+  "sections": [
+    {
+      "id": "deal",
+      "title": "The deal",
+      "note": "Live helper allowed, in the silent helper card format.",
+      "brief": {
+        "level": "Know it",
+        "bullets": [
+          "Their pattern from past deals, and how ours fits it.",
+          "Who signs, and what has to be true for a yes."
+        ],
+        "hold": "Our walk-away point."
+      },
+      "pages": [
+        {
+          "id": "their-deals",
+          "title": "Their deals",
+          "blurb": "Every deal they have done, and their pattern."
+        },
+        {
+          "id": "mandate-fit",
+          "title": "Mandate fit",
+          "blurb": "Their criteria against our offer."
+        },
+        {
+          "id": "term-map",
+          "title": "Term map",
+          "blurb": "Each term, both positions, walk-away and trade."
+        },
+        {
+          "id": "batna",
+          "title": "Alternatives",
+          "blurb": "Our alternatives and theirs, and what each side loses."
+        },
+        {
+          "id": "decision-path",
+          "title": "Decision path",
+          "blurb": "Who signs, the committee, timing, documents."
+        },
+        {
+          "id": "objections",
+          "title": "Objections",
+          "blurb": "Their 25 most likely objections, with evidence and answers."
+        },
+        {
+          "id": "numbers",
+          "title": "Numbers",
+          "blurb": "The model they will build of us."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

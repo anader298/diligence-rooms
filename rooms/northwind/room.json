@@ -1,0 +1,415 @@
+{
+  "slug": "northwind",
+  "title": "Northwind Logistics",
+  "subtitle": "Winning the ABC contract: network planning and terminal consolidation analytics",
+  "asOf": "2026-03-02",
+  "accent": "#8b2fd6",
+  "notice": "Synthetic example. Avery Freight Analytics, Jordan Avery, Northwind Logistics, its owners, its people, its documents and every link in this room are invented to show the format. Links point to reserved .example domains.",
+  "heroes": [
+    {
+      "page": "one-card",
+      "title": "The one card",
+      "cta": "Read last",
+      "warm": true,
+      "text": "The contract in one sentence, the line, four numbers to hold, three questions in order, three terms in plain words, logistics."
+    },
+    {
+      "page": "persona-coo",
+      "title": "Persona: Dan Ellison, COO",
+      "cta": "Drill against him",
+      "text": "Eleven sections from his own words: worldview, what he will probe, how he judges, a question bank in his voice, red flags, rapport hooks."
+    },
+    {
+      "page": "practice-bank",
+      "title": "Practice bank",
+      "cta": "Out loud",
+      "text": "Run sheet for the 45 minutes, twelve questions in the buying group's voices, four push-back drills, one mini-case, the grading rule."
+    }
+  ],
+  "process": [
+    {
+      "status": "done",
+      "title": "First contact",
+      "detail": "Capability statement and a one-page note on the RFP, sent 9 February."
+    },
+    {
+      "status": "done",
+      "title": "Intro call",
+      "detail": "20 minutes, 16 February, with Northwind procurement. Scope, timeline, the buying group's names."
+    },
+    {
+      "status": "done",
+      "title": "Sponsor call",
+      "detail": "45 minutes with Theo Lindqvist, 23 February. Debrief logged within the hour."
+    },
+    {
+      "status": "next",
+      "title": "Pitch meeting",
+      "detail": "Thursday 5 March, 45 minutes: Dan Ellison (COO), Theo Lindqvist, Ines Carvalho (Finance). Rehearse with the practice bank."
+    },
+    {
+      "status": "todo",
+      "title": "Proposal and contract",
+      "detail": "Expected: CEO conversation, client references, terms."
+    }
+  ],
+  "sections": [
+    {
+      "id": "start",
+      "group": "start",
+      "title": "Start here",
+      "pages": [
+        {
+          "id": "one-card",
+          "title": "The one card",
+          "blurb": "Everything needed in the last ten minutes before the pitch meeting. Nothing new on it; every line traces to a page below."
+        }
+      ]
+    },
+    {
+      "id": "brief",
+      "group": "company",
+      "title": "Background brief",
+      "note": "Who they are, the money, the rules, their own documents, and what they can and cannot do.",
+      "pages": [
+        {
+          "id": "who-they-are",
+          "title": "Who Northwind is",
+          "blurb": "Profile from their own site, press releases and trade coverage: what they run, where, for whom, and what changed in the last two years."
+        },
+        {
+          "id": "money",
+          "title": "The money behind it",
+          "blurb": "Ownership, the lender, the acquisition, and what the owner most likely wants from this work. Inferences marked."
+        },
+        {
+          "id": "filings-bank",
+          "title": "Filings bank",
+          "blurb": "Ten public records, each graded from verified to unknown. Says not public where it is not public."
+        },
+        {
+          "id": "documents",
+          "title": "Document index",
+          "blurb": "Every Northwind publication read for this room, with the one thing each says and the phrases they repeat."
+        },
+        {
+          "id": "can-cant",
+          "title": "What they can and cannot do",
+          "blurb": "The limits of the company and of the contract, so every answer stays inside what is possible for them."
+        }
+      ]
+    },
+    {
+      "id": "people",
+      "group": "company",
+      "title": "The people across the table",
+      "note": "Built from public material only, without sight of our side's file.",
+      "pages": [
+        {
+          "id": "org-chart",
+          "title": "Org chart",
+          "blurb": "Every leadership seat, tenure, and where the contract sits. Includes who did the work before."
+        },
+        {
+          "id": "people-map",
+          "title": "People map",
+          "blurb": "Who decides, who influences, what each one is likely to care about in this purchase."
+        },
+        {
+          "id": "persona-coo",
+          "title": "Persona: Dan Ellison, COO",
+          "blurb": "The eleven-section profile, built to be drilled against."
+        }
+      ]
+    },
+    {
+      "id": "m1",
+      "group": "role",
+      "title": "Meeting 1: sponsor",
+      "pages": [
+        {
+          "id": "meeting-1",
+          "title": "Meeting 1: sponsor",
+          "blurb": "The brief before the call and the debrief written within the hour after it."
+        }
+      ],
+      "status": "done"
+    },
+    {
+      "id": "m2",
+      "group": "role",
+      "title": "Meeting 2: pitch meeting",
+      "note": "Thursday 5 March, 45 minutes, three people.",
+      "pages": [
+        {
+          "id": "duty-map",
+          "title": "Scope line by line",
+          "blurb": "Each line of the RFP scope as captured, our evidence for it, and the honest gap."
+        },
+        {
+          "id": "practice-bank",
+          "title": "Practice bank",
+          "blurb": "Run sheet, questions in the buying group's voices, push-back drills, a mini-case and the grading rule."
+        }
+      ],
+      "status": "next"
+    },
+    {
+      "id": "m3",
+      "group": "role",
+      "title": "Meeting 3: CEO",
+      "pages": [
+        {
+          "id": "meeting-3",
+          "title": "Meeting 3: CEO",
+          "blurb": "Expected next. What he is likely to care about and what to prepare once the pitch meeting is done."
+        }
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "ref",
+      "group": "behind",
+      "title": "Vocabulary, corrections, what was sent",
+      "pages": [
+        {
+          "id": "glossary",
+          "title": "Glossary",
+          "blurb": "Their vocabulary, translated. Twenty terms, each with how Northwind uses it."
+        },
+        {
+          "id": "corrections-log",
+          "title": "Corrections log",
+          "blurb": "Every claim that changed after it was first written, and why."
+        },
+        {
+          "id": "sent",
+          "title": "As sent",
+          "blurb": "The documents that went to them, listed as sent, so nothing said in the room contradicts them."
+        }
+      ]
+    }
+  ],
+  "summary": "Jordan Avery, founder of Avery Freight Analytics, meets Dan Ellison, Northwind's COO, with Theo Lindqvist and Ines Carvalho, to win the ABC contract: twelve months of network-planning and terminal-consolidation analytics across 31 warehouses and the nine terminals that came with Tailspin Freight. Northwind paid for one network study in 2024 and shelved it. Win by showing a model their own two analysts keep current, priced on Ines's definition of cost per shipment. Dan approves; the CFO signs.",
+  "ourSide": "Jordan Avery, Avery Freight Analytics",
+  "counterparty": "Northwind",
+  "modes": [
+    "pitch and deal"
+  ],
+  "meetings": [
+    {
+      "date": "2026-02-17",
+      "time": "10:00",
+      "title": "Discovery call",
+      "who": "Theo",
+      "format": "video",
+      "length": "45 min"
+    },
+    {
+      "date": "2026-03-05",
+      "time": "10:00",
+      "tz": "CT",
+      "title": "Pitch meeting",
+      "who": "Dan, Theo and Ines",
+      "format": "Northwind HQ, Chicago",
+      "length": "60 min"
+    },
+    {
+      "date": "2026-03-17",
+      "title": "Commercial terms",
+      "who": "Ines and the CFO",
+      "format": "video"
+    }
+  ],
+  "deadlines": [
+    {
+      "date": "2026-02-20",
+      "time": "17:00",
+      "title": "Mutual NDA signed and returned",
+      "kind": "submission"
+    },
+    {
+      "date": "2026-03-04",
+      "time": "18:00",
+      "title": "Written proposal to Theo, 6 pages max",
+      "kind": "submission"
+    },
+    {
+      "date": "2026-03-09",
+      "time": "12:00",
+      "title": "Three client references, contacts confirmed",
+      "kind": "submission"
+    },
+    {
+      "date": "2026-03-11",
+      "time": "17:00",
+      "title": "Pricing sheet on Ines's cost-per-shipment basis",
+      "kind": "submission"
+    }
+  ],
+  "matters": [
+    {
+      "title": "They already paid for one network study and shelved it.",
+      "text": "A large consulting firm ran a network review in 2024; it never reached operations. Win by showing a model Theo's two analysts keep current every month.",
+      "page": "who-they-are",
+      "link": "Who Northwind is"
+    },
+    {
+      "title": "Dan Ellison approves, and he judges on a number first.",
+      "text": "Then what breaks if you are wrong, then the first step. Bring one number, one named risk and a 90-day plan. Do not offer a menu of options.",
+      "page": "persona-coo",
+      "link": "His persona"
+    },
+    {
+      "title": "Ines Carvalho owns cost per shipment, and it is defined two ways.",
+      "text": "Northwind and Tailspin count it differently. The business case and the pricing sheet must use her definition, or the deal stalls at terms.",
+      "page": "money",
+      "link": "The numbers"
+    }
+  ],
+  "drives": [
+    {
+      "kind": "financial",
+      "label": "Financial",
+      "line": "Margin from the Tailspin overlap before the fund sells.",
+      "grade": "inference"
+    },
+    {
+      "kind": "social",
+      "label": "Social",
+      "line": "A family carrier that still wants to look like one.",
+      "grade": "verified"
+    },
+    {
+      "kind": "commercial",
+      "label": "Commercial",
+      "line": "Density, service, cost per shipment, in that order.",
+      "grade": "verified"
+    },
+    {
+      "kind": "technical",
+      "label": "Technical",
+      "line": "One TMS by June, and a network model their own people run.",
+      "grade": "verified"
+    }
+  ],
+  "people": [
+    {
+      "name": "Dan Ellison",
+      "slug": "dan-ellison",
+      "title": "Chief Operating Officer",
+      "since": "2024",
+      "pronoun": "he",
+      "role": "Approves the vendor",
+      "decides": true,
+      "judges": "A number first, then what breaks if you are wrong, then the first step. Hedging marks you down.",
+      "verdict": {
+        "level": "proven",
+        "line": "Delivers. Ran network design at a 3PL and then a larger carrier for twelve years; the Tailspin integration is on schedule."
+      },
+      "drives": "Margin from the Tailspin overlap inside the fund's hold, and one name next to every decision.",
+      "family": "Married, two children. Lives in Chicago, Lincoln Park area.",
+      "familyGrade": "partly",
+      "page": "persona-coo",
+      "drivers": [
+        {
+          "kind": "financial",
+          "label": "Financial",
+          "line": "Paid on the exit, so the Tailspin margin is his number.",
+          "grade": "inference"
+        },
+        {
+          "kind": "social",
+          "label": "Social",
+          "line": "Standing among operators, at the club and at the summit.",
+          "grade": "partly"
+        },
+        {
+          "kind": "commercial",
+          "label": "Commercial",
+          "line": "Every building has to earn its place.",
+          "grade": "verified"
+        },
+        {
+          "kind": "technical",
+          "label": "Technical",
+          "line": "A model with one name next to every decision.",
+          "grade": "verified"
+        }
+      ]
+    },
+    {
+      "name": "Theo Lindqvist",
+      "slug": "theo-lindqvist",
+      "title": "VP Network and Engineering",
+      "since": "2021",
+      "pronoun": "he",
+      "role": "Recommends",
+      "decides": false,
+      "judges": "Whether the model stays alive with his two analysts after we leave, and whether operations will trust it.",
+      "verdict": {
+        "level": "proven",
+        "line": "Keeps models alive. His two analysts ran Northwind's network studies for three years before 2024, and still refresh them."
+      },
+      "drives": "A model his team owns, and no surprises for operations.",
+      "family": "Married. Lives in the Oak Park area.",
+      "familyGrade": "verified"
+    },
+    {
+      "name": "Ines Carvalho",
+      "slug": "ines-carvalho",
+      "title": "Director, FP&A",
+      "since": "2024",
+      "pronoun": "she",
+      "role": "Checks the numbers",
+      "decides": false,
+      "judges": "Whether cost per shipment is defined the way she defines it, and whether the price traces to it.",
+      "verdict": {
+        "level": "mixed",
+        "line": "Strong on numbers, thin in public. Two integration models at a prior carrier are on her profile; neither can be checked from outside."
+      },
+      "drives": "One definition of cost per shipment across both companies, and a price she can trace.",
+      "family": "No public family information found. Lives in the Chicago area.",
+      "familyGrade": "weak"
+    }
+  ],
+  "dealPath": [
+    {
+      "who": "Theo Lindqvist",
+      "action": "Recommends in writing",
+      "detail": "Technical fit and hand-over. Discovery done 17 February.",
+      "status": "done",
+      "grade": "verified"
+    },
+    {
+      "who": "Ines Carvalho",
+      "action": "Builds the business case",
+      "detail": "On her cost-per-shipment basis. Pricing sheet due 11 March.",
+      "status": "next",
+      "grade": "partly"
+    },
+    {
+      "who": "Dan Ellison",
+      "action": "Approves vendor and scope",
+      "detail": "At or after the pitch meeting on 5 March.",
+      "status": "next",
+      "grade": "verified"
+    },
+    {
+      "who": "Ruth Okoye, CFO",
+      "action": "Signs",
+      "detail": "Contracts over $250k need the CFO.",
+      "status": "todo",
+      "grade": "verified"
+    }
+  ],
+  "demo": {
+    "now": "2026-03-03T19:40",
+    "read": [
+      "who-they-are",
+      "money",
+      "org-chart",
+      "meeting-1"
+    ]
+  }
+}

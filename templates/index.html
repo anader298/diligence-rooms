@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#ffffff">
+<title>{{roomTitle}} · Diligence room</title>
+<link rel="stylesheet" href="assets/room.css">
+<style>:root{--acc:{{accent}}}</style>
+</head>
+<body data-room="{{slug}}" data-pages="{{pageCount}}"{{demoAttrs}}>
+{{bar}}
+<div class="shell">
+{{rail}}
+<div class="lead" id="main">
+{{notice}}
+<header class="room-head" id="start-here" data-hide-on-search>
+<p class="kind eyebrow">Start here · diligence room{{modeText}} · as of {{asOfLong}} · <b>{{pageCount}} pages</b></p>
+<h1>{{roomTitle}}</h1>
+<p class="sub">{{subtitle}}</p>
+{{summary}}
+{{facts}}
+</header>
+</div>
+{{schedule}}
+<main>
+{{msearch}}
+<p class="hits" id="hits" aria-live="polite"></p>
+{{matters}}
+{{drives}}
+{{tools}}
+{{sections}}
+<p class="foot-note">{{footer}} Your reading progress and anything you feed it stay in this browser until the room is rebuilt.</p>
+</main></div>
+<footer class="site-foot"><div class="in"><span class="brand-s">{{roomTitle}}</span><span>Diligence room · private</span></div></footer>
+<script src="assets/room.js"></script>
+</body></html>

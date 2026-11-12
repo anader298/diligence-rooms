@@ -1,0 +1,50 @@
+{
+  "sections": [
+    {
+      "id": "audit",
+      "title": "The audit",
+      "note": "Live helper allowed, notes only.",
+      "brief": {
+        "level": "Know it",
+        "bullets": [
+          "The claims that matter most, and the document that proves each.",
+          "The red flags worth a test."
+        ],
+        "hold": "The one claim that would change the decision if false."
+      },
+      "pages": [
+        {
+          "id": "claims-register",
+          "title": "Claims register",
+          "blurb": "Every claim they make, graded, with the proof needed."
+        },
+        {
+          "id": "request-list",
+          "title": "Request list",
+          "blurb": "Document requests ordered by risk, mapped to claims."
+        },
+        {
+          "id": "red-flags",
+          "title": "Red flags",
+          "blurb": "Litigation, liens, regulator actions, exits, related parties."
+        },
+        {
+          "id": "controls-map",
+          "title": "Controls map",
+          "blurb": "Process, owner, control, evidence, gap."
+        },
+        {
+          "id": "financial-reconstruction",
+          "title": "Financial reconstruction",
+          "blurb": "What the public record rebuilds, against their story."
+        },
+        {
+          "id": "management-interview",
+          "title": "Management interview",
+          "blurb": "Questions per person, and the answer that would worry us."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

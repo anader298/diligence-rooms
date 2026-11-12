@@ -1,0 +1,52 @@
+<!-- GATHER: How the companion will be used in this room's meetings, calls and negotiations: which device, which meeting, whether recording is agreed, what to feed it beforehand, and anything it must not surface. The setup steps and the card guide below are fixed; fill the room-specific rows and delete what does not apply (e.g. the interviewing mode, where the live helper is off).
+     FROM: process (meetings and their format), the mode pack's live-helper rule (STANDARD.md sec. 7), the people across the table and where they are based (for the consent rule).
+     Keep every <h2> bare and under 40 characters. Delete this comment when the page is filled. -->
+<p>The companion is a silent assistant on your phone for the meeting itself. It holds everything in this room, plus anything you feed it, and puts four kinds of card on the screen as the conversation moves: facts, calculations, suggestions and notes. It never makes a sound. Open it at <a href="assist.html">assist.html</a> (same password as the room); <a href="assist.html?demo=1">assist.html?demo=1</a> plays a synthetic meeting with no microphone and no network.</p>
+<h2>Set up the phone</h2>
+<ol>
+<li><b>Open the link</b> on the phone: assist.html in this room.</li>
+<li><b>Log in</b> with the room password. The companion and its functions sit behind the same gate as the room.</li>
+<li><b>Add to home screen</b> (Safari: Share, Add to Home Screen; Chrome: Install app). It then opens full screen, dark, like an app. Only the empty page is stored on the phone; the room's content is fetched each time and never cached.</li>
+<li><b>Feed it.</b> Press Feed and add what is not in the room yet: notes from the last call, their latest offer, your price floor, an email, a text or markdown file, the text of a PDF. Quick facts go in one line at a time. Fed items stay in this session on this phone; Save to room keeps one for the next build (only where saving is switched on).</li>
+<li><b>Check what it knows.</b> The line under the title shows the page count, the personas and the number of fed items. Tap it for the detail.</li>
+<li><b>Test the microphone.</b> Press Listen, confirm consent, say one sentence with a number in it ("the fee is 900,000 a year"), and watch a NOTE and the transcript line appear. Then type a question in Ask and press Think.</li>
+<li><b>Consent.</b> Listen asks you to confirm that everyone in the conversation has agreed to be recorded and transcribed. If they have not, choose Typed only: every card still works from what you type.</li>
+<li><b>Before you walk in:</b> charge the phone, turn on Do Not Disturb, set the haptic tick on or off in More, and prop the phone where you can glance at it without turning your head (it works on its side, two cards by two). On a video call, keep it off camera. The screen stays on while it listens.</li>
+</ol>
+<h2>Read the four cards</h2>
+<ul>
+<li><b>FACT</b> (blue): the fact that answers what was just asked, with the room page it came from and its grade. On a push-back it starts with <b>NEW FACT</b> or <b>NO NEW FACT</b>; with no new fact, hold your position.</li>
+<li><b>CALC</b> (green): numbers you hear, computed on the phone as they are said: percentages, shares, growth and growth a year, multiples, cost per unit, payback, NPV and IRR once a cost, a yearly amount, the years and a rate are all on the table, and unit conversions when asked. It shows the inputs it used. A number of ours that is not in the room or the fed items is marked "check before you say it".</li>
+<li><b>SUGGEST</b> (violet): what to say or ask next and where to steer, written for the person speaking (from their persona: what they judge on) and the stage of the conversation: opening, discovery, numbers, push-back, close.</li>
+<li><b>NOTE</b> (amber): running notes: commitments either side made, numbers they gave, names, open questions, follow-ups. They go into the export.</li>
+</ul>
+<p>The stage and the speaker sit at the top. Tap a card for its history and full detail; tap SUGGEST, or press Think, for the full answer to the last question: best answer, evidence, what they are testing, a question back, the risk to avoid. Cards never repeat: something already shown is not shown again.</p>
+<h2>How it works</h2>
+<ul>
+<li><b>Fast lane</b> (a few seconds): cleans the transcript, guesses who is speaking and the stage, and writes FACT and NOTE cards from the room and the fed items.</li>
+<li><b>Deep lane</b>: writes the considered SUGGEST card when a question, a push-back or a new stage arrives, and the full answer on Think.</li>
+<li><b>On the phone, no model</b>: CALC cards and most notes come from plain code the moment a line is heard, so the arithmetic is never a model's guess.</li>
+<li><b>Transcription</b>: 8-second audio chunks on the server; the phone's own speech recognition if that fails, or by choice in More.</li>
+</ul>
+<h2>Consent first</h2>
+<p>Recording or transcribing people without their consent is unlawful in many places. In the US, two-party (all-party) consent states, such as California, Florida, Illinois, Maryland, Massachusetts, Montana, New Hampshire, Pennsylvania and Washington, require everyone on the call to agree, and the strictest rule of any participant's location usually applies. Outside the US, assume consent is required. Without consent, use typed questions only, or not at all.</p>
+<div class="tw"><table><tr><th>Meeting</th><th>Their location (state or country)</th><th>Consent rule</th><th>Consent obtained?</th></tr>
+<tr><td>[FILL: meeting]</td><td></td><td></td><td>[FILL: yes, how and when]</td></tr>
+</table></div>
+<h2>What to feed it</h2>
+<p>[FILL: for this room, what to add before the meeting that the room does not hold, e.g. our price floor and walk-away, their last offer, notes from the prep call.]</p>
+<ul><li></li></ul>
+<h2>Limits</h2>
+<ul>
+<li>It knows this room and what you fed it, nothing else. When a card says "Not in room", use its bridge line. Never say a number that is not on a card.</li>
+<li>Speech-to-text garbles names and numbers; a CALC built on a misheard number is wrong. Glance at its inputs before you use the result.</li>
+<li>The speaker guess can be wrong when two people talk over each other; the SUGGEST card is shaped for whoever it thinks is speaking.</li>
+<li>The microphone stops when the phone locks or the page goes to the background. Keep it in front.</li>
+<li>It needs a connection for the transcript and the model cards; CALC and notes still work from typed lines offline.</li>
+<li>It is a prompt, not a script. Read the first line of a card, not the whole card.</li>
+</ul>
+<h2>Do not say</h2>
+<p>Anything the companion must never surface in this room, for example what was learned only from a partner's account.</p>
+<ul><li></li></ul>
+<h2>After the meeting</h2>
+<p>The session (transcript, all four kinds of card, full answers and fed items) is saved on the phone only. In More, press Export for debrief and paste the file into the meeting page's debrief, then Clear session to remove it from the phone.</p>

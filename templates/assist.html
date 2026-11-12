@@ -1,0 +1,768 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Companion">
+<link rel="manifest" href="assist-manifest.json" crossorigin="use-credentials">
+<link rel="icon" href="assist/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assist/icon-192.png">
+<title>Companion</title>
+<style>
+/* Silent by design: nothing on this page makes a sound. The only signal is an
+   optional single haptic tick when new cards land (Settings: "Haptic tick"). */
+:root{--bg:#0b0f14;--card:#121922;--card2:#0f151d;--line:#223041;--ink:#eef2f7;--mut:#94a3b6;--fact:#4da3ff;--calc:#2ecc71;--sug:#b99cff;--note:#f4b942;--bad:#ff6b6b;--ok:#2ecc71;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);--safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none;background:var(--bg)}
+body{margin:0;height:100dvh;background:var(--bg);color:var(--ink);font:16px/1.35 -apple-system,"SF Pro Text",system-ui,Helvetica,Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;padding:0 var(--safe-r) 0 var(--safe-l)}
+button,[role="button"],.tog,summary{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+button{font:inherit;border:0;border-radius:14px;padding:12px 14px;font-weight:700;cursor:pointer;color:var(--ink);background:#1c2633;transition:transform .1s ease-out,background .1s}
+button:active{transform:scale(.97);background:#263345}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--fact);outline-offset:2px}
+input,textarea,select{font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%}
+textarea{min-height:120px;resize:vertical}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- top: stage, who is speaking, what it knows */
+.top{min-width:0;padding:calc(var(--safe-t) + 8px) 12px 8px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.top .rn{font-weight:700;font-size:15px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:10px;height:10px;border-radius:50%;background:#3a4656;flex:none}
+.dot.on{background:var(--bad);box-shadow:0 0 0 3px rgba(255,107,107,.25)}
+.chip{font-size:13px;font-weight:700;border-radius:999px;padding:4px 10px;background:#1a2330;color:var(--ink);white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.chip.stage{text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+.chip.stage.push-back{background:#4a2a10;color:#ffd08a}
+.chip.stage.close{background:#173322;color:#9be8b5}
+.chip.stage.numbers{background:#10301f;color:#8fe3ad}
+.knows{all:unset;flex:1 1 100%;font-size:12.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+
+/* ---------- the four cards: one glance */
+.glance{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(4,minmax(0,1fr));gap:8px;padding:8px 10px}
+.tile{position:relative;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:16px;padding:10px 13px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;min-height:0;touch-action:manipulation}
+.tile:active{background:#16202b}
+.tile[data-type="FACT"]{--c:var(--fact)}.tile[data-type="CALC"]{--c:var(--calc)}.tile[data-type="SUGGEST"]{--c:var(--sug)}.tile[data-type="NOTE"]{--c:var(--note)}
+.tile.fresh{animation:fresh 1.2s ease-out}
+@keyframes fresh{from{box-shadow:inset 0 0 0 2px var(--c)}to{box-shadow:inset 0 0 0 2px transparent}}
+.th{display:flex;align-items:baseline;gap:8px;font-size:12px;color:var(--mut);margin:0 0 4px;user-select:none;-webkit-user-select:none}
+.th b{color:var(--c);letter-spacing:.09em;font-size:12.5px}
+.th .age{margin-left:auto}
+.th .n{background:#1d2836;border-radius:999px;padding:1px 7px;color:var(--ink)}
+.big{font-size:20px;font-weight:700;line-height:1.22;margin:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;overflow-wrap:anywhere}
+.calc .big{font-size:26px;-webkit-line-clamp:2}
+.big.two{-webkit-line-clamp:2}
+.sub{font-size:14.5px;color:#c4cfdc;margin:5px 0 0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.q{font-size:13.5px;color:var(--mut);margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb{display:inline-block;font-size:13px;font-weight:800;letter-spacing:.04em;border-radius:6px;padding:1px 7px;margin:0 0 4px;background:#3c2a0c;color:#ffd08a;align-self:flex-start}
+.pb.new{background:#123a24;color:#9be8b5}
+.src{color:var(--fact);font-weight:600}
+.grade{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:6px;background:#1f2a38;color:#c8d3e0;text-transform:uppercase;letter-spacing:.04em}
+.grade.verified{background:#123a24;color:#9be8b5}.grade.partly{background:#1d3550;color:#a9d1ff}.grade.weak,.grade.inference{background:#3c2a0c;color:#ffd08a}.grade.none,.grade.not-public,.grade.unknown{background:#3a1b1f;color:#ffb3b3}.grade.fed{background:#2b2142;color:#d6c6ff}
+.check{color:#ffd08a;font-size:13.5px;margin-top:4px}
+.empty{color:var(--mut);font-size:15px;margin:2px 0 0}
+.notes{list-style:none;margin:0;padding:0;font-size:16px;line-height:1.3;overflow:hidden}
+.notes li{display:flex;gap:7px;margin:0 0 4px;min-width:0}
+.notes li span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.kind{flex:none;align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:6px;padding:2px 6px;background:#2d2410;color:var(--note);margin-top:1px}
+
+/* ---------- ticker and dock (thumb zone) */
+.ticker{font-size:13.5px;color:var(--mut);padding:4px 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:1px solid var(--line)}
+.ticker b{color:var(--ink);font-weight:600}
+.dock{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(4,minmax(0,1fr));gap:6px;padding:8px 10px calc(8px + var(--safe-b));border-top:1px solid var(--line);background:var(--bg)}
+.dock button{padding:14px 4px;font-size:15px}
+#listen{background:var(--ok);color:#06240f}
+#listen.on{background:var(--bad);color:#fff}
+#think{background:var(--sug);color:#1b0f3a}
+
+/* ---------- deep answer (desktop column; inside the SUGGEST sheet on a phone) */
+.deep{background:var(--card2);border:1px solid var(--line);border-left:5px solid var(--sug);border-radius:16px;padding:12px 14px;overflow-wrap:anywhere}
+.deep .dh{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--mut);margin:0 0 6px}
+.deep h4{margin:10px 0 2px;font-size:12px;letter-spacing:.08em;color:var(--sug)}
+.deep h4:first-of-type{margin-top:0}
+.deep p{margin:2px 0;font-size:16.5px;white-space:pre-wrap}
+.deep .dq{font-size:14px;color:var(--mut);margin:0 0 6px}
+.cursor:after{content:"\2589";color:var(--sug);animation:blink 1s steps(2) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.side{display:none}
+
+/* ---------- sheets */
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:20px;padding:0;width:min(560px,calc(100% - 16px));max-height:calc(100dvh - var(--safe-t) - 24px)}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog[open]{display:flex;flex-direction:column}
+.sh{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.sh h2{margin:0;font-size:17px;flex:1}
+.sb{padding:12px 14px calc(14px + var(--safe-b));overflow-y:auto;overscroll-behavior:contain}
+.item{border:1px solid var(--line);border-left:4px solid var(--c,var(--line));border-radius:12px;padding:10px 12px;margin:0 0 8px;background:var(--card2)}
+.item .big{-webkit-line-clamp:unset;font-size:19px}
+.item .sub{-webkit-line-clamp:unset}
+.item .meta{font-size:12px;color:var(--mut);margin-top:6px}
+.inputs{margin:6px 0 0;padding:0;list-style:none;font-size:14.5px;color:#c4cfdc}
+.inputs li{margin:2px 0}
+.row{display:flex;gap:8px;margin:8px 0}
+.row>*{flex:1}
+.tog{display:flex;align-items:center;gap:10px;font-size:16px;padding:10px 0;border-bottom:1px solid var(--line)}
+.tog input{width:22px;height:22px;flex:none}
+.tog small{display:block;color:var(--mut);font-size:13px}
+.fed{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:0 0 6px;background:var(--card2)}
+.fed div{flex:1;min-width:0}
+.fed b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fed small{color:var(--mut);font-size:12.5px}
+.fed button{padding:7px 10px;font-size:13px}
+.hint{font-size:13.5px;color:var(--mut);margin:6px 0}
+.tx{font-size:15px;color:#c6d0dc;max-height:40dvh;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--card2)}
+.tx div{margin:2px 0}.tx b{color:var(--fact);font-weight:600}.tx b.us{color:var(--ok)}
+.tx i{color:var(--mut);font-style:normal;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+#consent p{font-size:15px;color:#c6d0dc;margin:6px 0}
+#consent label{display:flex;gap:10px;align-items:flex-start;font-size:16px;margin:12px 0}
+#consent label input{width:22px;height:22px;flex:none;margin-top:1px}
+.status{font-size:12px;color:var(--mut);padding:0 14px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+body.dim{filter:brightness(.72)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Propped on its side on a table: two by two. */
+@media (orientation:landscape) and (max-height:560px){
+  .glance{grid-template-columns:1fr 1fr;grid-template-rows:repeat(2,minmax(0,1fr))}
+  .top .knows{display:none}
+}
+/* Laptop or tablet: four cards across, the deep answer and the transcript underneath. */
+@media (min-width:900px) and (min-height:560px){
+  body{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto 1fr auto auto;grid-template-areas:"top top" "glance glance" "deep side" "ticker ticker" "dock dock"}
+  .top{grid-area:top}.glance{grid-area:glance;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:none;height:290px}
+  .ticker{grid-area:ticker}.dock{grid-area:dock;grid-template-columns:repeat(5,minmax(0,170px));justify-content:center}
+  #deepMain{grid-area:deep;margin:0 0 8px 10px;overflow-y:auto}
+  .side{grid-area:side;display:flex;flex-direction:column;gap:8px;margin:0 10px 8px 8px;min-height:0}
+  .side .tx{max-height:none;flex:1}
+  .big{-webkit-line-clamp:5}
+  .status{grid-area:auto}
+}
+@media (max-width:899px),(max-height:559px){#deepMain{display:none}}
+</style></head><body>
+<header class="top">
+  <span class="dot" id="dot" aria-hidden="true"></span>
+  <span class="rn" id="rname">Companion</span>
+  <span class="chip stage" id="stage" aria-live="polite">opening</span>
+  <span class="chip" id="who">no speaker yet</span>
+  <button class="knows" id="knows" type="button" aria-label="What the companion knows">Loading what it knows…</button>
+</header>
+<main class="glance" id="glance">
+  <article class="tile" data-type="FACT" role="button" tabindex="0" aria-label="Fact card"></article>
+  <article class="tile calc" data-type="CALC" role="button" tabindex="0" aria-label="Calculation card"></article>
+  <article class="tile" data-type="SUGGEST" role="button" tabindex="0" aria-label="Suggestion card"></article>
+  <article class="tile" data-type="NOTE" role="button" tabindex="0" aria-label="Notes card"></article>
+</main>
+<section class="deep" id="deepMain" aria-live="polite" aria-label="Deep answer"></section>
+<aside class="side" id="side"><div class="tx" id="txSide" aria-label="Transcript"></div></aside>
+<div class="ticker" id="ticker" aria-live="off">Press Listen, or Ask to type a question.</div>
+<div class="status" id="status" role="status">idle</div>
+<nav class="dock">
+  <button id="listen" type="button">Listen</button>
+  <button id="think" type="button" title="The full answer to the last question">Think</button>
+  <button id="askBtn" type="button">Ask</button>
+  <button id="feedBtn" type="button">Feed</button>
+  <button id="moreBtn" type="button">More</button>
+</nav>
+
+<dialog id="sheet" aria-labelledby="shTitle"><div class="sh"><h2 id="shTitle">Cards</h2><button id="shThink" type="button" hidden>Think</button><button type="button" data-close>Close</button></div><div class="sb" id="shBody"></div></dialog>
+
+<dialog id="ask" aria-labelledby="askTitle"><div class="sh"><h2 id="askTitle">Ask</h2><button type="button" data-close>Close</button></div><div class="sb">
+  <input id="q" placeholder="Type what they asked" autocomplete="off" enterkeyhint="go" aria-label="Question">
+  <div class="row"><button id="qCard" type="button">Cards</button><button id="qThink" type="button" style="background:var(--sug);color:#1b0f3a">Think</button></div>
+  <p class="hint">Cards: FACT, CALC and NOTE in seconds, then a SUGGEST. Think: the full answer, streamed.</p>
+</div></dialog>
+
+<dialog id="feed" aria-labelledby="feedTitle"><div class="sh"><h2 id="feedTitle">Feed it</h2><button type="button" data-close>Done</button></div><div class="sb">
+  <p class="hint">Before or during the meeting, call or negotiation: anything you learned that is not in the room (price floor, their last offer, notes from the prep call). It goes to both lanes for this session, after the room.</p>
+  <div class="row"><input id="fact" placeholder="Quick fact, e.g. their budget is set in May" autocomplete="off" enterkeyhint="done" aria-label="Quick fact"><button id="factAdd" type="button" style="flex:0 0 auto">Add</button></div>
+  <textarea id="paste" placeholder="Paste notes, an email, a page of text" aria-label="Paste notes"></textarea>
+  <div class="row"><input id="pasteTitle" placeholder="Title (optional)" autocomplete="off" aria-label="Title"><button id="pasteAdd" type="button" style="flex:0 0 auto">Add notes</button></div>
+  <div class="row"><label class="hint" style="margin:0">Files (.txt, .md, .csv, .json, or the text of a PDF)<input id="files" type="file" multiple accept=".txt,.md,.markdown,.csv,.json,.pdf,text/*" style="margin-top:6px"></label></div>
+  <p class="hint" id="fedUse"></p>
+  <div id="fedList"></div>
+</div></dialog>
+
+<dialog id="more" aria-labelledby="moreTitle"><div class="sh"><h2 id="moreTitle">More</h2><button type="button" data-close>Close</button></div><div class="sb">
+  <h3 style="font-size:14px;color:var(--mut);margin:0 0 4px">What it knows</h3>
+  <div id="knowsFull" class="hint"></div>
+  <h3 style="font-size:14px;color:var(--mut);margin:14px 0 4px">Settings</h3>
+  <label class="tog"><input type="checkbox" id="optTick" checked><span>Haptic tick on new cards<small>One short vibration where the phone supports it. Never a sound.</small></span></label>
+  <label class="tog"><input type="checkbox" id="optAuto" checked><span>Cards as they talk<small>Fast lane on every new piece of speech.</small></span></label>
+  <label class="tog"><input type="checkbox" id="optSteer" checked><span>Suggest on questions and stage changes<small>Deep lane writes the SUGGEST card.</small></span></label>
+  <label class="tog"><input type="checkbox" id="optDevice"><span>Phone speech recognition<small>Instead of server transcription. Used anyway if the server fails.</small></span></label>
+  <label class="tog"><input type="checkbox" id="optDim"><span>Dim the screen<small>For in-person meetings.</small></span></label>
+  <h3 style="font-size:14px;color:var(--mut);margin:14px 0 4px">Transcript</h3>
+  <div class="tx" id="txFull"></div>
+  <div class="row"><button id="export" type="button">Export for debrief</button><button id="copy" type="button">Copy</button></div>
+  <div class="row"><button id="clear" type="button" style="background:#3a1b1f">Clear session</button><a href="./" style="align-self:center;color:var(--mut);text-align:center">Back to the room</a></div>
+  <p class="hint" id="sess"></p>
+</div></dialog>
+
+<dialog id="consent" aria-labelledby="ctitle"><div class="sh"><h2 id="ctitle">Before the microphone turns on</h2></div><div class="sb">
+  <p>The companion records and transcribes what it hears. In many places, including the US two-party consent states (such as California, Florida, Illinois, Maryland, Massachusetts, Montana, New Hampshire, Pennsylvania and Washington), everyone in the conversation must agree first.</p>
+  <label><input type="checkbox" id="cok"> Everyone in this conversation has agreed to it being recorded and transcribed.</label>
+  <p>Without consent, use Ask: all four cards and Think still work from typed questions.</p>
+  <div class="row"><button id="cno" type="button">Typed only</button><button id="cgo" type="button" disabled style="background:var(--ok);color:#06240f">Start listening</button></div>
+</div></dialog>
+
+<script type="module">
+import * as C from "./assist/core.js";
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const DEMO = params.get("demo") === "1" || location.hash === "#demo";
+const ROOM = (location.pathname.split("/")[1] || "room").replace(/[^a-z0-9-]/g, "");
+const KEY = "companion:" + ROOM;
+const SEG_MS = 8000;
+const TYPES = ["FACT", "CALC", "SUGGEST", "NOTE"];
+
+// ---------------------------------------------------------------- session (this device only; Clear removes it)
+const newSession = () => ({ room: ROOM, id: Date.now().toString(36), startedAt: new Date().toISOString(), consent: null, lines: [], cards: [], fed: [], deeps: [], stage: "opening", stages: [], speaker: "", lastQ: null, seq: 0, mem: {} });
+let S = null;
+if (!DEMO) { try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {} }
+if (!S || S.room !== ROOM || !Array.isArray(S.cards) || !Array.isArray(S.fed)) S = newSession();
+for (const d of S.deeps) if (d.state === "streaming" || d.state === "queued") { d.state = "error"; d.error = "interrupted (page reloaded); press Think again"; }
+let saveT = null;
+const save = () => { if (DEMO) return; clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { status("could not save: " + e.message); } }, 300); };
+const prefs = Object.assign({ tick: true, auto: true, steer: true, device: false, dim: false }, JSON.parse(localStorage.getItem("companion:prefs") || "{}"));
+const savePrefs = () => localStorage.setItem("companion:prefs", JSON.stringify(prefs));
+
+// ---------------------------------------------------------------- DOM helpers (text only; never innerHTML with data)
+function el(tag, attrs, kids) {
+  const n = document.createElement(tag);
+  for (const k in attrs || {}) { if (k === "text") n.textContent = attrs[k]; else if (k === "class") n.className = attrs[k]; else if (attrs[k] != null) n.setAttribute(k, attrs[k]); }
+  for (const c of kids || []) if (c != null && c !== false) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  return n;
+}
+const clear = (n) => { while (n.firstChild) n.removeChild(n.firstChild); };
+const status = (t) => { $("status").textContent = t; };
+const hhmm = (iso) => new Date(iso).toTimeString().slice(0, 5);
+const ago = (iso) => { const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000)); return s < 10 ? "now" : s < 60 ? s + "s" : Math.round(s / 60) + "m"; };
+const GRADE_LABEL = { verified: "verified", partly: "partly", weak: "weak", inference: "inference", none: "none found", "not-public": "not public", unknown: "unknown", fed: "fed" };
+const gradeTag = (g) => (g ? el("span", { class: "grade " + g, text: GRADE_LABEL[g] || g }) : null);
+const KIND_LABEL = { commitment: "commit", number: "number", name: "name", question: "open q", followup: "follow-up" };
+
+// ---------------------------------------------------------------- knowledge: the room + what was fed
+let KNOW = { title: "", pages: 0, personas: [], people: [], savedFed: [], numbers: [] };
+const people = () => [...KNOW.people, ...KNOW.personas.filter((p) => !KNOW.people.some((x) => x.name === p.name))];
+const knownNumbers = () => KNOW.numbers.concat(...S.fed.map((f) => C.numbersIn(f.text)));
+function drawKnows() {
+  const names = KNOW.personas.map((p) => p.name);
+  const line = `Knows ${KNOW.pages || "?"} pages` + (names.length ? " · " + names.join(", ") : "") + ` · ${S.fed.length} fed` + (KNOW.savedFed.length ? ` (+${KNOW.savedFed.length} saved)` : "");
+  $("knows").textContent = line;
+  $("rname").textContent = KNOW.title ? "Companion · " + KNOW.title : "Companion";
+  const k = $("knowsFull"); clear(k);
+  k.appendChild(el("div", { text: `${KNOW.pages || "?"} room pages` + (KNOW.kinds ? " (" + Object.entries(KNOW.kinds).map(([a, b]) => b + " " + a).join(", ") + ")" : "") + (KNOW.asOf ? ", as of " + KNOW.asOf : "") }));
+  k.appendChild(el("div", { text: "Personas: " + (names.join(", ") || "none") }));
+  if (KNOW.people.length) k.appendChild(el("div", { text: "Across the table: " + KNOW.people.map((p) => p.name + (p.title ? " (" + p.title + ")" : "")).join(", ") }));
+  k.appendChild(el("div", { text: `Fed this session: ${S.fed.length ? S.fed.map((f) => f.title).join("; ") : "nothing yet"}` }));
+  if (KNOW.savedFed.length) k.appendChild(el("div", { text: "Saved to the room earlier: " + KNOW.savedFed.join("; ") }));
+}
+async function loadKnows() {
+  if (DEMO) return;
+  try { const r = await fetch("api/know"); const j = await r.json(); if (!j.error) KNOW = Object.assign(KNOW, j); else status("knowledge: " + j.error); }
+  catch (e) { status("could not load what it knows: " + e.message); }
+  drawKnows();
+}
+const fedPayload = () => S.fed.map((f) => ({ title: f.title, text: f.text, kind: f.kind, at: f.at }));
+
+// ---------------------------------------------------------------- cards
+function compact(c) { const o = { type: c.type }; for (const k of ["text", "source", "grade", "title", "result", "say", "ask", "kind", "op"]) if (c[k]) o[k] = c[k]; if (c.inputs) o.inputs = c.inputs; return o; }
+let tickPending = false;
+function addCards(list, lane) {
+  const stamped = [];
+  for (const raw of list || []) {
+    const v = C.validateCard(raw);
+    if (!v.ok) continue;
+    const card = Object.assign({}, raw, v.card, { id: "k" + (++S.seq), at: new Date().toISOString(), lane: raw.lane || lane, stage: S.stage });
+    if (C.isDuplicate(card, S.cards)) continue;
+    S.cards.push(card); stamped.push(card);
+  }
+  if (!stamped.length) return [];
+  save();
+  for (const t of new Set(stamped.map((c) => c.type))) drawTile(t, true);
+  if (sheetType) drawSheet();
+  if (prefs.tick && !tickPending) { tickPending = true; setTimeout(() => { tickPending = false; if (navigator.vibrate && document.visibilityState === "visible") try { navigator.vibrate(12); } catch (e) {} }, 60); }
+  return stamped;
+}
+const ofType = (t) => S.cards.filter((c) => c.type === t);
+
+function factBody(c, full) {
+  return [
+    c.q && (full || !c.pushback) ? el("p", { class: "q", text: c.q }) : null,
+    c.pushback ? el("span", { class: "pb" + (c.pushback === "new" ? " new" : ""), text: c.pushback === "new" ? "NEW FACT" : "NO NEW FACT" }) : null,
+    el("p", { class: "big" + (c.pushback && !full ? " two" : ""), text: cap(c.text.replace(/^(new fact|no new fact):\s*/i, "")) }),
+    el("p", { class: "sub" }, [c.source ? el("span", { class: "src", text: c.source }) : "not in room", gradeTag(c.grade)]),
+  ];
+}
+function calcBody(c, full) {
+  return [
+    el("p", { class: "q", text: c.title }),
+    el("p", { class: "big num", text: c.result }),
+    full ? el("ul", { class: "inputs" }, (c.inputs || []).map((i) => el("li", { class: "num", text: (i.label ? i.label + ": " : "") + i.value + (i.source ? " (" + i.source + ")" : "") }))) :
+      el("p", { class: "sub num", text: "from " + (c.inputs || []).map((i) => i.value + (i.label && i.label !== "value" ? " " + i.label : "")).join(" · ") }),
+    full && c.formula ? el("p", { class: "sub num", text: "= " + c.formula }) : null,
+    c.check ? el("p", { class: "check", text: c.check }) : null,
+  ];
+}
+function sugBody(c, full) {
+  return [
+    c.pushback ? el("span", { class: "pb" + (c.pushback === "new" ? " new" : ""), text: c.pushback === "new" ? "NEW FACT" : "NO NEW FACT: HOLD" }) : null,
+    el("p", { class: "big", text: c.say || c.ask }),
+    c.say && c.ask ? el("p", { class: "sub", text: "Ask: " + c.ask }) : null,
+    (full || !c.ask) && (c.steer || c.why || c.persona) ? el("p", { class: "sub", text: [c.steer ? "Steer: " + c.steer : "", c.persona ? "for " + c.persona + (c.why ? ", " + c.why : "") : c.why].filter(Boolean).join(" · ") }) : null,
+  ];
+}
+const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+const first = (n) => (n === "us" ? "you" : String(n || "").split(/\s+/)[0]);
+function noteRow(c) { return el("li", {}, [el("span", { class: "kind", text: KIND_LABEL[c.kind] || c.kind }), el("span", { text: (c.who && c.kind !== "name" ? first(c.who) + ": " : "") + c.text.replace(/^[^:]*?:\s(?=.)/, (m) => (c.kind === "number" ? "" : m)) })]); }
+
+const EMPTY = { FACT: "The fact that answers what was just asked, with its page and grade.", CALC: "Numbers you hear get computed here, with the inputs used.", SUGGEST: "What to say or ask next, shaped for whoever is speaking.", NOTE: "Commitments, numbers they give, names, open questions, follow-ups." };
+function drawTile(t, fresh) {
+  const tile = document.querySelector(`.tile[data-type="${t}"]`); clear(tile);
+  const all = ofType(t), c = all[all.length - 1];
+  tile.appendChild(el("div", { class: "th" }, [el("b", { text: t }), all.length > 1 ? el("span", { class: "n", text: String(all.length) }) : null, c ? el("span", { class: "age", "data-at": c.at, text: ago(c.at) }) : null]));
+  if (!c) tile.appendChild(el("p", { class: "empty", text: EMPTY[t] }));
+  else if (t === "FACT") factBody(c).forEach((n) => n && tile.appendChild(n));
+  else if (t === "CALC") calcBody(c).forEach((n) => n && tile.appendChild(n));
+  else if (t === "SUGGEST") sugBody(c).forEach((n) => n && tile.appendChild(n));
+  else tile.appendChild(el("ul", { class: "notes" }, all.slice(-4).reverse().map(noteRow)));
+  if (fresh) { tile.classList.remove("fresh"); void tile.offsetWidth; tile.classList.add("fresh"); }
+}
+const drawTiles = () => TYPES.forEach((t) => drawTile(t));
+setInterval(() => document.querySelectorAll(".age[data-at]").forEach((n) => (n.textContent = ago(n.dataset.at))), 5000);
+
+// ---------------------------------------------------------------- expanded view (tap a card)
+let sheetType = null;
+function openSheet(t) { sheetType = t; drawSheet(); $("sheet").showModal(); }
+$("sheet").addEventListener("close", () => { sheetType = null; });
+function drawSheet() {
+  const t = sheetType, body = $("shBody"); clear(body);
+  $("shTitle").textContent = { FACT: "Facts", CALC: "Calculations", SUGGEST: "Suggestions", NOTE: "Notes" }[t];
+  $("shThink").hidden = t !== "SUGGEST";
+  if (t === "SUGGEST") { const d = el("section", { class: "deep", style: "margin:0 0 10px" }); drawDeep(d); body.appendChild(d); }
+  const all = ofType(t).slice().reverse();
+  if (!all.length) body.appendChild(el("p", { class: "empty", text: EMPTY[t] }));
+  if (t === "NOTE") {
+    for (const k of C.NOTE_KINDS) {
+      const ks = all.filter((c) => c.kind === k); if (!ks.length) continue;
+      body.appendChild(el("h4", { text: { commitment: "Commitments", number: "Numbers they gave", name: "Names", question: "Open questions", followup: "Follow-ups" }[k], style: "margin:8px 0 4px;color:var(--note);font-size:13px;letter-spacing:.06em" }));
+      body.appendChild(el("ul", { class: "notes", style: "font-size:16px" }, ks.map((c) => el("li", {}, [el("span", { class: "kind", text: hhmm(c.at) }), el("span", { style: "white-space:normal", text: (c.who && c.kind !== "name" ? (c.who === "us" ? "You" : c.who) + ": " : "") + c.text })]))));
+    }
+    return;
+  }
+  for (const c of all) {
+    const box = el("div", { class: "item", style: `--c:var(--${{ FACT: "fact", CALC: "calc", SUGGEST: "sug" }[t]})` });
+    (t === "FACT" ? factBody(c, true) : t === "CALC" ? calcBody(c, true) : sugBody(c, true)).forEach((n) => n && box.appendChild(n));
+    box.appendChild(el("div", { class: "meta", text: hhmm(c.at) + " · " + (c.stage || "") + " · " + (c.lane === "local" ? "computed on the phone" : c.lane === "deep" ? "deep lane" : c.lane === "demo" ? "demo" : "fast lane") }));
+    body.appendChild(box);
+  }
+}
+for (const tile of document.querySelectorAll(".tile")) {
+  tile.addEventListener("click", () => openSheet(tile.dataset.type));
+  tile.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSheet(tile.dataset.type); } });
+}
+for (const b of document.querySelectorAll("[data-close]")) b.addEventListener("click", () => b.closest("dialog").close());
+
+// ---------------------------------------------------------------- transcript, stage, speaker
+function drawWho() {
+  const st = $("stage"); st.textContent = S.stage; st.className = "chip stage " + S.stage;
+  const p = people().find((x) => x.name === S.speaker);
+  $("who").textContent = S.speaker ? (S.speaker === "us" ? "you are speaking" : S.speaker + (p && p.title ? " · " + p.title : "")) : "no speaker yet";
+}
+function drawTranscript() {
+  const last = S.lines[S.lines.length - 1];
+  const t = $("ticker"); clear(t);
+  if (last) t.append(el("b", { text: (last.speaker || "?") + ": " }), last.text); else t.textContent = "Press Listen, or Ask to type a question.";
+  for (const id of ["txFull", "txSide"]) {
+    const box = $(id); clear(box);
+    if (!S.lines.length) { box.textContent = "(the transcript appears here)"; continue; }
+    let stage = "";
+    for (const l of S.lines.slice(-80)) {
+      if (l.stage && l.stage !== stage) { stage = l.stage; box.appendChild(el("div", {}, [el("i", { text: "· " + stage + " ·" })])); }
+      box.appendChild(el("div", {}, [l.speaker ? el("b", { class: l.speaker === "us" ? "us" : "", text: l.speaker + ": " }) : null, l.text]));
+    }
+    box.scrollTop = box.scrollHeight;
+  }
+}
+function setStage(s) {
+  if (!s || s === S.stage) return false;
+  if (S.stage === "close" && s !== "close") return false;
+  S.stage = s; S.stages.push({ stage: s, at: new Date().toISOString() }); drawWho(); return true;
+}
+const contextText = () => S.lines.slice(-40).map((l) => (l.speaker ? l.speaker + ": " : "") + l.text).join("\n");
+
+/** A new piece of speech (or a typed line): local cards at once, then the fast lane. */
+function hear(text, source, opts = {}) {
+  const t = String(text || "").trim(); if (!t) return null;
+  const guess = opts.speaker || C.speakerFromText(t, people()) || (opts.turn ? "" : S.speaker);
+  const line = { id: ++S.seq, at: new Date().toISOString(), raw: t, text: t, speaker: guess || "", turn: !!opts.turn, clean: !!opts.clean, source };
+  S.lines.push(line);
+  if (line.speaker) S.speaker = line.speaker;
+  const before = S.stage;
+  setStage(C.stageOf(t, S.stage, line.speaker, S.lines.length));
+  line.stage = S.stage;
+  local(line);
+  drawTranscript(); drawWho(); save();
+  if (S.stage !== before && (S.stage === "push-back" || S.stage === "close")) steerSoon("stage");
+  return line;
+}
+/** Plain-code cards for one line: CALC from the numbers heard, NOTEs. No model, no network. */
+function local(line) {
+  const calcs = C.calcsFor(line.text, S.mem).map((c) => C.checkOurSide(c, line.speaker, knownNumbers()));
+  addCards(calcs.map((c) => Object.assign(c, { side: c.side || (line.speaker === "us" ? "us" : "them") })), "local");
+  addCards(C.notesFor(line.text, line.speaker, people()), "local");
+}
+
+// ---------------------------------------------------------------- fast lane: FACT, NOTE (+ CALC from room numbers)
+let fastBusy = false, fastAgain = false;
+async function quick(mode, question) {
+  if (DEMO) return;
+  if (fastBusy) { if (mode === "auto") fastAgain = true; else setTimeout(() => quick(mode, question), 400); return; }
+  fastBusy = true;
+  const t0 = Date.now();
+  const pending = S.lines.filter((l) => !l.clean).slice(-6);
+  try {
+    if (mode !== "auto") status("cards…");
+    const r = await fetch("api/suggest", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ mode, question: question || "", segments: pending.map((l) => ({ id: l.id, text: l.raw, turn: l.turn })), context: contextText(), stage: S.stage, speaker: S.speaker, shown: S.cards.slice(-40).map(compact), fed: fedPayload() }) });
+    const j = await r.json();
+    for (const ln of j.lines || []) { const l = S.lines.find((x) => String(x.id) === String(ln.id)); if (l && ln.text) { l.text = ln.text; if (ln.speaker) l.speaker = ln.speaker; l.clean = true; } }
+    for (const l of pending) l.clean = true;
+    if (j.speaker) S.speaker = j.speaker;
+    const moved = j.stage && setStage(j.stage);
+    addCards(j.cards, "fast");
+    drawTranscript(); drawWho(); save();
+    status(j.error ? "cards: " + j.error : (j.model || "") + " · " + (j.ms || Date.now() - t0) + " ms · cache " + (j.cache || 0));
+    if (j.question && j.question.detected && j.question.text) {
+      S.lastQ = { text: j.question.text, kind: j.question.kind, asker: j.question.asker || S.speaker, at: new Date().toISOString() };
+      steerSoon("question");
+    } else if (moved) steerSoon("stage");
+  } catch (e) { status("cards failed: " + e.message); }
+  fastBusy = false;
+  if (fastAgain) { fastAgain = false; quick("auto"); }
+}
+
+// ---------------------------------------------------------------- deep lane: SUGGEST, and Think
+let steerBusy = false, steerAgain = false;
+function steerSoon() { if (prefs.steer) steer(); }
+async function steer() {
+  if (DEMO) return;
+  if (steerBusy) { steerAgain = true; return; }
+  steerBusy = true;
+  try {
+    const q = S.lastQ;
+    const r = await fetch("api/steer", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ stage: S.stage, speaker: q?.asker || S.speaker, question: q?.text || "", kind: q?.kind || "", context: contextText(), shown: S.cards.slice(-30).map(compact), notes: ofType("NOTE").slice(-12).map((n) => ({ kind: n.kind, text: n.text })), fed: fedPayload() }) });
+    const j = await r.json();
+    addCards(j.cards, "deep");
+    if (j.error) status("suggest: " + j.error);
+  } catch (e) { status("suggest failed: " + e.message); }
+  steerBusy = false;
+  if (steerAgain) { steerAgain = false; steer(); }
+}
+
+const HEADS = ["BEST ANSWER", "EVIDENCE", "WHAT THEY ARE TESTING", "ASK BACK", "RISK TO AVOID"];
+function drawDeep(box) {
+  clear(box);
+  const d = S.deeps[S.deeps.length - 1];
+  box.appendChild(el("div", { class: "dh" }, [el("span", { text: "Full answer (Think)" }), el("span", { text: d ? (d.state === "streaming" ? "writing…" : d.state === "queued" ? "queued" : d.state === "error" ? "error" : (d.model || "") + (d.ms ? " · " + (d.ms / 1000).toFixed(1) + " s" : "")) : "" })]));
+  if (!d) { box.appendChild(el("p", { class: "empty", text: "Press Think for the full answer to the last question: best answer, evidence, what they are testing, a question back, the risk." })); return; }
+  box.appendChild(el("p", { class: "dq", text: (d.speaker ? d.speaker + ": " : "") + d.question }));
+  if (d.error) box.appendChild(el("p", { style: "color:var(--bad)", text: d.error }));
+  if (!d.text && d.state === "streaming") { box.appendChild(el("p", { class: "cursor", text: "Reading the room" })); return; }
+  let para = null;
+  for (const raw of d.text.split("\n")) {
+    const line = raw.trim();
+    const h = HEADS.find((x) => line.replace(/[:#*]/g, "").trim().toUpperCase() === x);
+    if (h) { box.appendChild(el("h4", { text: h })); para = null; continue; }
+    if (!line) { para = null; continue; }
+    if (!para) { para = el("p"); box.appendChild(para); para.textContent = line; } else para.textContent += "\n" + line;
+  }
+  if (d.state === "streaming" && box.lastChild) box.lastChild.classList.add("cursor");
+}
+function drawDeeps() { drawDeep($("deepMain")); if (sheetType === "SUGGEST") drawSheet(); }
+let deepAbort = null;
+async function think(question) {
+  const q = (question || S.lastQ?.text || [...ofType("NOTE")].reverse().find((n) => n.kind === "question")?.text || "").trim();
+  if (!q) { status("nothing asked yet: type the question in Ask"); openAsk(); return; }
+  const d = { question: q, speaker: S.lastQ?.asker || S.speaker, kind: S.lastQ?.kind || "question", state: "streaming", text: "", model: "", at: new Date().toISOString() };
+  S.deeps.push(d); drawDeeps();
+  if (!window.matchMedia("(min-width:900px) and (min-height:560px)").matches && sheetType !== "SUGGEST") openSheet("SUGGEST");
+  const t0 = Date.now();
+  try {
+    if (DEMO) await demoDeep(d);
+    else {
+      if (deepAbort) deepAbort.abort();
+      deepAbort = new AbortController();
+      const r = await fetch("api/deep", { method: "POST", signal: deepAbort.signal, headers: { "content-type": "application/json" },
+        body: JSON.stringify({ question: q, speaker: d.speaker, kind: d.kind, stage: S.stage, card: S.cards.slice(-8).map(compact), context: contextText(), fed: fedPayload() }) });
+      if (!r.ok || !r.body) { let j = {}; try { j = await r.json(); } catch (e) {} throw new Error(j.error || "HTTP " + r.status); }
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      let buf = "", last = 0;
+      for (;;) {
+        const { value, done } = await reader.read(); if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) > -1) {
+          const ln = buf.slice(0, i); buf = buf.slice(i + 1);
+          if (!ln.trim()) continue;
+          let ev; try { ev = JSON.parse(ln); } catch (e) { continue; }
+          if (ev.t === "model") d.model = ev.model; else if (ev.t === "text") d.text += ev.d; else if (ev.t === "error") d.error = ev.error; else if (ev.t === "done") d.ms = ev.ms;
+        }
+        if (Date.now() - last > 120) { drawDeeps(); last = Date.now(); }
+      }
+    }
+    d.state = d.error && !d.text ? "error" : "done"; d.ms = d.ms || Date.now() - t0;
+  } catch (e) { d.state = "error"; d.error = e.name === "AbortError" ? "stopped" : "full answer failed: " + e.message; }
+  save(); drawDeeps();
+}
+$("think").onclick = () => think();
+$("shThink").onclick = () => think();
+
+// ---------------------------------------------------------------- typed questions
+function openAsk() { $("ask").showModal(); setTimeout(() => $("q").focus(), 50); }
+$("askBtn").onclick = openAsk;
+function typed(deep) {
+  const q = $("q").value.trim(); if (!q) { $("q").focus(); return; }
+  $("q").value = ""; $("ask").close();
+  hear(q, "typed", { speaker: S.speaker && S.speaker !== "us" ? S.speaker : "them", clean: true });
+  S.lastQ = { text: q, kind: "question", asker: S.speaker, at: new Date().toISOString() };
+  if (deep) think(q); else { quick("manual", q); steerSoon("question"); }
+}
+$("qCard").onclick = () => typed(false);
+$("qThink").onclick = () => typed(true);
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter") typed(false); });
+
+// ---------------------------------------------------------------- feed it
+function addFed(title, text, kind) {
+  const t = String(text || "").trim(); if (!t) return;
+  const used = S.fed.reduce((n, f) => n + f.text.length, 0);
+  if (used + t.length > 60000) { status("fed items are full (60,000 characters); remove one first"); return; }
+  S.fed.push({ id: "f" + (++S.seq), title: (title || t.split("\n")[0]).slice(0, 80), text: t.slice(0, 20000), kind, at: new Date().toISOString(), saved: "" });
+  save(); drawFed(); drawKnows();
+}
+function drawFed() {
+  const box = $("fedList"); clear(box);
+  const used = S.fed.reduce((n, f) => n + f.text.length, 0);
+  $("fedUse").textContent = S.fed.length ? `${S.fed.length} item${S.fed.length === 1 ? "" : "s"}, ${used.toLocaleString()} of 60,000 characters. Sent to both lanes after the room.` : "Nothing fed yet.";
+  for (const f of S.fed.slice().reverse()) {
+    const save2 = el("button", { type: "button", text: f.saved ? "Saved" : "Save to room" }); save2.disabled = !!f.saved || DEMO;
+    save2.onclick = async () => {
+      save2.disabled = true; save2.textContent = "Saving…";
+      try { const r = await fetch("api/feed", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) }); const j = await r.json(); if (j.saved) { f.saved = j.saved; status("saved: " + j.saved); save(); } else { status(j.error || "not saved"); save2.disabled = false; } }
+      catch (e) { status("not saved: " + e.message); save2.disabled = false; }
+      drawFed();
+    };
+    const rm = el("button", { type: "button", text: "Remove", style: "background:#3a1b1f" });
+    rm.onclick = () => { S.fed = S.fed.filter((x) => x !== f); save(); drawFed(); drawKnows(); };
+    box.appendChild(el("div", { class: "fed" }, [el("div", {}, [el("b", { text: f.title }), el("small", { text: `${f.kind} · ${f.text.length.toLocaleString()} chars · ${hhmm(f.at)}${f.saved ? " · " + f.saved : ""}` })]), save2, rm]));
+  }
+}
+$("feedBtn").onclick = () => { drawFed(); $("feed").showModal(); };
+$("factAdd").onclick = () => { addFed("", $("fact").value, "fact"); $("fact").value = ""; };
+$("fact").addEventListener("keydown", (e) => { if (e.key === "Enter") $("factAdd").click(); });
+$("pasteAdd").onclick = () => { addFed($("pasteTitle").value.trim(), $("paste").value, "notes"); $("paste").value = ""; $("pasteTitle").value = ""; };
+$("files").onchange = async (e) => {
+  for (const file of e.target.files) {
+    const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    if (String.fromCharCode(...head) === "%PDF-") { status(file.name + ": a PDF file. Paste its text, or save it as .txt first."); continue; }
+    const text = await file.text();
+    if (/\u0000/.test(text.slice(0, 2000))) { status(file.name + ": not a text file"); continue; }
+    addFed(file.name, text, "file");
+  }
+  e.target.value = "";
+};
+
+// ---------------------------------------------------------------- listening: server STT in 8-second chunks, phone STT as the fallback
+let stream = null, rec = null, running = false, chunks = 0, wake = null, segTimer = null, sr = null, srRestart = null, lastFinal = 0;
+function mimeType() { for (const m of ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg"]) if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; return ""; }
+async function keepAwake() { try { if ("wakeLock" in navigator && !wake) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => { wake = null; }); } } catch (e) {} }
+document.addEventListener("visibilitychange", () => { if (running && document.visibilityState === "visible") keepAwake(); });
+function askConsent() {
+  if (S.consent && S.consent.recording) return Promise.resolve(true);
+  const d = $("consent"); $("cok").checked = false; $("cgo").disabled = true;
+  return new Promise((resolve) => {
+    $("cok").onchange = () => { $("cgo").disabled = !$("cok").checked; };
+    $("cgo").onclick = () => { S.consent = { recording: true, at: new Date().toISOString() }; save(); d.close(); resolve(true); };
+    $("cno").onclick = () => { S.consent = { recording: false, at: new Date().toISOString() }; save(); d.close(); resolve(false); };
+    d.addEventListener("cancel", () => resolve(false), { once: true });
+    d.showModal();
+  });
+}
+async function start() {
+  if (!(await askConsent())) { status("typed only (no recording)"); keepAwake(); openAsk(); return; }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true } }); }
+  catch (e) { status("microphone refused: " + e.message); return; }
+  running = true; $("listen").textContent = "Stop"; $("listen").classList.add("on"); $("dot").classList.add("on"); keepAwake(); warm();
+  if (prefs.device) startDevice(); else recordSegment();
+}
+function stop() {
+  running = false; clearTimeout(segTimer); stopDevice(); try { rec && rec.state !== "inactive" && rec.stop(); } catch (e) {}
+  if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null;
+  $("listen").textContent = "Listen"; $("listen").classList.remove("on"); $("dot").classList.remove("on"); status("stopped");
+  if (wake && wake.release) wake.release(); wake = null;
+}
+function recordSegment() {
+  if (!running) return;
+  const mt = mimeType(), parts = [];
+  rec = new MediaRecorder(stream, mt ? { mimeType: mt } : undefined);
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) parts.push(e.data); };
+  rec.onstop = () => { const blob = new Blob(parts, { type: rec.mimeType || mt || "audio/mp4" }); if (blob.size > 2000) send(blob); if (running && !prefs.device) recordSegment(); };
+  rec.start();
+  segTimer = setTimeout(() => { try { rec.stop(); } catch (e) {} }, SEG_MS);
+  status("listening · " + chunks + " chunks");
+}
+const b64 = (blob) => new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(",")[1]); fr.readAsDataURL(blob); });
+async function send(blob) {
+  chunks++;
+  try {
+    const r = await fetch("api/transcribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ audio: await b64(blob), mime: blob.type }) });
+    const j = await r.json();
+    if (j.text) {
+      // The transcriber starts each new speaker on a new line: each break is a voice turn.
+      j.text.split(/\n+/).forEach((t, i) => hear(t, "server", { turn: i > 0 }));
+      status("heard · " + (j.ms || "?") + " ms · " + chunks + " chunks");
+      if (prefs.auto) quick("auto");
+    } else if (j.error) { status("server transcription failed; using the phone's"); fallbackToDevice(); }
+  } catch (e) { status("transcription failed: " + e.message); fallbackToDevice(); }
+}
+function fallbackToDevice() {
+  if (prefs.device || !running) return;
+  prefs.device = true; $("optDevice").checked = true; clearTimeout(segTimer); try { rec && rec.state !== "inactive" && rec.stop(); } catch (e) {}
+  setTimeout(() => { if (running) startDevice(); }, 300);
+}
+function startDevice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { status("no speech recognition in this browser; use Ask"); return; }
+  sr = new SR(); sr.lang = "en-US"; sr.continuous = true; sr.interimResults = false; sr.maxAlternatives = 1;
+  sr.onresult = (e) => {
+    let fin = ""; for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) fin += e.results[i][0].transcript + " ";
+    if (!fin.trim()) return;
+    const gap = Date.now() - lastFinal; lastFinal = Date.now();
+    hear(fin.trim(), "device", { turn: gap > 1800 }); chunks++;
+    status("phone STT · " + chunks + " segments"); if (prefs.auto) quick("auto");
+  };
+  sr.onerror = (e) => status("phone STT: " + e.error);
+  sr.onend = () => { if (running && prefs.device) srRestart = setTimeout(() => { try { sr.start(); } catch (err) { startDevice(); } }, 250); };
+  try { sr.start(); status("phone STT listening"); } catch (e) { status("phone STT did not start: " + e.message); }
+}
+function stopDevice() { clearTimeout(srRestart); try { sr && sr.stop(); } catch (e) {} sr = null; }
+async function warm() { if (DEMO) return; try { await fetch("api/suggest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ warm: true, fed: fedPayload() }) }); } catch (e) {} }
+$("listen").onclick = () => (DEMO ? runDemo() : running ? stop() : start());
+
+// ---------------------------------------------------------------- settings
+const OPTS = { optTick: "tick", optAuto: "auto", optSteer: "steer", optDevice: "device", optDim: "dim" };
+for (const [id, k] of Object.entries(OPTS)) {
+  $(id).checked = !!prefs[k];
+  $(id).onchange = () => { prefs[k] = $(id).checked; savePrefs(); document.body.classList.toggle("dim", prefs.dim); if (k === "device" && running) { stop(); setTimeout(start, 300); } };
+}
+document.body.classList.toggle("dim", prefs.dim);
+$("moreBtn").onclick = () => { drawKnows(); drawTranscript(); $("more").showModal(); };
+$("knows").onclick = () => { drawKnows(); drawTranscript(); $("more").showModal(); };
+
+// ---------------------------------------------------------------- export for the debrief
+function markdown() {
+  const L = [], d16 = (s) => s.slice(0, 16).replace("T", " ");
+  L.push("# Companion session: " + (KNOW.title || ROOM) + ", " + d16(S.startedAt), "");
+  L.push("Consent to record: " + (S.consent ? (S.consent.recording ? "confirmed " + d16(S.consent.at) : "not given; typed only") : "not asked (no recording)"));
+  L.push("Stages: " + (S.stages.map((s) => s.stage + " " + hhmm(s.at)).join(" > ") || S.stage));
+  L.push("Paste into the meeting page's debrief, or give it to the debrief step (P10) as the transcript.", "");
+  const notes = ofType("NOTE");
+  L.push("## Notes", "");
+  for (const [k, h] of [["commitment", "Commitments made"], ["number", "Numbers they gave"], ["name", "Names mentioned"], ["question", "Open questions"], ["followup", "Follow-ups"]]) {
+    const ks = notes.filter((n) => n.kind === k); if (!ks.length) continue;
+    L.push("### " + h, ""); for (const n of ks) L.push("- [" + hhmm(n.at) + "] " + (n.who && k !== "name" ? n.who + ": " : "") + n.text); L.push("");
+  }
+  if (!notes.length) L.push("(no notes)", "");
+  L.push("## Facts shown", ""); for (const c of ofType("FACT")) L.push("- [" + hhmm(c.at) + "] " + (c.q ? "Q: " + c.q + " | " : "") + c.text + (c.source ? " (" + c.source + (c.grade ? ", " + c.grade : "") + ")" : "")); L.push("");
+  L.push("## Calculations", ""); for (const c of ofType("CALC")) L.push("- [" + hhmm(c.at) + "] " + c.title + " = " + c.result + " | inputs: " + (c.inputs || []).map((i) => (i.label ? i.label + " " : "") + i.value).join(", ") + (c.check ? " | " + c.check : "")); L.push("");
+  L.push("## Suggestions", ""); for (const c of ofType("SUGGEST")) L.push("- [" + hhmm(c.at) + "] " + (c.pushback ? (c.pushback === "new" ? "NEW FACT. " : "NO NEW FACT. ") : "") + (c.say || "") + (c.ask ? " Ask: " + c.ask : "") + (c.steer ? " Steer: " + c.steer : "")); L.push("");
+  if (S.deeps.length) { L.push("## Full answers (Think)", ""); for (const d of S.deeps) L.push("### " + hhmm(d.at) + " " + (d.speaker ? d.speaker + ": " : "") + d.question, "", (d.text || d.error || "").trim(), ""); }
+  if (S.fed.length) { L.push("## Fed to the companion", ""); for (const f of S.fed) L.push("- " + f.title + " (" + f.kind + ", " + f.text.length + " chars" + (f.saved ? ", saved as " + f.saved : "") + ")"); L.push(""); }
+  L.push("## Transcript", "");
+  for (const l of S.lines) L.push("[" + new Date(l.at).toTimeString().slice(0, 8) + "] " + (l.speaker ? l.speaker + ": " : "") + l.text);
+  if (!S.lines.length) L.push("(no transcript)");
+  return L.join("\n") + "\n";
+}
+$("export").onclick = () => {
+  const a = el("a", { href: URL.createObjectURL(new Blob([markdown()], { type: "text/markdown" })), download: "companion-" + ROOM + "-" + S.startedAt.slice(0, 16).replace(/[:T]/g, "-") + ".md" });
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+};
+$("copy").onclick = () => navigator.clipboard.writeText(markdown()).then(() => status("session copied"), (e) => status("copy failed: " + e.message));
+$("clear").onclick = () => {
+  if (!confirm("Clear this session from this device, fed items included? Export it first if you need it for the debrief.")) return;
+  if (deepAbort) deepAbort.abort();
+  S = newSession(); localStorage.removeItem(KEY); drawAll(); $("more").close();
+};
+function drawAll() { drawTiles(); drawTranscript(); drawWho(); drawKnows(); drawFed(); drawDeep($("deepMain")); $("sess").textContent = "Session " + S.startedAt.slice(0, 16).replace("T", " ") + " · saved on this device only"; }
+
+// ---------------------------------------------------------------- demo: ?demo=1 plays a scripted, synthetic business meeting, no network
+// Synthetic business meeting: Jordan Avery (us, Avery Freight Analytics) pitches a
+// network-planning analytics contract to Dan Ellison, COO of Northwind Logistics;
+// Ines Carvalho from Finance pushes on price and cost per shipment. Every name invented.
+const DEMO_SCRIPT = [
+  ["Dan Ellison", "Thanks for coming in, Jordan. I'm Dan, I run operations. Ines Carvalho from Finance is with us."],
+  ["us", "Thanks, Dan. I'll keep the pitch short and leave the time for your questions."],
+  ["Dan Ellison", "You know we have nine Tailspin terminals and three overlap cities. Where would your model start?", {
+    fact: [{ type: "FACT", q: "Where would the model start?", text: "Tailspin leases all 3 overlap buildings; Northwind owns 1 of its 3.", source: "Filings bank row 9", grade: "partly" }],
+    sug: { type: "SUGGEST", say: "With the three overlap cities: the leases decide which building goes first, and the model tells you what service each closure costs.", ask: "Who makes the call on the nine terminals?", steer: "Toward the decision owner and the date", persona: "Dan Ellison", why: "number first, then risk, then first step" } }],
+  ["us", "With the lease end dates in the overlap cities. That is what decides which building goes first."],
+  ["Dan Ellison", "City A: we own a 180,000 sq ft warehouse at 70% utilisation, and Tailspin leases a 60,000 sq ft cross-dock at 90%."],
+  ["Ines Carvalho", "Your fee is $900,000 one-off, and you claim $400,000 a year in savings."],
+  ["Ines Carvalho", "Over three years at a 9% cost of capital, does that clear our hurdle?", {
+    fact: [{ type: "FACT", q: "Does the fee clear the hurdle?", text: "Their 2025 letter makes cost per shipment the headline measure.", source: "Documents: 2025 letter", grade: "partly" }],
+    sug: { type: "SUGGEST", say: "Yes at 9%: positive NPV over three years and an IRR near 16%. I would tie part of the fee to cost per shipment so you pay for savings that show.", ask: "What hurdle did your last network project have to clear?", steer: "From price to outcome", persona: "Ines Carvalho", why: "signs only what she can defend to the fund" } }],
+  ["Ines Carvalho", "But that's too high. Our last consultant charged half that, and whose cost per shipment are you measuring?", {
+    fact: [{ type: "FACT", q: "Too high; whose cost per shipment?", pushback: "none", text: "No new fact: hold the fee. Tailspin allocates terminal overhead differently from Northwind.", source: "Practice bank", grade: "inference" }],
+    sug: { type: "SUGGEST", pushback: "none", say: "Hold the price. Put 20% of the fee at risk against one cost-per-shipment definition we agree with you in week one.", ask: "What did the last consultant leave you that is still in use?", persona: "Ines Carvalho", why: "wants one owner per number" } }],
+  ["us", "I'll send you a one-page definition and a fee-at-risk option by Friday."],
+  ["Dan Ellison", "Cost per shipment went from $14.20 to $16.50 over two years at Tailspin."],
+  ["Dan Ellison", "Ballpark, the Chicago lane is 420 miles. What's that in kilometres?"],
+  ["Dan Ellison", "We're nearly out of time. Next steps: Ines will follow up on contract terms next week.", {
+    sug: { type: "SUGGEST", say: "Before we close: who signs, and by when? Offer a six-week pilot on City A so the first number is yours, not ours.", ask: "Can we hold a date for the decision now?", steer: "Secure the decision date and the signer", persona: "Dan Ellison", why: "one name next to every decision" } }],
+];
+const DEMO_KNOW = { title: "Northwind Logistics", asOf: "2026-03-02", pages: 16, kinds: { page: 9, bank: 2, persona: 1, meeting: 2, "one-card": 1, glossary: 1 }, personas: [{ name: "Dan Ellison", title: "COO", page: "persona-coo.html" }],
+  people: [{ name: "Dan Ellison", title: "COO" }, { name: "Ines Carvalho", title: "Finance" }], savedFed: [], numbers: [31, 9, 2400, 3, 1, 10, 900000, 750000, 120000] };
+async function demoDeep(d) {
+  const text = "BEST ANSWER\nWe measure cost per shipment the way your Finance team reports it, and we agree one planning definition with you in week one so Northwind and Tailspin are counted the same way. The fee stays at $900,000; I can put 20% of it at risk against that number.\n\nEVIDENCE\n- Tailspin allocates terminal overhead differently from Northwind (Practice bank)\n- The 2025 letter makes cost per shipment the headline measure (Documents)\n- Our floor is $750,000; do not go below it (Fed: Pricing notes)\n\nWHAT THEY ARE TESTING\nThe Ines Carvalho persona is checking whether we will own the measure or hide behind their Finance team, and whether the price moves without a reason.\n\nASK BACK\nWhich definition did the board see last quarter?\n\nRISK TO AVOID\nDo not quote a Northwind cost per shipment: none is published, and do not cut the fee without getting scope back.";
+  d.model = "demo";
+  if (params.get("step") === "0") { d.text = text; return; }
+  for (let i = 0; i < text.length; i += 24) { d.text = text.slice(0, i + 24); drawDeeps(); await new Promise((r) => setTimeout(r, 20)); }
+  d.text = text;
+}
+let demoRunning = false;
+async function runDemo() {
+  if (demoRunning) return;
+  demoRunning = true; S = newSession(); KNOW = Object.assign({}, KNOW, DEMO_KNOW);
+  S.fed.push({ id: "f0", title: "Pricing notes", text: "Fee $900,000 for the network study. Floor $750,000; walk away below it. Pilot option: City A only, $120,000, six weeks. Ines owns the integration budget.", kind: "notes", at: new Date().toISOString(), saved: "" });
+  drawAll();
+  $("listen").textContent = "Demo"; $("dot").classList.add("on");
+  // &step=<ms> sets the pace; &step=0 jumps straight to the end (for screenshots).
+  const step = Number(params.get("step") ?? 900) || 0;
+  const wait = (ms) => (step ? new Promise((r) => setTimeout(r, ms)) : null);
+  for (const [who, text, extra] of DEMO_SCRIPT) {
+    hear(text, "demo", { speaker: who === "us" ? "us" : who, clean: true });
+    if (extra && extra.fact) addCards(extra.fact, "demo");
+    if (extra && extra.fact) S.lastQ = { text: extra.fact[0].q, kind: extra.fact[0].pushback ? "pushback" : "question", asker: who };
+    if (step) await wait(step / 2);
+    if (extra && extra.sug) addCards([extra.sug], "demo");
+    if (step) await wait(step / 2);
+  }
+  S.lastQ = { text: "That's too high, and whose cost per shipment are you measuring?", kind: "pushback", asker: "Ines Carvalho" };
+  await think();
+  status("demo · synthetic meeting (Avery Freight Analytics and Northwind) · no microphone, no network, no model");
+  $("dot").classList.remove("on"); $("listen").textContent = "Replay"; demoRunning = false;
+  const open = params.get("open"); if (open && TYPES.includes(open)) { if (sheetType) $("sheet").close(); openSheet(open); } else if (sheetType && !params.get("keep")) $("sheet").close();
+}
+
+// ---------------------------------------------------------------- start
+if (!window.MediaRecorder && !(window.SpeechRecognition || window.webkitSpeechRecognition)) status("this browser cannot record: use Ask");
+drawAll();
+if (DEMO) runDemo();
+else {
+  loadKnows();
+  // The shell only (see assist-sw.js): installable, opens fast; no room content is cached.
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("assist-sw.js").catch(() => {});
+}
+</script></body></html>

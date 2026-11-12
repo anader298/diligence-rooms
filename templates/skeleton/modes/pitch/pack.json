@@ -1,0 +1,50 @@
+{
+  "sections": [
+    {
+      "id": "pitch",
+      "title": "The pitch",
+      "note": "Live helper allowed.",
+      "brief": {
+        "level": "Know it",
+        "bullets": [
+          "What they bought recently and why.",
+          "Who holds the budget, and when it is set."
+        ],
+        "hold": "Their stated problem, in their words."
+      },
+      "pages": [
+        {
+          "id": "their-priorities",
+          "title": "Their priorities",
+          "blurb": "Recent purchases, budget cycle, budget holder."
+        },
+        {
+          "id": "incumbents",
+          "title": "Incumbents",
+          "blurb": "Who they buy from today, and why they might switch."
+        },
+        {
+          "id": "fit-map",
+          "title": "Fit map",
+          "blurb": "Their problem, our proof, the matching case."
+        },
+        {
+          "id": "deck-brief",
+          "title": "Deck brief",
+          "blurb": "The room, the audience, seven slides, questions per persona."
+        },
+        {
+          "id": "buyer-objections",
+          "title": "Buyer objections",
+          "blurb": "What the buyer will object to, with evidence and answers."
+        },
+        {
+          "id": "buying-path",
+          "title": "Buying path",
+          "blurb": "Who signs, procurement steps, timing."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

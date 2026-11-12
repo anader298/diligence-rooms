@@ -1,0 +1,13 @@
+.env
+site/
+node_modules/
+.netlify/
+.DS_Store
+netlify/functions/corpus/
+config/our-side.json
+rooms/*/run.log
+rooms/*/RUN.sh
+rooms/*/work/
+config/facts.md
+/work/
+config/connectors.json

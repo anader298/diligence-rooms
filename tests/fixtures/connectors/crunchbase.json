@@ -1,0 +1,32 @@
+{
+  "GET /v4/data/autocompletes?collection_ids=organizations": { "entities": [ { "identifier": { "permalink": "acme-capital", "value": "Acme Capital" } } ] },
+  "GET /v4/data/autocompletes?collection_ids=people": { "entities": [ { "identifier": { "permalink": "jane-doe-4", "value": "Jane Doe" } } ] },
+  "GET /v4/data/entities/organizations/acme-capital": {
+    "properties": {
+      "identifier": { "permalink": "acme-capital", "value": "Acme Capital" },
+      "legal_name": "Acme Capital LLC",
+      "website_url": "https://acme.example",
+      "categories": [ { "value": "Financial Services" }, { "value": "Asset Management" } ],
+      "num_employees_enum": "c_00101_00250",
+      "revenue_range": "r_00010000"
+    },
+    "cards": {
+      "raised_funding_rounds": [ { "identifier": { "value": "Series B - Acme Capital" }, "investment_type": "series_b", "announced_on": "2022-05-10", "money_raised": { "value_usd": 30000000 }, "lead_investor_identifiers": [ { "value": "North Fund" } ] } ],
+      "parent_organization": [],
+      "sub_organizations": [ { "identifier": { "value": "Acme Data Ltd" } } ]
+    }
+  },
+  "GET /v4/data/entities/people/jane-doe-4": {
+    "properties": {
+      "identifier": { "permalink": "jane-doe-4", "value": "Jane Doe" },
+      "first_name": "Jane", "last_name": "Doe", "primary_job_title": "CFO",
+      "primary_organization": { "value": "Acme Capital" },
+      "location_identifiers": [ { "value": "Boston", "location_type": "city" }, { "value": "Massachusetts", "location_type": "region" } ],
+      "linkedin": { "value": "https://www.linkedin.com/in/janedoe-example" }
+    },
+    "cards": {
+      "jobs": [ { "title": "CFO", "started_on": { "value": "2021-03-01" }, "is_current": true, "organization_identifier": { "value": "Acme Capital" } } ],
+      "degrees": [ { "school_identifier": { "value": "Boston College" }, "type_name": "MBA", "completed_on": { "value": "2012-05-01" } } ]
+    }
+  }
+}

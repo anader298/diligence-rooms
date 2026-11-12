@@ -1,0 +1,37 @@
+<!-- GATHER: Which data connectors ran for this room (stage 2b, npm run enrich), what each cost, which fields it filled, and where providers disagreed.
+     FROM: rooms/__SLUG__/work/connectors/run.json (providers, credits used, fields filled, errors), estimate.json, conflicts.json and merged.json.
+     CHECKLIST: every provider row stays. Ran: the credits used, the fields filled and the grade partly (licensed data, not yet confirmed).
+       Not configured or not chosen: "Not run" in Ran, the reason in Fields filled, graded unknown. Ran and returned nothing: graded none.
+     Grading rule: a connector value is partly; two independent providers agreeing is still partly; a public source read in the research stage makes it verified.
+     Connector data is a lead list for the research stage, never a source to cite as fact. No LinkedIn scraping: LinkedIn content comes from our own export or a licensed provider.
+       <span class="grade verified">Verified</span> <span class="grade partly">Partly verified</span> <span class="grade weak">Weak</span> <span class="grade inference">Inference</span> <span class="grade none">None found</span> <span class="grade not-public">Not public</span> <span class="grade unknown">Unknown</span>
+       <a class="src" href="https://...">label</a>
+     Keep every <h2> bare and under 40 characters. Delete this comment when the page is filled.
+     Contacts: every email, phone and address a provider returns is kept and labelled (work, personal, unknown; phone type; source). Business of record:
+       a contact that matches the company's own record (work/business-records.json: website, state registry, SEC / Form ADV / Form D / 990, UCC, WHOIS) is marked sameAsBusiness.
+       List the counts here; the values go in the "Contact routes" tables on the linkedin and who-they-are pages.
+     Boundaries: public or licensed sources only; nothing on minors; no real-time location; no breached or leaked data. -->
+<p>Which licensed data and own exports fed this room, what they cost, and where they disagreed.</p>
+<h2>Connectors</h2>
+<div class="tw"><table class="checklist"><tr><th>Provider</th><th>What it is</th><th>Ran</th><th>Credits used</th><th>Fields filled</th><th>Grade</th></tr>
+<tr class="ck"><td>apollo</td><td>Apollo.io (API key)</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>apollo-mcp</td><td>Apollo.io (MCP in Claude Code)</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>zoominfo</td><td>ZoomInfo</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>lusha</td><td>Lusha</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>cognism</td><td>Cognism</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>clay</td><td>Clay</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>crunchbase</td><td>Crunchbase</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>pitchbook</td><td>PitchBook</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>linkedin-export</td><td>LinkedIn export (our own data or Sales Navigator CSV)</td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>csv</td><td>CSV import</td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<h2>Contact routes found</h2>
+<div class="tw"><table><tr><th>Who</th><th>Emails</th><th>Phones</th><th>Addresses</th><th>Business of record</th><th>Grade</th></tr></table></div>
+<h2>Conflicts between providers</h2>
+<div class="tw"><table><tr><th>Who or what</th><th>Field</th><th>Values by provider</th><th>Settled by (public source)</th><th>Grade</th></tr></table></div>
+<h2>Confirmed at a public source</h2>
+<div class="tw"><table><tr><th>Field</th><th>Value</th><th>Provider</th><th>Public source</th><th>Grade</th></tr></table></div>
+<h2>The grading rule</h2>
+<p>A value from one connector is graded partly: licensed data, not yet confirmed at a public source. Two independent providers agreeing is still partly. It becomes verified only when the research stage reads it at a public source, and that source is the one cited.</p>
+<h2>Sources</h2>
+<ul><li></li></ul>

@@ -1,0 +1,15 @@
+[build]
+  command = "npm install && node scripts/build.mjs"
+  publish = "site"
+
+# The gate (netlify/edge-functions/room-gate.ts) declares its own path in code:
+# every path except the root page and robots.txt. Adding a room needs no change
+# here, only a rooms/<slug>/ folder and a ROOM_PASSWORD_<SLUG> variable.
+# The live helper's functions sit at /<room>/api/*, so the gate covers them too.
+#
+# Static headers for every room are generated into site/_headers by the build.
+
+[functions]
+  node_bundler = "esbuild"
+  # Room knowledge for the live helper, written by the build.
+  included_files = ["netlify/functions/corpus/*.json"]

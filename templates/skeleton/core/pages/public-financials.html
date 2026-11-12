@@ -1,0 +1,43 @@
+<!-- GATHER: Every public number about the company. First the checklist: revenue, funding, assets, debt, filings, credit, ownership, one row each, never omitted (found: value, period, filing, grade; weak: one unconfirmed source, graded weak; nothing: "None found", graded none, plus what was searched). Then every other number (AUM, headcount, pay of officers, contracts, grants), one row per number with period and filing. Say which sources do not apply (e.g. private, no 990) and why.
+     FROM: EDGAR (10-K, 10-Q, 8-K, S-1, DEF 14A, 13F) and full-text search; Form D; Form ADV (IAPD); ProPublica Nonprofit Explorer 990s; state annual reports; EMMA bond disclosures; credit rating reports; USAspending and SAM.gov; state procurement portals; grant databases.
+     Grade every fact line with one span, and link its source:
+       <span class="grade verified">Verified</span> <span class="grade partly">Partly verified</span> <span class="grade weak">Weak</span> <span class="grade inference">Inference</span> <span class="grade none">None found</span> <span class="grade not-public">Not public</span> <span class="grade unknown">Unknown</span>
+       <a class="src" href="https://...">label</a>
+     Fit is Strong / Partial / Gap only. [FILL: question] for what only our side can answer. [A] after an assumed number.
+     Keep every <h2> bare and under 40 characters. Delete this comment when the page is filled. -->
+<p>Every public number found, with the filing it comes from.</p>
+<h2>Company checklist</h2>
+<div class="tw"><table class="checklist"><tr><th>Item</th><th>Finding</th><th>Period</th><th>Filing</th><th>Grade</th><th>Source, or what was searched</th></tr>
+<tr class="ck"><td>Revenue</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Funding (rounds, investors, amounts)</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Assets (total, AUM, property, plant)</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Debt (loans, bonds, facilities, lenders)</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Filings (which exist, latest of each)</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Credit (ratings, UCC liens, judgments)</td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Ownership (owners, stakes, parent, beneficial owners)</td><td></td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<h2>Every other number</h2>
+<div class="tw"><table><tr><th>Metric</th><th>Value</th><th>Period</th><th>Filing</th><th>Grade</th></tr></table></div>
+<h2>Filings checked</h2>
+<div class="tw"><table><tr><th>Source</th><th>Applies?</th><th>Result</th><th>Link</th></tr></table></div>
+<h2>Government contracts and grants</h2>
+<div class="tw"><table><tr><th>Award</th><th>Agency</th><th>Amount</th><th>Dates</th><th>Source</th></tr></table></div>
+<h2>Ratings and bonds</h2>
+<p></p>
+<h2>What the numbers say</h2>
+<p></p>
+<h2>Connector findings</h2>
+<!-- CONNECTORS: from rooms/__SLUG__/work/connectors/merged.json (stage 2b, P2b). Leads, not facts: a connector value is graded partly; two providers agreeing is still partly; only a public source read in the research stage makes it verified (link that source, not the provider). Provider: every provider that gave the value; add "conflict" and the other value if conflicts.json lists one. No connector ran or nothing came back: Value "None found", Provider "none run" (or the providers tried), Grade none or unknown. Keep every row. -->
+<div class="tw"><table class="checklist"><tr><th>Field</th><th>Value</th><th>Provider</th><th>Grade</th></tr>
+<tr class="ck"><td>Legal name</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Headcount</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Revenue (provider estimate)</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Funding rounds</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Investors</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Parent</td><td></td><td></td><td></td></tr>
+<tr class="ck"><td>Subsidiaries</td><td></td><td></td><td></td></tr>
+</table></div>
+<h2>Open questions</h2>
+<ol><li></li></ol>
+<h2>Sources</h2>
+<ul><li></li></ul>

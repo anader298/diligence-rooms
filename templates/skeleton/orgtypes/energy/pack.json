@@ -1,0 +1,30 @@
+{
+  "sections": [
+    {
+      "id": "energy",
+      "title": "Assets and regulation",
+      "note": "Energy or commodities company.",
+      "brief": {
+        "level": "Reference",
+        "bullets": [
+          "What assets they own and where.",
+          "Which regulators and filings govern them."
+        ],
+        "hold": "The asset or filing this conversation turns on."
+      },
+      "pages": [
+        {
+          "id": "assets",
+          "title": "Assets",
+          "blurb": "Every asset: type, location, capacity, status."
+        },
+        {
+          "id": "regulatory-filings",
+          "title": "Regulatory filings",
+          "blurb": "Commission, FERC and permit dockets."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

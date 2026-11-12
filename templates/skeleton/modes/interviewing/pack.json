@@ -1,0 +1,45 @@
+{
+  "sections": [
+    {
+      "id": "interview",
+      "title": "The interview",
+      "note": "Rounds use the meeting pages. The live helper stays off: cards are prep, not live.",
+      "brief": {
+        "level": "Know it",
+        "bullets": [
+          "What the posting asks for, and which lines are must-haves.",
+          "How their process runs and what each round tests."
+        ],
+        "hold": "The one line of the posting they will weigh most."
+      },
+      "pages": [
+        {
+          "id": "intake",
+          "title": "Intake",
+          "blurb": "The posting line by line, comp position, process and rounds."
+        },
+        {
+          "id": "role-scan",
+          "title": "Role scan",
+          "blurb": "Comparable postings with term counts."
+        },
+        {
+          "id": "technical-playbook",
+          "title": "Technical playbook",
+          "blurb": "The seat as a competent owner would describe it, and the first 90 days."
+        },
+        {
+          "id": "case-shapes",
+          "title": "Case shapes",
+          "blurb": "Likely cases and exercises, and mocks in each interviewer's style."
+        },
+        {
+          "id": "process-intel",
+          "title": "Process intel",
+          "blurb": "Candidate reports, the recruiter guide, official sample cases."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

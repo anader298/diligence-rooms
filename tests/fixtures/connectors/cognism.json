@@ -1,0 +1,13 @@
+{
+  "POST /api/search/contact/enrich": { "results": [ { "redeemId": "r-1", "matchScore": 0.94 } ] },
+  "POST /api/search/contact/redeem": { "results": [ {
+    "id": "cg-1", "fullName": "Jane Doe", "jobTitle": "CFO", "account": { "name": "Acme Capital" },
+    "seniority": "C-Level", "department": "Finance", "city": "Boston", "homeAddress": "12 Elm Street",
+    "email": { "address": "jane.doe@acme.example" },
+    "mobilePhoneNumbers": [ { "number": "+1 617 555 0100" } ],
+    "directPhoneNumbers": [ { "number": "+1 617 555 0199" } ],
+    "linkedinUrl": "https://www.linkedin.com/in/janedoe-example"
+  } ] },
+  "POST /api/search/account/enrich": { "results": [ { "redeemId": "ra-1" } ] },
+  "POST /api/search/account/redeem": { "results": [ { "id": "ca-1", "name": "Acme Capital", "domain": "acme.example", "industry": "Financial Services", "size": 250, "revenue": "10M-50M" } ] }
+}

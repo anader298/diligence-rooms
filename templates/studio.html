@@ -1,0 +1,470 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Studio · Diligence rooms</title>
+<link rel="stylesheet" href="/assets/room.css">
+<style>
+body{background:var(--bg)}
+.st-head{background:var(--acc);color:#fff;padding:28px 16px 64px}
+.st-head .in{max-width:980px;margin:0 auto}
+.st-head h1{margin:0;font-size:1.1rem;font-weight:600;letter-spacing:.01em}
+.st-head h1 span{font-weight:400;opacity:.75}
+.st-head p{margin:4px 0 0;color:#d4e0ea;font-size:.85rem}
+.st-main{max-width:980px;margin:-44px auto 0;padding:0 16px 60px}
+
+/* the bar */
+form.bar{display:flex;align-items:stretch;background:#fff;border:1px solid var(--line);border-radius:999px;box-shadow:0 2px 6px rgba(15,61,90,.08),0 8px 24px rgba(15,61,90,.10);padding:6px 6px 6px 8px;transition:box-shadow .15s}
+form.bar:focus-within{box-shadow:0 2px 8px rgba(15,61,90,.14),0 10px 30px rgba(15,61,90,.16)}
+.bar label{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:4px 16px;border-radius:999px;cursor:text}
+.bar label+label{border-left:1px solid var(--line)}
+.bar label.goal{flex:1.8}
+.bar label:focus-within{background:var(--accbg)}
+.bar label small{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}
+.bar input{border:0;outline:0;background:transparent;font:inherit;font-size:15px;color:var(--ink);padding:2px 0;width:100%}
+.bar input::placeholder{color:#9aa3ad}
+.bar button{flex:none;border:0;border-radius:999px;background:var(--acc);color:#fff;font:inherit;font-weight:700;font-size:15px;padding:0 26px;cursor:pointer}
+.bar button:hover{filter:brightness(1.12)}
+.bar button:disabled{opacity:.5;cursor:default}
+.bar button:focus-visible,.chips button:focus-visible,.st-btn:focus-visible{outline:2px solid var(--hot);outline-offset:2px}
+
+.opts{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin:14px 10px 0;font-size:.85rem;color:var(--mut)}
+.opts .grp{display:flex;align-items:center;gap:6px}
+.opts .lbl{font-weight:600;color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{font:inherit;font-size:.82rem;border:1px solid var(--line);background:#fff;color:var(--mut);border-radius:999px;padding:3px 12px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+.opts .auto{font-size:.75rem;color:var(--mut)}
+.opts .auto a{color:var(--acc);cursor:pointer;text-decoration:underline}
+.opts select,.opts input[type=date]{font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:8px;background:#fff;padding:3px 6px;color:var(--ink)}
+.sched{display:grid;grid-template-columns:1fr;gap:12px;margin:14px 0 0}
+.sched fieldset{border:1px solid var(--line);border-radius:14px;background:#fff;padding:10px 14px 12px;margin:0;min-width:0}
+.sched legend{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);padding:0 4px}
+.sched .hint{margin:0 0 6px;font-size:.78rem;color:var(--mut)}
+.srow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:4px 0;border-top:1px solid var(--line)}
+.srow:first-of-type{border-top:0}
+.srow input,.srow select{font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:8px;background:#fff;padding:4px 6px;color:var(--ink);min-width:0}
+.srow input[type=date]{width:9.5em}.srow input[type=time]{width:6.5em}
+.srow .w1{flex:1 1 10em}.srow .w2{flex:1 1 8em}.srow .w3{width:7em}
+.srow label.done{font-size:.8rem;color:var(--mut);display:flex;align-items:center;gap:4px}
+.srow button.x{font:inherit;border:0;background:none;color:var(--mut);font-size:1.1rem;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px}
+.srow button.x:hover{background:var(--accbg);color:var(--ink)}
+.sched .add{margin-top:6px}
+.sched .ask{margin:6px 0 0;color:#6b4a0c;background:var(--hotbg);border:1px dashed var(--hot);border-radius:8px;padding:6px 10px;font-size:.82rem}
+.slugline{margin:8px 10px 0;font-size:.8rem;color:var(--mut);min-height:1.2em}
+.slugline code{color:var(--ink)}
+.slugline .bad{color:#9b2c2c;font-weight:600}
+
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:22px 0 0}
+.panel h2{margin:0 0 8px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+.panel p{margin:6px 0;font-size:.9rem}
+.panel .warn{color:#6b4a0c;background:var(--hotbg);border:1px dashed var(--hot);border-radius:8px;padding:6px 10px;font-size:.82rem}
+.panel .err{color:#9b2c2c;background:#fdf2f2;border:1px solid #efc4c4;border-radius:8px;padding:8px 12px}
+.cmd{display:flex;gap:8px;align-items:flex-start}
+pre.code{flex:1;margin:0;background:#0f1720;color:#e6edf3;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-all}
+pre.log{max-height:340px;overflow:auto;white-space:pre-wrap}
+.st-btn{font:inherit;font-size:.82rem;border:1px solid var(--line);background:#fff;color:var(--acc);border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
+.st-btn:hover{background:var(--accbg)}
+
+.cx-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.cx-head h2{margin:0}
+.cx-head label{font-size:.82rem;color:var(--mut);display:flex;gap:6px;align-items:center}
+.cx-head select{font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:8px;background:#fff;padding:3px 6px;color:var(--ink)}
+.cxl{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.cxl li{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.84rem;display:flex;gap:8px;align-items:flex-start}
+.cxl li.off{opacity:.62}
+.cxl input{margin-top:3px}
+.cxl b{display:block;font-weight:600}
+.cxl .sub{display:block;color:var(--mut);font-size:.76rem}
+.pill{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:0 7px;border:1px solid var(--line);color:var(--mut);margin-left:4px}
+.pill.ok{color:#1f6b3f;border-color:#bfe0cc;background:#effaf3}
+.pill.no{color:#8a5a00;border-color:#ecd39b;background:#fff8e8}
+.cx-foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:10px;font-size:.86rem}
+.cx-foot .acts{gap:8px}
+.st-btn.go{background:var(--acc);color:#fff;border-color:var(--acc)}
+.st-btn:disabled{opacity:.5;cursor:default}
+.roomsbar{display:flex;align-items:center;justify-content:space-between;margin:30px 0 8px}
+.roomsbar h2{margin:0;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+.roomsbar .r{display:flex;gap:8px;align-items:center;font-size:.8rem;color:var(--mut)}
+table.rooms{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:.86rem}
+table.rooms th,table.rooms td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+table.rooms tr:last-child td{border-bottom:0}
+table.rooms th{background:var(--accbg);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);font-weight:700}
+table.rooms td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+table.rooms b{display:block}
+table.rooms .sub{color:var(--mut);font-size:.78rem}
+.score{display:inline-block;min-width:44px;text-align:center;font-weight:700;border-radius:6px;padding:1px 6px;border:1px solid}
+.score.hi{color:#1f6b3f;border-color:#bfe0cc;background:#effaf3}
+.score.mid{color:#8a5a00;border-color:#ecd39b;background:#fff8e8}
+.score.lo{color:#9b2c2c;border-color:#efc4c4;background:#fdf2f2}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.acts a{color:var(--acc);text-decoration:underline}
+.empty{color:var(--mut);font-size:.9rem;padding:14px}
+@media (max-width:760px){
+  form.bar{flex-direction:column;border-radius:18px;padding:6px}
+  .bar label+label{border-left:0;border-top:1px solid var(--line)}
+  .bar label{border-radius:12px;padding:8px 12px}
+  .bar button{padding:12px;margin-top:4px;border-radius:12px}
+  table.rooms .hide-sm{display:none}
+}
+</style>
+</head><body>
+<header class="st-head"><div class="in">
+<h1>Diligence rooms <span>Studio</span></h1>
+<p>Business due diligence before a meeting: who you are meeting, at which company, what you want from it, and when. Start composes the room and writes the pipeline command.</p>
+</div></header>
+<div class="st-main">
+
+<form class="bar" id="bar" autocomplete="off" novalidate>
+  <label><small>Person</small><input id="people" name="people" placeholder="Dan Ellison, Theo Lindqvist" spellcheck="false" aria-label="Person or people, comma-separated"></label>
+  <label><small>Company</small><input id="company" name="company" placeholder="Northwind Logistics" spellcheck="false" aria-label="Their company" required></label>
+  <label class="goal"><small>What you want to do</small><input id="goal" name="goal" placeholder="pitch a network-planning analytics contract" aria-label="What you want to do"></label>
+  <button type="submit" id="go">Start</button>
+</form>
+
+<div class="opts">
+  <div class="grp"><span class="lbl" id="modelbl">Mode</span><div class="chips" id="modes" role="group" aria-labelledby="modelbl"></div><span class="auto" id="modeauto"></span></div>
+  <div class="grp"><label class="lbl" for="org">Org type</label><select id="org"></select></div>
+  <div class="grp"><label class="lbl" for="tier">Depth</label><select id="tier"><option value="full">full</option><option value="light">light</option></select></div>
+</div>
+<div class="sched">
+  <fieldset id="mtgs"><legend>Meetings</legend>
+    <p class="hint">The meeting date first. Add a row for each later meeting or round: time, who, format, length.</p>
+    <div id="mrows"></div>
+    <p class="ask" id="mask" hidden>When is the meeting? Add the date above, or press Start again to create the room without one.</p>
+    <button class="st-btn add" type="button" id="addm">+ Add meeting</button>
+  </fieldset>
+  <fieldset id="dls"><legend>Deadlines</legend>
+    <p class="hint">Anything due before or between meetings: documents to send, decisions, prep.</p>
+    <div id="drows"></div>
+    <button class="st-btn add" type="button" id="addd">+ Add deadline</button>
+  </fieldset>
+</div>
+<div class="slugline" id="slugline" aria-live="polite"></div>
+
+<section class="panel" id="connectors" aria-labelledby="cxtitle">
+  <div class="cx-head"><h2 id="cxtitle">Licensed data</h2><label for="cxroom">Room <select id="cxroom"></select></label></div>
+  <p class="sub" id="cxinfo">Our licensed data (Apollo) plus public sources, as leads to verify (graded partly until a public source confirms them). Keys stay in .env; only whether each is set is shown here.</p>
+  <ul class="cxl" id="cxlist"></ul>
+  <p class="sub" id="cxmcp" hidden></p>
+  <div class="cx-foot"><span id="cxtotal" aria-live="polite"></span><div class="acts"><button class="st-btn go" type="button" id="cxgo">Enrich</button></div></div>
+  <div id="cxout" aria-live="polite"></div>
+</section>
+
+<section class="panel" id="result" hidden aria-live="polite"></section>
+
+<div class="roomsbar"><h2>Rooms</h2><div class="r"><span id="buildmsg"></span><button class="st-btn" id="buildall" type="button">Build all</button><button class="st-btn" id="refresh" type="button">Refresh</button></div></div>
+<div id="rooms"><p class="empty">Loading…</p></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  // Every value from the server goes into the page through textContent or attributes set by the DOM, never innerHTML.
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === "text") n.textContent = attrs[k];
+      else if (k === "class") n.className = attrs[k];
+      else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== false && attrs[k] != null) n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return n;
+  }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function api(path, body) {
+    var opt = body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) };
+    return fetch(path, opt).then(function (r) {
+      return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ("HTTP " + r.status)); return j; });
+    });
+  }
+
+  var state = { modes: [], orgTypes: [], deadlineKinds: ["submission", "decision", "document", "prep", "follow-up", "other"], personPages: [], runEnabled: false, picked: [], manual: false, orgManual: false, inferredOrg: "other", askedDate: false };
+
+  // ---------------------------------------------------------------- meetings and deadlines
+  function field(type, cls, ph, label) { return el("input", { type: type, class: cls, placeholder: ph || null, "aria-label": label }); }
+  function removeBtn(row, label) { return el("button", { type: "button", class: "x", "aria-label": label, text: "\u00d7", onclick: function () { row.parentNode.removeChild(row); } }); }
+  function addMeeting(first) {
+    var row = el("div", { class: "srow m" });
+    [field("date", "d", null, "Meeting date"), field("time", "t", null, "Start time"), field("text", "w1 title", first ? "Intro call" : "Pitch meeting", "Meeting title"),
+     field("text", "w2 who", "COO, VP Network, FP&A", "Who is in the meeting"), field("text", "w3 fmt", "video / in person", "Format"), field("text", "w3 len", "45 min", "Length")]
+      .forEach(function (n) { row.appendChild(n); });
+    if (!first) row.appendChild(removeBtn(row, "Remove this meeting"));
+    $("mrows").appendChild(row);
+    return row;
+  }
+  function addDeadline() {
+    var row = el("div", { class: "srow dd" });
+    var kind = el("select", { class: "kind", "aria-label": "Kind of deadline" });
+    state.deadlineKinds.forEach(function (k) { kind.appendChild(el("option", { value: k, text: k })); });
+    [field("date", "d", null, "Deadline date"), field("text", "w1 title", "send the capability statement", "What is due"), kind,
+     el("label", { class: "done" }, [el("input", { type: "checkbox", class: "dn" }), "done"])].forEach(function (n) { row.appendChild(n); });
+    row.appendChild(removeBtn(row, "Remove this deadline"));
+    $("drows").appendChild(row);
+    row.querySelector(".d").focus();
+    return row;
+  }
+  function readRows() {
+    var q = function (row, c) { var n = row.querySelector(c); return n ? n.value.trim() : ""; };
+    var meetings = [].slice.call(document.querySelectorAll("#mrows .srow")).map(function (r) {
+      return { date: q(r, ".d"), time: q(r, ".t"), title: q(r, ".title"), who: q(r, ".who"), format: q(r, ".fmt"), length: q(r, ".len") };
+    }).filter(function (m) { return m.date || m.time || m.title || m.who || m.format || m.length; });
+    var deadlines = [].slice.call(document.querySelectorAll("#drows .srow")).map(function (r) {
+      return { date: q(r, ".d"), title: q(r, ".title"), kind: q(r, ".kind"), done: r.querySelector(".dn").checked };
+    }).filter(function (d) { return d.date || d.title; });
+    return { meetings: meetings, deadlines: deadlines };
+  }
+  addMeeting(true);
+  $("addm").addEventListener("click", function () { addMeeting(false).querySelector(".d").focus(); });
+  $("addd").addEventListener("click", addDeadline);
+  $("mrows").addEventListener("input", function () { $("mask").hidden = true; });
+
+  function drawChips() {
+    var box = $("modes"); clear(box);
+    state.modes.forEach(function (m) {
+      box.appendChild(el("button", { type: "button", "aria-pressed": state.picked.indexOf(m) > -1 ? "true" : "false", text: m, onclick: function () {
+        state.manual = true;
+        var i = state.picked.indexOf(m);
+        if (i > -1) state.picked.splice(i, 1); else state.picked.push(m);
+        drawChips();
+      } }));
+    });
+    var a = $("modeauto"); clear(a);
+    if (state.manual) a.appendChild(el("a", { role: "button", tabindex: "0", text: "back to auto", onclick: function () { state.manual = false; infer(); } }));
+    else a.textContent = "auto, from what you typed";
+  }
+  function drawOrg() {
+    var s = $("org"), cur = s.value; clear(s);
+    s.appendChild(el("option", { value: "auto", text: "auto (" + state.inferredOrg + ")" }));
+    state.orgTypes.forEach(function (o) { s.appendChild(el("option", { value: o, text: o })); });
+    s.value = cur && cur !== "" ? cur : "auto";
+  }
+
+  var timer = null;
+  function infer() {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      api("/api/infer", { company: $("company").value, goal: $("goal").value, people: $("people").value }).then(function (r) {
+        if (!state.manual) { state.picked = r.modes.slice(); drawChips(); }
+        state.inferredOrg = r.orgType; drawOrg();
+        var line = $("slugline"); clear(line);
+        if (r.slug) {
+          line.appendChild(document.createTextNode("Room: "));
+          line.appendChild(el("code", { text: "rooms/" + r.slug + "/" }));
+          if (r.people.length) line.appendChild(document.createTextNode(" · " + r.people.length + " person" + (r.people.length === 1 ? "" : "s") + ": " + r.people.join("; ")));
+          if (r.exists) line.appendChild(el("span", { class: "bad", text: " · already exists, will not overwrite" }));
+        }
+      }).catch(function () {});
+    }, 200);
+  }
+  ["people", "company", "goal"].forEach(function (id) { $(id).addEventListener("input", infer); });
+
+  // ---------------------------------------------------------------- start
+  var tail = { slug: null, from: -1, timer: null };
+  $("bar").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!$("company").value.trim()) { $("company").focus(); return; }
+    var sched = readRows();
+    // Ask once for the meeting date; a second Start goes ahead without it.
+    if (!sched.meetings.some(function (m) { return m.date; }) && !state.askedDate) {
+      state.askedDate = true; $("mask").hidden = false; document.querySelector("#mrows .d").focus(); return;
+    }
+    var go = $("go"); go.disabled = true; go.textContent = "Starting…";
+    api("/api/start", {
+      people: $("people").value, company: $("company").value, goal: $("goal").value,
+      modes: state.picked.length ? state.picked : [], orgType: $("org").value, tier: $("tier").value,
+      date: (sched.meetings[0] || {}).date || "", meetings: sched.meetings, deadlines: sched.deadlines
+    }).then(showResult, function (err) {
+      var p = $("result"); clear(p); p.hidden = false;
+      p.appendChild(el("h2", { text: "Could not start" }));
+      p.appendChild(el("p", { class: "err", text: err.message }));
+    }).then(function () { go.disabled = false; go.textContent = "Start"; loadRooms(); });
+  });
+
+  function copyBtn(text) {
+    return el("button", { class: "st-btn", type: "button", text: "Copy", onclick: function (e) {
+      var b = e.currentTarget;
+      navigator.clipboard.writeText(text).then(function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500); });
+    } });
+  }
+
+  function showResult(r) {
+    var p = $("result"); clear(p); p.hidden = false;
+    cx.slug = r.slug; // the Connectors panel follows the new room
+    p.appendChild(el("h2", { text: "Room created" }));
+    p.appendChild(el("p", {}, [
+      el("b", { text: "rooms/" + r.slug + "/" }),
+      " · " + r.pageCount + " pages · modes " + r.intake.modes.join(", ") + (r.intake.modesInferred ? " (from the goal)" : "") +
+      " · org " + r.intake.orgType + (r.intake.orgTypeInferred ? " (guessed)" : "") + " · depth " + r.intake.tier
+    ]));
+    p.appendChild(el("p", { class: "sub", text: (r.intake.meetings.length ? r.intake.meetings.length + " meeting" + (r.intake.meetings.length === 1 ? "" : "s") + " (next " + (r.intake.meetingDate || "not set") + ")" : "No meeting date yet; the pipeline will ask for it") +
+      " · " + r.intake.deadlines.length + " deadline" + (r.intake.deadlines.length === 1 ? "" : "s") + " · saved in room.json and intake.json" }));
+    if (r.personPages && r.personPages.length) p.appendChild(el("p", { class: "sub", text: r.personPages.length + " pages per person: " + r.personPages.join(", ") }));
+    (r.warnings || []).forEach(function (w) { p.appendChild(el("p", { class: "warn", text: w })); });
+    p.appendChild(el("p", { text: "Pipeline command, written to " + r.runFile + " (prompt from " + r.promptSource + "):" }));
+    p.appendChild(el("div", { class: "cmd" }, [el("pre", { class: "code", text: r.command }), copyBtn(r.command)]));
+    if (r.started) {
+      p.appendChild(el("p", { text: "Running in the background. Log: rooms/" + r.slug + "/run.log" }));
+      startTail(r.slug, p);
+    } else if (r.runError) {
+      p.appendChild(el("p", { class: "err", text: r.runError }));
+    } else {
+      p.appendChild(el("p", { class: "sub", text: "Runs from the studio are off. Run it in a terminal from the repo folder: rooms/" + r.slug + "/RUN.sh  (or start the studio with STUDIO_RUN=1 to run it from here)." }));
+    }
+  }
+
+  function startTail(slug, host) {
+    clearTimeout(tail.timer);
+    var old = document.getElementById("logbox"); if (old) old.parentNode.removeChild(old);
+    var status = el("p", { class: "sub", id: "logstatus", text: "" });
+    var pre = el("pre", { class: "code log", id: "logpre", text: "" });
+    var box = el("div", { id: "logbox" }, [el("h2", { text: "run.log · " + slug }), status, pre]);
+    (host || $("result")).appendChild(box);
+    if (!host) $("result").hidden = false;
+    tail = { slug: slug, from: -1, timer: null };
+    (function poll() {
+      api("/api/log?slug=" + encodeURIComponent(slug) + "&from=" + tail.from).then(function (r) {
+        if (tail.slug !== slug) return;
+        var atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 8;
+        if (tail.from < 0 || r.size < tail.from) pre.textContent = r.text; else pre.textContent += r.text;
+        tail.from = r.size;
+        if (atBottom) pre.scrollTop = pre.scrollHeight;
+        status.textContent = r.running ? "running" : "not running (finished, or started outside this studio)";
+        tail.timer = setTimeout(poll, r.running ? 1500 : 5000);
+      }).catch(function () { tail.timer = setTimeout(poll, 5000); });
+    })();
+  }
+
+  // ---------------------------------------------------------------- connectors
+  // The estimate always comes first; the run needs a second, explicit click on the confirm button.
+  var cx = { slug: "", picked: null, state: null };
+  function cxPicked() { return (cx.state ? cx.state.providers : []).filter(function (p) { return cx.picked.indexOf(p.id) > -1; }); }
+  function cxTotal() {
+    var ps = cxPicked(), conf = ps.filter(function (p) { return p.configured; });
+    var t = conf.reduce(function (n, p) { return n + (p.estimate.credits || 0); }, 0);
+    $("cxtotal").textContent = !cx.slug ? "Choose a room to see the estimate." :
+      "Estimated " + t + " credit" + (t === 1 ? "" : "s") + " for " + cx.state.people + " person" + (cx.state.people === 1 ? "" : "s") + " and the company, across " + conf.length + " configured provider" + (conf.length === 1 ? "" : "s") +
+      (ps.length > conf.length ? " (" + (ps.length - conf.length) + " chosen but not configured, skipped)" : "") + ". Cap " + cx.state.maxCredits + ".";
+    $("cxgo").disabled = !cx.slug || !cx.state.intakeFound || !conf.length;
+  }
+  function drawConnectors() {
+    var s = cx.state, list = $("cxlist"); clear(list);
+    if (cx.picked === null) cx.picked = s.enabled.slice();
+    s.providers.forEach(function (p) {
+      var id = "cx-" + p.id;
+      var status = p.configured ? el("span", { class: "pill ok", text: "configured" }) :
+        el("span", { class: "pill no", text: p.kind === "api" ? "not configured" : p.kind === "mcp" ? "no MCP responses" : "no files" });
+      var why = p.configured ? (p.estimate.credits + " credit" + (p.estimate.credits === 1 ? "" : "s") + " est. · " + p.estimate.note) :
+        (p.kind === "api" ? "set " + (p.missing.length ? p.missing.join(", ") : p.envKeys.join(", ")) + " in .env" : p.estimate.note);
+      list.appendChild(el("li", { class: p.configured ? null : "off" }, [
+        el("input", { type: "checkbox", id: id, checked: cx.picked.indexOf(p.id) > -1 ? "checked" : false, onchange: function (e) {
+          var i = cx.picked.indexOf(p.id);
+          if (e.target.checked && i < 0) cx.picked.push(p.id); else if (!e.target.checked && i > -1) cx.picked.splice(i, 1);
+          cxTotal();
+        } }),
+        el("label", { for: id }, [el("b", {}, [p.name, el("span", { class: "pill", text: p.kind }), status]),
+          el("span", { class: "sub", text: why }),
+          el("span", { class: "sub", text: "Endpoint: " + p.apiStatus })])
+      ]));
+    });
+    var mcp = s.providers.filter(function (p) { return p.mcp; })[0];
+    $("cxmcp").hidden = !mcp; $("cxmcp").textContent = mcp ? "MCP available: " + mcp.mcp : "";
+    var info = "Config: " + s.config + ".";
+    if (s.slug && !s.intakeFound) info += " This room has no intake.json; compose it with Start first.";
+    if (s.lastRun) info += " Last run " + s.lastRun.ranAt.slice(0, 16).replace("T", " ") + ": " + s.lastRun.providers.join(", ") + ", " + s.lastRun.creditsUsed + " credits, " + s.lastRun.conflicts + " conflicts.";
+    $("cxinfo").textContent = "Our licensed data (Apollo) plus public sources, as leads to verify (graded partly until a public source confirms them). Keys stay in .env; only whether each is set is shown here. " + info;
+    cxTotal();
+  }
+  function loadConnectors() {
+    return api("/api/connectors?slug=" + encodeURIComponent(cx.slug)).then(function (s) { cx.state = s; drawConnectors(); })
+      .catch(function (e) { $("cxtotal").textContent = "Could not load connectors: " + e.message; });
+  }
+  function fillRoomPicker(rooms) {
+    var sel = $("cxroom"), cur = cx.slug; clear(sel);
+    sel.appendChild(el("option", { value: "", text: "choose a room" }));
+    rooms.filter(function (r) { return !r.error; }).forEach(function (r) { sel.appendChild(el("option", { value: r.slug, text: r.slug })); });
+    sel.value = cur && rooms.some(function (r) { return r.slug === cur; }) ? cur : "";
+    cx.slug = sel.value;
+  }
+  $("cxroom").addEventListener("change", function () { cx.slug = $("cxroom").value; clear($("cxout")); loadConnectors(); });
+  $("cxgo").addEventListener("click", function () {
+    var out = $("cxout"), go = $("cxgo"); clear(out);
+    var ids = cxPicked().filter(function (p) { return p.configured; }).map(function (p) { return p.id; });
+    go.disabled = true; go.textContent = "Estimating…";
+    api("/api/enrich", { slug: cx.slug, providers: ids, confirm: false }).then(function (r) {
+      out.appendChild(el("pre", { class: "code", text: r.output }));
+      var yes = el("button", { class: "st-btn go", type: "button", text: "Spend about " + r.total + " credits and run" });
+      var no = el("button", { class: "st-btn", type: "button", text: "Cancel", onclick: function () { clear(out); } });
+      yes.addEventListener("click", function () {
+        yes.disabled = true; no.disabled = true; yes.textContent = "Running…";
+        api("/api/enrich", { slug: cx.slug, providers: r.providers, confirm: true, expectTotal: r.total }).then(function (run) {
+          clear(out);
+          out.appendChild(el("p", { class: run.ok ? "sub" : "err", text: run.ok ? "Done. Written to rooms/" + cx.slug + "/work/connectors/ (merged.json, conflicts.json, run.json)." : "The run failed; see the output." }));
+          out.appendChild(el("pre", { class: "code log", text: run.output }));
+          cx.state = run.state; drawConnectors();
+        }, function (e) { clear(out); out.appendChild(el("p", { class: "err", text: e.message })); });
+      });
+      out.appendChild(el("p", { class: "warn", text: "Nothing has been spent yet. Confirm to fetch from the providers above." }));
+      out.appendChild(el("div", { class: "acts" }, [yes, no]));
+    }, function (e) { out.appendChild(el("p", { class: "err", text: e.message })); })
+      .then(function () { go.textContent = "Enrich"; cxTotal(); });
+  });
+
+  // ---------------------------------------------------------------- rooms
+  function ago(iso) {
+    if (!iso) return "never";
+    var s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 90) return "just now";
+    if (s < 5400) return Math.round(s / 60) + " min ago";
+    if (s < 129600) return Math.round(s / 3600) + " h ago";
+    return new Date(iso).toISOString().slice(0, 10);
+  }
+  function loadRooms() {
+    return api("/api/state").then(function (s) {
+      state.modes = s.modes; state.orgTypes = s.orgTypes; state.runEnabled = s.runEnabled;
+      if (s.deadlineKinds) state.deadlineKinds = s.deadlineKinds;
+      if (s.personPages) state.personPages = s.personPages;
+      drawChips(); drawOrg();
+      fillRoomPicker(s.rooms); loadConnectors();
+      var box = $("rooms"); clear(box);
+      if (!s.rooms.length) { box.appendChild(el("p", { class: "empty", text: "No rooms yet. Use the bar above." })); return; }
+      var head = el("tr", {}, ["Room", "Mode · org", "Pages", "Still skeleton", "Last build", "Lint", ""].map(function (h, i) {
+        return el("th", { text: h, class: i === 1 || i === 4 ? "hide-sm" : null });
+      }));
+      var body = s.rooms.map(function (r) {
+        if (r.error) return el("tr", {}, [el("td", {}, [el("b", { text: r.slug })]), el("td", { colspan: "6", class: "sub", text: "room.json could not be read: " + r.error })]);
+        var sc = r.score == null ? "" : r.score >= 80 ? "hi" : r.score >= 50 ? "mid" : "lo";
+        var acts = [el("a", { href: "/preview/" + encodeURIComponent(r.slug) + "/", target: "_blank", rel: "noopener", text: "Preview" })];
+        if (r.hasLog) acts.push(el("a", { href: "#", text: "Log", onclick: function (e) { e.preventDefault(); startTail(r.slug); $("result").scrollIntoView({ behavior: "smooth" }); } }));
+        if (state.runEnabled && r.hasRun && !r.running) acts.push(el("a", { href: "#", text: "Run", onclick: function (e) {
+          e.preventDefault();
+          api("/api/run", { slug: r.slug }).then(function () { startTail(r.slug); loadRooms(); }, function (err) { alert(err.message); });
+        } }));
+        if (r.running) acts.push(el("span", { class: "sub", text: "running" }));
+        return el("tr", {}, [
+          el("td", {}, [el("b", { text: r.title }), el("span", { class: "sub", text: r.slug + (r.people.length ? " · " + r.people.join(", ") : "") }), r.goal ? el("div", { class: "sub", text: r.goal }) : null,
+            r.nextMeeting || r.openDeadlines ? el("div", { class: "sub", text: (r.nextMeeting ? "next meeting " + r.nextMeeting : "no meeting set") + (r.openDeadlines ? " · " + r.openDeadlines + " open deadline" + (r.openDeadlines === 1 ? "" : "s") : "") }) : null]),
+          el("td", { class: "hide-sm" }, [r.modes.join(", ") || "–", el("div", { class: "sub", text: (r.orgType || "–") + " · " + r.tier })]),
+          el("td", { class: "num", text: String(r.pages) }),
+          el("td", { class: "num", text: r.skeletonPct + "%" }),
+          el("td", { class: "num hide-sm", text: ago(r.lastBuild) }),
+          el("td", { class: "num" }, [r.score == null ? "–" : el("span", { class: "score " + sc, title: r.lintOk ? "passes the standard" : "below the standard; npm run lint " + r.slug, text: r.score + "" }),
+            r.anthony ? el("div", { class: "sub", text: r.anthony + " for Anthony" }) : null]),
+          el("td", {}, [el("div", { class: "acts" }, acts)]),
+        ]);
+      });
+      box.appendChild(el("table", { class: "rooms" }, [el("thead", {}, [head]), el("tbody", {}, body)]));
+    }).catch(function (e) { var box = $("rooms"); clear(box); box.appendChild(el("p", { class: "empty", text: "Could not load rooms: " + e.message })); });
+  }
+  $("refresh").addEventListener("click", loadRooms);
+  $("buildall").addEventListener("click", function () {
+    var b = $("buildall"), m = $("buildmsg"); b.disabled = true; m.textContent = "building…";
+    api("/api/build", {}).then(function (r) { m.textContent = r.ok ? "built" : "build failed"; m.title = r.output; }, function (e) { m.textContent = e.message; })
+      .then(function () { b.disabled = false; loadRooms(); });
+  });
+
+  loadRooms().then(function () { infer(); $("people").focus(); });
+})();
+</script>
+</body></html>

@@ -1,0 +1,35 @@
+{
+  "sections": [
+    {
+      "id": "health-system",
+      "title": "Service, quality and community",
+      "note": "Hospital or health system.",
+      "brief": {
+        "level": "Reference",
+        "bullets": [
+          "Where they serve and what they are known for.",
+          "Quality scores and community-benefit spending."
+        ],
+        "hold": "The quality measure they are most exposed on."
+      },
+      "pages": [
+        {
+          "id": "service-area",
+          "title": "Service area",
+          "blurb": "Facilities, markets, market share."
+        },
+        {
+          "id": "cms-and-quality",
+          "title": "CMS and quality",
+          "blurb": "Star ratings, penalties, quality measures."
+        },
+        {
+          "id": "community-benefit",
+          "title": "Community benefit",
+          "blurb": "Schedule H and community health needs."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

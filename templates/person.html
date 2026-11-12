@@ -1,0 +1,31 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#ffffff">
+<title>{{name}} · {{roomTitle}}</title>
+<link rel="stylesheet" href="assets/room.css">
+<style>:root{--acc:{{accent}}}</style>
+</head>
+<body data-room="{{slug}}" data-pages="{{pageCount}}"{{demoAttrs}}>
+{{bar}}
+<main id="main" class="wrap">
+<header class="profile">
+{{headshot}}
+<div><p class="eyebrow">The person · {{name}}</p><h1>{{name}}</h1><p class="tt">{{tt}}</p>
+<p class="tags">{{tags}}</p>
+{{verdict}}</div>
+{{judges}}
+</header>
+{{brief}}
+{{drives}}
+<div class="tally" aria-label="What the research found across {{n}} pages">
+<div class="found"><b>{{found}}</b><span>found</span></div><div class="weak"><b>{{weak}}</b><span>weak</span></div><div class="pages"><b>{{n}}</b><span>pages</span></div>
+<div class="mix">{{mix}}<span class="mixt"><span data-read-of="{{ids}}"></span> read.</span></div>
+</div>
+<h2 class="h2s">{{possessive}} {{n}} pages</h2>
+{{halves}}
+<p class="status-key"><span class="found"><i></i>Found: public material, confirmed as theirs</span><span class="weak"><i></i>Weak: thin, indirect or not confirmed</span></p>
+<p class="rule-note"><b>Personal, public</b> records marital status, number of children and home metro or city only. Never children's names, ages, schools or photos, and never a street address.</p>
+</main>
+<script src="assets/room.js"></script>
+</body></html>
