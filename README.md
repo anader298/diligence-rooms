@@ -1,5 +1,7 @@
 # Diligence rooms
 
+[![tests](https://github.com/anader298/diligence-rooms/actions/workflows/test.yml/badge.svg)](https://github.com/anader298/diligence-rooms/actions/workflows/test.yml)
+
 Due diligence on a company and the people you are about to meet. Type who you are meeting, their company and what the meeting is for. Get a private room built from graded public sources and our licensed data (Apollo), with a live companion for the meeting itself. Built to prepare for high-stakes meetings: deals, partnerships, interviews. The tool is not public, and rooms are built privately.
 
 ![The front page of the sample room: Start here with the summary, the next meeting countdown and deadlines, and the room in three parts](docs/hero.png)
