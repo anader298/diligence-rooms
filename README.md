@@ -1,6 +1,6 @@
 # Diligence rooms
 
-Due diligence on a company and the people you are about to meet. Type who you are meeting, their company and what the meeting is for. Get a private room built from graded public sources and our licensed data (Apollo), with a live companion for the meeting itself. Built for C-suite executives and leadership teams; the tool is not public, and rooms are built privately.
+Due diligence on a company and the people you are about to meet. Type who you are meeting, their company and what the meeting is for. Get a private room built from graded public sources and our licensed data (Apollo), with a live companion for the meeting itself. Built to prepare for high-stakes meetings: deals, partnerships, interviews. The tool is not public, and rooms are built privately.
 
 ![The front page of the sample room: Start here with the summary, the next meeting countdown and deadlines, and the room in three parts](docs/hero.png)
 
@@ -74,7 +74,7 @@ flowchart LR
 - **Three sections to open.** The reader sees **Start here** on top (summary, countdown and deadlines, the three things), then **1. The person**, one block per person split into Personal and Professional, **2. The role, the deal, the specifics** (the ask, the deal pages, meetings and the companion, the drills, the one card) and **3. The company** (who they are and what drives them, the money, filings, the outside view, the org chart and people map, the org-type pack). The mirror and the record sit in a closed **Behind the room** at the bottom.
 - **A verdict, motives and photos.** Each persona opens with a verdict, **Proven**, **Mixed** or **Unproven**: one plain line, then their claims against the record, each graded and sourced. "What drives them" covers the person and the company under four headings: financial, social, commercial and technical. A headshot frame and life photos, each with its source, sit on the person pages.
 - **Public sources plus our licensed data.** Lookups run on our own Apollo account; the client connects nothing. Licensed data counts as partly verified until a public source confirms it. More providers can be added later.
-- **Agents in parallel, blind where it matters.** Claude Code agents gather and draft every page with a source link on each line. The people agents never read your side's file, so the profiles cannot flatter you. A separate agent re-fetches every source and recomputes every number.
+- **Agents in parallel, blind where it matters.** Claude Code agents gather and draft every page with a source link on each line. The people agents never read your side's file, so the profiles cannot flatter you. A separate agent re-fetches every source and recomputes every number; that check is a model, not code (see Methodology).
 - **Every fact graded.** Each one is verified, partly verified, weak, inference, none found, not public or unknown. The reader's pages show what was found; every search, including the empty ones, is kept in the OSINT log behind the room. `npm run lint` scores each room out of 100 on sources, verified share and pages still empty.
 - **A companion with two lanes.** During the meeting, a phone page transcribes the conversation in 8-second chunks. A fast model shows a quick card when it hears a question. A stronger model, with the whole room as a cached prompt, writes the considered answer a few seconds later. If the room does not cover the question, the card says so.
 - **A gate at the edge.** One Netlify Edge Function guards every room with its own password and a signed, HttpOnly session cookie. A room with no password returns 404, so the site does not reveal which rooms exist. The companion's API sits behind the same gate.
@@ -134,7 +134,7 @@ One Netlify Edge Function (`netlify/edge-functions/room-gate.ts`) sits in front 
 
 ## About this public copy
 
-The live rooms are private. They hold research on real companies and real people, so they stay behind their passwords and are deleted when the meeting is done. This copy is sanitized: it holds the engine, the standard, the prompts and one synthetic sample, where Avery Freight Analytics prepares to meet Northwind Logistics about a network-planning contract. Every company, person and link in it is invented. The private version changes first; this copy is fixed at the point it was published.
+The live rooms are private. They hold research on real companies and real people, so they stay behind their passwords and are deleted when the meeting is done. This copy is sanitized: it holds the engine, the standard, the prompts and one synthetic sample, where Avery Freight Analytics prepares to meet Northwind Logistics about a network-planning contract. Every company, person and link in it is invented. The private version changes first, and its history holds real research, so it stays private. This copy was published as one commit on 12 November 2026, and every change since is its own commit.
 
 ## Boundaries
 
@@ -157,9 +157,10 @@ Static HTML, CSS and plain JavaScript built by a Node script, with no framework.
 
 MIT. See [LICENSE](LICENSE).
 
+
 ## Author
 
-Anthony Nader. One of several side ventures he builds to learn. Read the [diligence rooms case study](https://dandoungroup.com/case-studies/#diligence).
+Anthony Nader, Dandoun Group. Read the [diligence rooms case study](https://dandoungroup.com/case-studies/#diligence).
 
 ## Run it locally
 
@@ -173,9 +174,9 @@ npm run studio          # http://localhost:8877, bound to this machine only
 Type who you are meeting, their company and the purpose, for example `Dan Ellison` / `Northwind Logistics` / `win a network-planning contract`. The studio picks the mode and organisation type and shows the page list. Press **Build all**, then **Preview** on the Northwind row, to read the finished synthetic room. Filling a new room needs Claude Code with model access (`STUDIO_RUN=1 npm run studio`).
 
 ```sh
-npm test                # gate, session, composer and lint tests
+npm test                # 84 tests
 npm run build           # every room into site/
-npm run lint            # depth score per room
+npm run lint            # depth score per room; the 16-page sample scores 67/100 (fails)
 npm run preview         # http://localhost:8888, no password
 cp .env.example .env    # set ROOM_COOKIE_SECRET and ROOM_PASSWORD_NORTHWIND
 npm run serve           # http://localhost:8888/northwind/ behind the real gate
