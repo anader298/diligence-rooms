@@ -158,6 +158,26 @@ Static HTML, CSS and plain JavaScript built by a Node script, with no framework.
 MIT. See [LICENSE](LICENSE).
 
 
+## Methodology
+
+Use: Analyze. Lever: commercial and risk. Before a negotiation, partnership talk or interview, a leader sees the counterparty's money, rules and people, with every claim sourced, and fewer surprises reach the table.
+
+| Step | Done by | Check |
+|---|---|---|
+| Research the company and each person | Claude Code agents in parallel; people agents never see our side's file | A source link on every line; every search logged |
+| Licensed data (Apollo) | Code; a person approves the spend | Nothing spent until `--yes`; values graded "partly" until a public source confirms |
+| Verify sources and numbers | Separate model agents | Re-fetch and recount: a model checking a model |
+| Companion cards in the meeting | Model, fast and deep lanes | `validateCard`: known type, grade, a source page on every fact; "Not in room" allowed |
+| Companion calculations | Model picks inputs; code computes (`recheckCalc`) | The code's result replaces the model's |
+| Publish a room; turn on the mic | Person | The pipeline never deploys; the mic stays off until everyone consents |
+
+- **Playbook or agent, and why.** Mostly a playbook (`pipeline/STANDARD.md`, briefs P0 to P10). Research fans out to agents because the reading is broad and independent; one render step writes the pages; the companion is two fixed calls per question.
+- **How it was built.** Personas that graded their own practice questions agreed with themselves, so grading moved to a separate agent.
+- **How it's checked.** 84 tests (`npm test`). `npm run lint` fails the synthetic sample at 67/100: 16 pages against 40+, and 11 pages with no source link. Card accuracy is not measured yet.
+- **Limits.** Card JSON is read with a regex, the fast lane defaults to an Opus-class model, and the research number check is a model. Next: structured outputs, a small fast model, a code tie-out and a labelled question set. See [Limits](#limits).
+
+How I build with AI: [github.com/anader298/how-i-build-with-ai](https://github.com/anader298/how-i-build-with-ai)
+
 ## Author
 
 Anthony Nader, Dandoun Group. Read the [diligence rooms case study](https://dandoungroup.com/case-studies/#diligence).
