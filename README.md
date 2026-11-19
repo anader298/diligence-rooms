@@ -10,37 +10,33 @@ Due diligence on a company and the people you are about to meet. Type who you ar
 
 **Case study:** [How a private room prepares you for the people across the table](https://dandoungroup.com/case-studies/#diligence)
 
-<table>
-<tr>
-<td width="50%"><img src="docs/person.png" alt="Dan Ellison's section: headshot frame, verdict, what he judges on, his brief and what drives him"></td>
-<td width="50%"><img src="docs/persona.png" alt="Dan Ellison's persona, opening with the verdict and his claims against the record"></td>
-</tr>
-<tr>
-<td><sub><b>A person's section.</b> Headshot frame, the verdict, what he judges on, and what drives him under four headings.</sub></td>
-<td><sub><b>The persona.</b> Proven, Mixed or Unproven in one line, then each claim set against the record, graded and sourced.</sub></td>
-</tr>
-<tr>
-<td><img src="docs/org-chart.png" alt="Org chart: every seat with name, title and tenure, the open seat, reporting and committee lines"></td>
-<td><img src="docs/company.png" alt="What drives Northwind: financial, social, commercial and technical, then sites by year as a chart"></td>
-</tr>
-<tr>
-<td><sub><b>The org chart.</b> Every seat, tenure, the open seat, reporting and committee lines. The people at the next meeting are ringed.</sub></td>
-<td><sub><b>The company.</b> What drives it, with evidence and a source on each line, and the charts behind it.</sub></td>
-</tr>
-<tr>
-<td><img src="docs/practice.png" alt="Practice dashboard: pitch clock with each beat timed, scorecard, flashcards, objections and mock meetings"></td>
-<td>
-<table><tr>
-<td width="50%"><img src="docs/one-card.png" alt="The one card on a phone: the ask, the line, who is in the room with their verdicts"></td>
-<td width="50%"><img src="docs/companion.png" alt="The companion on a phone during the meeting, with fact and suggestion cards"></td>
-</tr></table>
-</td>
-</tr>
-<tr>
-<td><sub><b>Practice.</b> Pitch clock, scorecard on their criteria, flashcards, objections and mock meetings, saved in the browser.</sub></td>
-<td><sub><b>On a phone.</b> The one card, read last, and the companion, glanced at during the meeting.</sub></td>
-</tr>
-</table>
+**A person's section.** Headshot frame, the verdict, what he judges on, and what drives him under four headings.
+
+![Dan Ellison's section: headshot frame, verdict, what he judges on, his brief and what drives him](docs/person.png)
+
+**The persona.** Proven, Mixed or Unproven in one line, then each claim set against the record, graded and sourced.
+
+![Dan Ellison's persona, opening with the verdict and his claims against the record](docs/persona.png)
+
+**The org chart.** Every seat, tenure, the open seat, reporting and committee lines. The people at the next meeting are ringed.
+
+![Org chart: every seat with name, title and tenure, the open seat, reporting and committee lines](docs/org-chart.png)
+
+**The company.** What drives it, with evidence and a source on each line, and the charts behind it.
+
+![What drives Northwind: financial, social, commercial and technical, then sites by year as a chart](docs/company.png)
+
+**Practice.** Pitch clock, scorecard on their criteria, flashcards, objections and mock meetings, saved in the browser.
+
+![Practice dashboard: pitch clock with each beat timed, scorecard, flashcards, objections and mock meetings](docs/practice.png)
+
+**On a phone.** The one card, read last, and the companion, glanced at during the meeting.
+
+<p align="center">
+<img src="docs/one-card.png" width="300" alt="The one card on a phone: the ask, the line, who is in the room with their verdicts">
+&nbsp;&nbsp;
+<img src="docs/companion.png" width="300" alt="The companion on a phone during the meeting, with fact and suggestion cards">
+</p>
 
 ## The problem
 
