@@ -1,0 +1,175 @@
+// Engine layer, usage guard, Codex stage plan and the studio's key handling.
+// No real engine is called: a fake `claude` on PATH stands in where a process is needed.
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtempSync, writeFileSync, readFileSync, statSync, rmSync, chmodSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawn } from "node:child_process";
+import { buildCommand, envFor, setEnvVar, usageFromLine, mergeEngineConfig, defaultConfig, notReady, plainError, runEngine, CLAUDE_DENIED } from "../scripts/lib/engines.mjs";
+import { stagePlan } from "../scripts/lib/stages.mjs";
+import { REPO } from "../scripts/lib/compose.mjs";
+
+const tmp = () => mkdtempSync(join(tmpdir(), "engines-"));
+
+test("claude argv: headless, scoped permissions, no MCP, prompt on stdin, no key", () => {
+  const { bin, args } = buildCommand("claude", { model: "opus", auth: "login", maxBudgetUsd: 20 });
+  assert.equal(bin, "claude");
+  assert.deepEqual(args.slice(0, 4), ["-p", "--output-format", "stream-json", "--verbose"]);
+  assert.ok(args.includes("--strict-mcp-config"));
+  assert.equal(args[args.indexOf("--permission-mode") + 1], "acceptEdits");
+  assert.ok(!args.includes("--dangerously-skip-permissions"));
+  for (const d of CLAUDE_DENIED) assert.ok(args.includes(d), d);
+  assert.ok(!args.includes("--max-budget-usd"), "budget applies to API keys only");
+  const keyed = buildCommand("claude", { auth: "key", maxBudgetUsd: 20 }).args;
+  assert.equal(keyed[keyed.indexOf("--max-budget-usd") + 1], "20");
+});
+
+test("codex argv: web search on, workspace sandbox with network, stdin prompt", () => {
+  const { bin, args } = buildCommand("codex", { model: "gpt-6-astra", lastMessageFile: "/tmp/x.md" });
+  assert.equal(bin, "codex");
+  assert.ok(args.indexOf("--search") < args.indexOf("exec"), "--search is a top-level flag");
+  assert.equal(args[args.indexOf("--sandbox") + 1], "workspace-write");
+  assert.ok(args.includes("sandbox_workspace_write.network_access=true"));
+  assert.equal(args.at(-1), "-");
+  assert.ok(!args.includes("--dangerously-bypass-approvals-and-sandbox"));
+});
+
+test("envFor: signed-in runs drop the key; Codex key runs get CODEX_API_KEY", () => {
+  const base = { ANTHROPIC_API_KEY: "a", OPENAI_API_KEY: "o", CODEX_API_KEY: "c", PATH: "/bin" };
+  assert.equal(envFor("claude", "login", base).ANTHROPIC_API_KEY, undefined);
+  assert.equal(envFor("claude", "login", base).PATH, "/bin");
+  const cx = envFor("codex", "login", base);
+  assert.equal(cx.OPENAI_API_KEY, undefined);
+  assert.equal(cx.CODEX_API_KEY, undefined);
+  assert.equal(envFor("codex", "key", { OPENAI_API_KEY: "o" }).CODEX_API_KEY, "o");
+  assert.equal(envFor("claude", "key", base).ANTHROPIC_API_KEY, "a");
+});
+
+test(".env writer keeps other lines, sets 0600, rejects injection, removes cleanly", () => {
+  const d = tmp();
+  try {
+    const f = join(d, ".env");
+    writeFileSync(f, "ROOM_COOKIE_SECRET=abc\n# note\nANTHROPIC_API_KEY=old\n");
+    setEnvVar(f, "ANTHROPIC_API_KEY", "sk-ant-api03-new_KEY-123");
+    assert.equal(readFileSync(f, "utf8"), "ROOM_COOKIE_SECRET=abc\n# note\nANTHROPIC_API_KEY=sk-ant-api03-new_KEY-123\n");
+    assert.equal(statSync(f).mode & 0o777, 0o600);
+    assert.throws(() => setEnvVar(f, "ANTHROPIC_API_KEY", "sk-abc\nROOM_PASSWORD_X=1"));
+    assert.throws(() => setEnvVar(f, "ANTHROPIC_API_KEY", "sk abc def ghi"));
+    assert.throws(() => setEnvVar(f, "bad name", "sk-abcdefgh"));
+    setEnvVar(f, "ANTHROPIC_API_KEY", null);
+    assert.equal(readFileSync(f, "utf8"), "ROOM_COOKIE_SECRET=abc\n# note\n");
+  } finally {
+    rmSync(d, { recursive: true, force: true });
+  }
+});
+
+test("usage: highest window from Claude events and Codex session logs", () => {
+  const claude = JSON.stringify({ type: "rate_limit_event", rate_limit_info: { unifiedWindows: { five_hour: { utilization: 0.31 }, seven_day: { utilization: 0.66 } } } });
+  assert.deepEqual(usageFromLine(claude), { pct: 66, window: "seven_day" });
+  const codex = JSON.stringify({ type: "event_msg", payload: { type: "token_count", rate_limits: { primary: { used_percent: 12, window_minutes: 300 }, secondary: { used_percent: 27, window_minutes: 10080 } } } });
+  assert.deepEqual(usageFromLine(codex), { pct: 27, window: "168h" });
+  assert.equal(usageFromLine("[run] hello"), null);
+  assert.equal(usageFromLine('{"type":"assistant"}'), null);
+});
+
+test("config: validated; settings changes clear the last test; readiness reasons", () => {
+  let c = mergeEngineConfig(defaultConfig(), { engine: "claude", auth: "login", model: "opus", usageLimit: 65 });
+  assert.throws(() => mergeEngineConfig(c, { engine: "gpt" }));
+  assert.throws(() => mergeEngineConfig(c, { usageLimit: 0 }));
+  assert.throws(() => mergeEngineConfig(c, { model: "opus; rm -rf /" }));
+  assert.match(notReady(defaultConfig(), {}), /connect an AI engine/);
+  assert.match(notReady(c, {}), /press Test/);
+  c = { ...c, test: { ok: true, engine: "claude", auth: "login", model: "opus", usagePct: 40 } };
+  assert.equal(notReady(c, {}), null);
+  assert.match(notReady({ ...c, test: { ...c.test, usagePct: 70 } }, {}), /above your 65% limit/);
+  assert.equal(mergeEngineConfig(c, { model: "sonnet" }).test, null);
+  assert.match(notReady({ ...c, auth: "key" }, {}), /no ANTHROPIC_API_KEY/);
+});
+
+test("plainError unwraps nested API errors and adds the model fix", () => {
+  const e = '{"type":"error","status":400,"error":{"type":"invalid_request_error","message":"The \'x\' model is not supported when using Codex with a ChatGPT account.","code":"model_not_found"}}';
+  assert.match(plainError(e, "codex"), /^The 'x' model is not supported.*Clear the Model box/);
+});
+
+test("usage guard stops a run that goes above the limit", async () => {
+  const d = tmp();
+  try {
+    // A fake claude: reports 70% plan usage, then would run for 30 seconds.
+    const fake = join(d, "claude");
+    writeFileSync(fake, `#!/usr/bin/env node
+process.stdin.resume();
+console.log(JSON.stringify({ type: "rate_limit_event", rate_limit_info: { unifiedWindows: { seven_day: { utilization: 0.7 } } } }));
+setTimeout(() => console.log(JSON.stringify({ type: "result", is_error: false })), 30000);
+`);
+    chmodSync(fake, 0o755);
+    const lines = [];
+    const t = Date.now();
+    const r = await runEngine({ engineId: "claude", cfg: { engine: "claude", auth: "login", model: "", usageLimit: 65 }, prompt: "x", cwd: d, env: { ...process.env, PATH: `${d}:${process.env.PATH}` }, log: (l) => lines.push(l) });
+    assert.equal(r.stoppedForUsage, true);
+    assert.equal(r.usage.pct, 70);
+    assert.ok(Date.now() - t < 15000, "stopped well before the fake finished");
+    assert.ok(lines.some((l) => l.startsWith("[usage-guard]")));
+    // API-key runs are not plan-limited: the same events do not stop them.
+    const fakeShort = join(d, "claude");
+    writeFileSync(fakeShort, `#!/usr/bin/env node
+process.stdin.resume();
+console.log(JSON.stringify({ type: "rate_limit_event", rate_limit_info: { unifiedWindows: { seven_day: { utilization: 0.7 } } } }));
+console.log(JSON.stringify({ type: "result", is_error: false }));
+process.exit(0);
+`);
+    const k = await runEngine({ engineId: "claude", cfg: { engine: "claude", auth: "key", usageLimit: 65 }, prompt: "x", cwd: d, env: { ...process.env, PATH: `${d}:${process.env.PATH}` } });
+    assert.equal(k.stoppedForUsage, false);
+  } finally {
+    rmSync(d, { recursive: true, force: true });
+  }
+});
+
+test("Codex stage plan: per-person cold stages carry no trace of our side", () => {
+  const md = readFileSync(join(REPO, "pipeline", "PROMPTS.md"), "utf8");
+  const intake = { company: "Acme Freight", people: [{ name: "Jane Doe", slug: "jane-doe" }, { name: "Raj Rao", slug: "raj-rao" }], goal: "pitch a contract", modes: ["pitch"], orgType: "other", meetingDate: "2026-12-01", tier: "light", meetings: [], deadlines: [] };
+  const ours = { name: "Zed Ourname", organisation: "Ourco Unique", factsFile: "config/facts.md" };
+  const waves = stagePlan(md, intake, "acme-freight", ours);
+  const names = waves.map((w) => w.wave);
+  assert.deepEqual(names, ["inventory", "harvest", "research", "people-osint", "personas", "mirror", "synthesis", "verification", "corrections", "render", "one-card"]);
+  const osint = waves.find((w) => w.wave === "people-osint").stages;
+  assert.deepEqual(osint.map((s) => s.id), ["P4a jane-doe", "P4a raj-rao"]);
+  assert.match(osint[0].prompt, /This stage covers one person only: Jane Doe/);
+  assert.doesNotMatch(osint[0].prompt, /Raj Rao.*\(page suffix/);
+  const cold = waves.flatMap((w) => w.stages).filter((s) => s.cold);
+  assert.ok(cold.length >= 5, "P4a x2, P4b x2, P5e");
+  for (const s of cold) {
+    assert.doesNotMatch(s.prompt, /Zed Ourname|Ourco Unique/, s.id);
+    assert.match(s.prompt, /must not read config\/our-side\.json/, s.id);
+  }
+  const p1 = waves[0].stages[0];
+  assert.match(p1.prompt, /never ask a question/);
+  assert.match(p1.prompt, /Do not run npm run enrich/);
+  assert.ok(waves.find((w) => w.wave === "verification").stages.length >= 4);
+});
+
+test("studio never sends a key to the page and refuses other hosts", async () => {
+  const port = 18000 + Math.floor(Math.random() * 1000);
+  const secret = "sk-ant-api03-SECRETVALUEzz9876";
+  const child = spawn(process.execPath, [join(REPO, "scripts", "studio.mjs")], { cwd: REPO, env: { ...process.env, STUDIO_PORT: String(port), ANTHROPIC_API_KEY: secret }, stdio: ["ignore", "pipe", "pipe"] });
+  try {
+    await new Promise((res, rej) => {
+      child.stdout.on("data", (d) => String(d).includes("studio on") && res());
+      child.on("exit", () => rej(new Error("studio exited")));
+      setTimeout(() => rej(new Error("studio did not start")), 10000);
+    });
+    const base = `http://127.0.0.1:${port}`;
+    for (const p of ["/api/engine", "/api/state", "/api/doctor"]) {
+      const text = await (await fetch(base + p)).text();
+      assert.ok(!text.includes("SECRETVALUE"), `${p} leaks the key`);
+    }
+    const eng = await (await fetch(base + "/api/engine")).json();
+    assert.equal(eng.engines.find((e) => e.id === "claude").keyMask, "…9876");
+    const bad = await fetch(base + "/api/engine", { method: "POST", headers: { "content-type": "application/json", origin: "http://evil.example" }, body: "{}" });
+    assert.equal(bad.status, 403);
+    const notJson = await fetch(base + "/api/engine/key", { method: "POST", body: "engine=claude" });
+    assert.equal(notJson.status, 415);
+  } finally {
+    child.kill();
+  }
+});

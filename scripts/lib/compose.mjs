@@ -493,6 +493,24 @@ export function fillPrompt(text, intake, slug, ours = {}) {
     .replace(/__([A-Z][A-Z_]*?)__/g, (m, k) => get(k) ?? m);
 }
 
+/** Rules for a run nobody is watching: no questions, no credit spend, no deploy. */
+export function unattendedBlock(slug) {
+  return `
+
+## This run is unattended
+
+Nobody is watching this run, so nobody can answer. These rules override steps 3 and 5 of the
+orchestrator above:
+- Never ask a question or wait for an answer. Use the intake below; where something is missing,
+  append the question to rooms/${slug}/work/questions.md (one line each: stage, question), mark it
+  [FILL: question] on the page, and carry on.
+- Do not run npm run enrich and do not spend licensed-data credits. The studio fetches licensed
+  data with the user's yes before the run; if rooms/${slug}/work/connectors/merged.json exists,
+  use it as leads.
+- Never deploy, commit or push. Do not delete files outside rooms/${slug}/work/.
+`;
+}
+
 /**
  * Write rooms/<slug>/work/P0.md and rooms/<slug>/RUN.sh. Returns the command.
  */
@@ -509,14 +527,17 @@ export function writeRunScript(slug, intake, paths = {}) {
     fillPrompt(p0 || FALLBACK_P0, intake, slug, ours) +
     `\n\n## Intake (from the studio)\n\nThe room is already composed from the skeleton (core + ${intake.modes.join(" + ")} + ${intake.orgType}, person pages per person): rooms/${slug}/room.json, rooms/${slug}/pages/, rooms/${slug}/intake.json. Do not compose it again; parse nothing from the line that the intake below already gives, create the workspace, and continue with the stages.\n\n\`\`\`json\n${JSON.stringify(intake, null, 2)}\n\`\`\`\n`;
   mkdirSync(join(roomDir, "work"), { recursive: true });
-  writeFileSync(join(roomDir, "work", "P0.md"), prompt);
-  const command = `claude -p "$(cat rooms/${slug}/work/P0.md)" --model opus`;
+  writeFileSync(join(roomDir, "work", "P0.md"), prompt + unattendedBlock(slug));
+  // The engine (Claude Code or Codex), account and usage limit come from config/engine.json,
+  // set in the studio's Connect AI panel, so this script never needs rewriting when they change.
+  const command = `node --env-file-if-exists=.env scripts/run-room.mjs ${slug}`;
   const script = `#!/usr/bin/env bash
 # Pipeline run for rooms/${slug}. Written by the studio / new-room; gitignored.
 # Prompt: rooms/${slug}/work/P0.md (from ${source}, filled with intake.json)
+# Engine: config/engine.json (studio > Connect AI). Stops itself above the plan usage limit.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-${command}
+exec ${command}
 `;
   const runFile = join(roomDir, "RUN.sh");
   writeFileSync(runFile, script);

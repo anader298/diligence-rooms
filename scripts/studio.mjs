@@ -6,8 +6,10 @@
 // deadlines (add-row lists), saved into room.json and intake.json.
 // Start composes the room exactly as new-room does,
 // writes rooms/<slug>/RUN.sh with the pipeline command, and shows it.
-// The pipeline is only started from here when STUDIO_RUN=1 is set; it then runs
-// in the background, logging to rooms/<slug>/run.log, tailed on the page.
+// Run starts the research with the engine chosen in Connect AI (Claude Code or Codex, the
+// user's own signed-in account or API key; config/engine.json, key in .env), once it has passed
+// Test. It runs in the background, logging to rooms/<slug>/run.log, tailed on the page, and stops
+// itself when plan usage goes above the limit set there. STUDIO_RUN=0 turns runs off.
 // Below the bar: every room in rooms/ with its status, and a local preview of
 // the built site (no gate). No dependencies; the page makes no outside calls.
 // The Connectors panel lists the data providers (scripts/connectors/), whether each is
@@ -17,16 +19,24 @@
 
 import { createServer } from "node:http";
 import { spawn, execFile } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync, openSync, closeSync, readSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, openSync, closeSync, readSync, writeFileSync } from "node:fs";
 import { join, normalize, extname } from "node:path";
 import { REPO, composeRoom, writeRunScript, inferModes, inferOrgType, slugify, availableOptions, SLUG_RE, parsePeople, PERSON_PAGES, DEADLINE_KINDS } from "./lib/compose.mjs";
 import { lintRoom } from "./lib/lint.mjs";
 import { ADAPTERS, BY_ID, describe, loadConfig, roomPaths, staticCtx } from "./connectors/index.mjs";
 import { enrich } from "./connectors/run.mjs";
+import { ENGINES, detect, loadEngineConfig, mergeEngineConfig, saveEngineConfig, setEnvVar, maskKey, testEngine, notReady, modelFor } from "./lib/engines.mjs";
+import { checks as doctorChecks } from "./lib/doctor.mjs";
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.STUDIO_PORT || 8877);
-const RUN = process.env.STUDIO_RUN === "1";
+const RUN_OFF = process.env.STUDIO_RUN === "0";
+const engineFile = join(REPO, "config", "engine.json");
+const envFile = join(REPO, ".env");
+const oursFile = join(REPO, "config", "our-side.json");
+const factsFile = join(REPO, "config", "facts.md");
+const engineConfig = () => loadEngineConfig(engineFile);
+const runBlocked = () => (RUN_OFF ? "runs are turned off (STUDIO_RUN=0)" : notReady(engineConfig()));
 const roomsDir = join(REPO, "rooms");
 const siteDir = join(REPO, "site");
 const skeletonDir = join(REPO, "templates", "skeleton");
@@ -69,7 +79,22 @@ function roomStatus(slug) {
     hasRun: existsSync(join(dir, "RUN.sh")),
     hasLog: existsSync(join(dir, "run.log")),
     running: running.has(slug),
+    questions: readSmall(join(dir, "work", "questions.md")),
+    lastRun: readJson(join(dir, "work", "last-run.json")),
   };
+}
+
+function readSmall(f, max = 4000) {
+  if (!existsSync(f)) return null;
+  const t = readFileSync(f, "utf8").trim();
+  return t ? t.slice(0, max) : null;
+}
+function readJson(f) {
+  try {
+    return JSON.parse(readFileSync(f, "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 function listRooms() {
@@ -87,17 +112,72 @@ function listRooms() {
 }
 
 function startRun(slug) {
-  if (!RUN) throw new Error("running the pipeline from the studio is off; start it with STUDIO_RUN=1 npm run studio, or run RUN.sh yourself");
+  const blocked = runBlocked();
+  if (blocked) throw new Error(`cannot run yet: ${blocked}`);
   if (running.has(slug)) throw new Error(`a run for ${slug} is already going`);
+  const intakeFile = join(roomsDir, slug, "intake.json");
+  if (!existsSync(intakeFile)) throw new Error(`rooms/${slug}/intake.json does not exist`);
+  // Rewrite RUN.sh and P0.md so rooms made by an older version run the current way.
+  writeRunScript(slug, JSON.parse(readFileSync(intakeFile, "utf8")));
   const runFile = join(roomsDir, slug, "RUN.sh");
-  if (!existsSync(runFile)) throw new Error(`rooms/${slug}/RUN.sh does not exist`);
   const fd = openSync(join(roomsDir, slug, "run.log"), "a");
-  const child = spawn("bash", [runFile], { cwd: REPO, detached: true, stdio: ["ignore", fd, fd] });
+  // Own process group, so Stop ends the engine and every call it started.
+  const child = spawn("bash", [runFile], { cwd: REPO, detached: true, stdio: ["ignore", fd, fd], env: process.env });
   closeSync(fd);
   running.set(slug, child);
   child.on("exit", () => running.delete(slug));
   child.on("error", () => running.delete(slug));
   child.unref();
+}
+
+function stopRun(slug) {
+  const child = running.get(slug);
+  if (!child) throw new Error(`no run for ${slug} is going`);
+  try {
+    process.kill(-child.pid, "SIGTERM");
+  } catch {
+    child.kill("SIGTERM");
+  }
+  setTimeout(() => {
+    try {
+      process.kill(-child.pid, "SIGKILL");
+    } catch {}
+  }, 15000).unref();
+}
+
+// ---------------------------------------------------------------- engine (Connect AI)
+
+let detectCache = null;
+async function detected(fresh) {
+  if (fresh || !detectCache || Date.now() - detectCache.at > 30000) detectCache = { at: Date.now(), value: await detect(process.env) };
+  return detectCache.value;
+}
+
+async function engineState(fresh = false) {
+  const cfg = engineConfig();
+  const found = await detected(fresh);
+  return {
+    // Flags and the last four characters of a key only; never a key.
+    config: { engine: cfg.engine, auth: cfg.auth, model: cfg.model, effectiveModel: modelFor(cfg), usageLimit: cfg.usageLimit, maxBudgetUsd: cfg.maxBudgetUsd, test: cfg.test },
+    engines: Object.values(ENGINES).map((e) => ({ ...found[e.id], keyHint: e.keyHint })),
+    blocked: runBlocked(),
+  };
+}
+
+function readOurs() {
+  const o = readJson(oursFile);
+  return { exists: !!(o && o.name && o.name !== "Your Name"), ours: o || readJson(join(REPO, "config", "our-side.example.json")), facts: readSmall(factsFile, 20000) || "" };
+}
+
+function saveOurs(body) {
+  const clean = (v, n = 200) => String(v ?? "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, n);
+  const list = (v) => (Array.isArray(v) ? v : String(v || "").split("\n")).map((x) => clean(x, 300)).filter(Boolean).slice(0, 40);
+  const name = clean(body.name);
+  if (!name) throw new Error("your name is needed");
+  const ours = { name, organisation: clean(body.organisation), role: clean(body.role), offer: clean(body.offer, 600), factsFile: "config/facts.md", overlapHooks: list(body.overlapHooks), publicHandles: list(body.publicHandles) };
+  writeFileSync(oursFile, JSON.stringify(ours, null, 2) + "\n");
+  if (typeof body.facts === "string") writeFileSync(factsFile, body.facts.slice(0, 50000));
+  return readOurs();
 }
 
 function tailLog(slug, from) {
@@ -242,7 +322,7 @@ const server = createServer(async (req, res) => {
         });
         const run = writeRunScript(r.slug, r.intake);
         let started = false, runError = null;
-        if (RUN) {
+        if (body.run === true) {
           try {
             startRun(r.slug);
             started = true;
@@ -250,13 +330,41 @@ const server = createServer(async (req, res) => {
             runError = e.message;
           }
         }
-        return send(res, 200, { slug: r.slug, pageCount: r.pageCount, personPages: PERSON_PAGES, intake: r.intake, warnings: r.warnings, command: run.command, runFile: `rooms/${r.slug}/RUN.sh`, promptSource: run.source, runEnabled: RUN, started, runError });
+        return send(res, 200, { slug: r.slug, pageCount: r.pageCount, personPages: PERSON_PAGES, intake: r.intake, warnings: r.warnings, command: run.command, runFile: `rooms/${r.slug}/RUN.sh`, promptSource: run.source, runEnabled: !runBlocked(), runBlocked: runBlocked(), started, runError });
       }
       if (path === "/api/run") {
         if (!SLUG_RE.test(body.slug || "")) return send(res, 400, { error: "bad slug" });
         startRun(body.slug);
         return send(res, 200, { started: true });
       }
+      if (path === "/api/stop") {
+        if (!SLUG_RE.test(body.slug || "")) return send(res, 400, { error: "bad slug" });
+        stopRun(body.slug);
+        return send(res, 200, { stopping: true });
+      }
+      if (path === "/api/engine") {
+        saveEngineConfig(engineFile, mergeEngineConfig(engineConfig(), body));
+        return send(res, 200, await engineState());
+      }
+      if (path === "/api/engine/key") {
+        const e = ENGINES[body.engine];
+        if (!e) return send(res, 400, { error: "engine must be claude or codex" });
+        const value = body.key === null ? null : String(body.key || "").trim();
+        setEnvVar(envFile, e.keyVar, value);
+        // Keep this process (and the runs it starts) in step with .env.
+        for (const k of e.keyVars) delete process.env[k];
+        if (value) process.env[e.keyVar] = value;
+        saveEngineConfig(engineFile, mergeEngineConfig(engineConfig(), { engine: body.engine, auth: value ? "key" : "login" }));
+        return send(res, 200, await engineState(true));
+      }
+      if (path === "/api/engine/test") {
+        const cfg = engineConfig();
+        if (!cfg.engine) return send(res, 400, { error: "pick Claude Code or Codex first" });
+        const result = await testEngine(cfg, { cwd: REPO, env: process.env });
+        saveEngineConfig(engineFile, { ...engineConfig(), test: result });
+        return send(res, 200, { result, ...(await engineState(true)) });
+      }
+      if (path === "/api/ourside") return send(res, 200, saveOurs(body));
       if (path === "/api/build") return send(res, 200, await build());
       if (path === "/api/enrich") {
         // Two steps: {confirm:false} returns the estimate; {confirm:true, expectTotal} runs with --yes,
@@ -280,8 +388,11 @@ const server = createServer(async (req, res) => {
       const opts = availableOptions(skeletonDir);
       // Business modes first; "interviewing" stays available but is listed last.
       opts.modes = [...opts.modes.filter((m) => m !== "interviewing"), ...opts.modes.filter((m) => m === "interviewing")];
-      return send(res, 200, { ...opts, personPages: PERSON_PAGES, deadlineKinds: DEADLINE_KINDS, runEnabled: RUN, rooms: listRooms() });
+      return send(res, 200, { ...opts, personPages: PERSON_PAGES, deadlineKinds: DEADLINE_KINDS, runEnabled: !runBlocked(), runBlocked: runBlocked(), rooms: listRooms() });
     }
+    if (path === "/api/engine") return send(res, 200, await engineState(url.searchParams.get("fresh") === "1"));
+    if (path === "/api/ourside") return send(res, 200, readOurs());
+    if (path === "/api/doctor") return send(res, 200, await doctorChecks(REPO, process.env));
     if (path === "/api/connectors") {
       const slug = url.searchParams.get("slug") || "";
       if (slug && !SLUG_RE.test(slug)) return send(res, 400, { error: "bad slug" });
@@ -304,5 +415,6 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`studio on http://localhost:${PORT}/  (bound to ${HOST}; pipeline runs ${RUN ? "ON (STUDIO_RUN=1)" : "off"})`);
+  const blocked = runBlocked();
+  console.log(`studio on http://localhost:${PORT}/  (bound to ${HOST}; runs ${blocked ? "not ready: " + blocked : "ready"})`);
 });

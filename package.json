@@ -16,6 +16,8 @@
     "test": "node --test tests/*.test.ts tests/*.test.mjs",
     "new-room": "node scripts/new-room.mjs",
     "studio": "node --env-file-if-exists=.env scripts/studio.mjs",
+    "doctor": "node --env-file-if-exists=.env scripts/doctor.mjs",
+    "run-room": "node --env-file-if-exists=.env scripts/run-room.mjs",
     "enrich": "node --env-file-if-exists=.env scripts/enrich.mjs",
     "lint": "node scripts/lint.mjs"
   },

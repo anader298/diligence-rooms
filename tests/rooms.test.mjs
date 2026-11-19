@@ -203,7 +203,8 @@ test("pipeline: P0 extracted from PROMPTS.md, filled, RUN.sh written executable"
     writeFileSync(join(base, "pipeline", "PROMPTS.md"), md);
     mkdirSync(join(base, "rooms", "acme"), { recursive: true });
     const run = writeRunScript("acme", intake, { repo: base });
-    assert.equal(run.command, 'claude -p "$(cat rooms/acme/work/P0.md)" --model opus');
+    assert.equal(run.command, "node --env-file-if-exists=.env scripts/run-room.mjs acme");
+    assert.match(readFileSync(join(base, "rooms", "acme", "work", "P0.md"), "utf8"), /This run is unattended[\s\S]*Never ask a question[\s\S]*Do not run npm run enrich/);
     const sh = readFileSync(join(base, "rooms", "acme", "RUN.sh"), "utf8");
     assert.ok(sh.startsWith("#!/usr/bin/env bash") && sh.includes(run.command));
     assert.ok(statSync(join(base, "rooms", "acme", "RUN.sh")).mode & 0o100, "RUN.sh is executable");

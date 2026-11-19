@@ -99,6 +99,22 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
 .acts{display:flex;gap:6px;flex-wrap:wrap}
 .acts a{color:var(--acc);text-decoration:underline}
 .empty{color:var(--mut);font-size:.9rem;padding:14px}
+[hidden]{display:none!important}
+.doctor{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 14px;font-size:.9rem}
+.doctor li{margin:3px 0}.doctor .fix{color:var(--mut);display:block;font-size:.85rem}
+.doctor .ok::before{content:"\2713  ";color:#1a7f37}.doctor .bad::before{content:"\2717  ";color:#b42318}.doctor .opt::before{content:"\2013  ";color:var(--mut)}
+.eng{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+.eng label.card{flex:1 1 240px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.eng label.card.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.eng .card b{display:block}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.row input[type=text],.row input[type=password],.row input[type=number]{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit}
+.ok-t{color:#1a7f37}.bad-t{color:#b42318}
+.about textarea,.about input{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;box-sizing:border-box}
+.about label{display:block;margin:6px 0;font-size:.85rem;color:var(--mut)}
+.qs{white-space:pre-wrap;font-size:.8rem;background:#fff8e6;border-radius:8px;padding:6px 8px;margin-top:4px}
+.logsum{max-height:360px;overflow:auto;font-size:.82rem;line-height:1.5}
+.logsum .t{color:var(--mut)}
 @media (max-width:760px){
   form.bar{flex-direction:column;border-radius:18px;padding:6px}
   .bar label+label{border-left:0;border-top:1px solid var(--line)}
@@ -110,9 +126,38 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
 </head><body>
 <header class="st-head"><div class="in">
 <h1>Diligence rooms <span>Studio</span></h1>
-<p>Business due diligence before a meeting: who you are meeting, at which company, what you want from it, and when. Start composes the room and writes the pipeline command.</p>
+<p>Business due diligence before a meeting: who you are meeting, at which company, what you want from it, and when. Start composes the room; Run researches it on this machine with your own Claude Code or Codex.</p>
 </div></header>
 <div class="st-main">
+<div class="doctor" id="doctor" hidden aria-live="polite"></div>
+
+<section class="panel" id="engine" aria-labelledby="engtitle">
+  <h2 id="engtitle">Connect AI</h2>
+  <p class="sub">The research runs on this machine with your own account. Use the Claude Code or Codex you are signed in to, or paste an API key (saved only in .env on this machine; this page never sees it again).</p>
+  <div class="eng" id="engcards"></div>
+  <div class="row" id="engauth"></div>
+  <div class="row">
+    <label>Model <input type="text" id="engmodel" size="16" spellcheck="false"></label>
+    <label>Stop the run above <input type="number" id="englimit" min="1" max="100" step="1" style="width:4.5em">% plan usage</label>
+    <label id="engbudgetl" hidden>Max spend per run (USD) <input type="number" id="engbudget" min="1" step="1" style="width:6em"></label>
+    <button class="st-btn" type="button" id="engsave">Save</button>
+    <button class="st-btn go" type="button" id="engtest">Test</button>
+  </div>
+  <p id="engmsg" aria-live="polite"></p>
+</section>
+
+<section class="panel about" id="about" hidden aria-labelledby="abouttitle">
+  <h2 id="abouttitle">About you</h2>
+  <p class="sub">Your side of the table. Used for the mirror (what they will find about you) and the people map, never on the pages about them. Saved in config/our-side.json and config/facts.md on this machine.</p>
+  <label>Your name <input id="osname"></label>
+  <label>Organisation <input id="osorg"></label>
+  <label>Your role <input id="osrole"></label>
+  <label>What you offer, in a sentence <input id="osoffer"></label>
+  <label>Public profiles, one per line (LinkedIn, site, X) <textarea id="oshandles" rows="3"></textarea></label>
+  <label>Overlap hooks, one per line (schools, past employers, cities, languages) <textarea id="oshooks" rows="3"></textarea></label>
+  <label>Facts about you the room may quote: numbers, roles, results (config/facts.md) <textarea id="osfacts" rows="5"></textarea></label>
+  <div class="row"><button class="st-btn go" type="button" id="ossave">Save</button><span id="osmsg"></span></div>
+</section>
 
 <form class="bar" id="bar" autocomplete="off" novalidate>
   <label><small>Person</small><input id="people" name="people" placeholder="Dan Ellison, Theo Lindqvist" spellcheck="false" aria-label="Person or people, comma-separated"></label>
@@ -304,22 +349,39 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
     (r.warnings || []).forEach(function (w) { p.appendChild(el("p", { class: "warn", text: w })); });
     p.appendChild(el("p", { text: "Pipeline command, written to " + r.runFile + " (prompt from " + r.promptSource + "):" }));
     p.appendChild(el("div", { class: "cmd" }, [el("pre", { class: "code", text: r.command }), copyBtn(r.command)]));
-    if (r.started) {
-      p.appendChild(el("p", { text: "Running in the background. Log: rooms/" + r.slug + "/run.log" }));
-      startTail(r.slug, p);
-    } else if (r.runError) {
-      p.appendChild(el("p", { class: "err", text: r.runError }));
+    if (r.runBlocked) {
+      p.appendChild(el("p", { class: "sub", text: "Not ready to research yet: " + r.runBlocked + ". Or run it in a terminal from the repo folder: rooms/" + r.slug + "/RUN.sh" }));
     } else {
-      p.appendChild(el("p", { class: "sub", text: "Runs from the studio are off. Run it in a terminal from the repo folder: rooms/" + r.slug + "/RUN.sh  (or start the studio with STUDIO_RUN=1 to run it from here)." }));
+      p.appendChild(el("div", { class: "row" }, [el("button", { class: "st-btn go", type: "button", text: "Run research", onclick: function () { runRoom(r.slug, p); } })]));
     }
+  }
+
+  // Run asks first: which engine and account pay for it, and where the usage guard sits.
+  function runRoom(slug, host) {
+    var c = eng.state && eng.state.config;
+    if (!c || eng.state.blocked) { alert("Not ready: " + ((eng.state && eng.state.blocked) || "connect an AI engine first")); return; }
+    var e = engRow(c.engine);
+    var who = (e ? e.name : c.engine) + " · " + (c.auth === "key" ? "your API key (" + (e && e.keyMask || "set") + ")" : "your signed-in account") + " · model " + (c.effectiveModel || "default");
+    var guard = c.auth === "key"
+      ? (c.maxBudgetUsd ? "It stops at $" + c.maxBudgetUsd + " of API spend." : "API keys are billed per use; set a max spend in Connect AI to cap it.")
+      : "It stops itself if plan usage goes above " + c.usageLimit + "%" + (c.test && c.test.usagePct != null ? " (now " + c.test.usagePct + "%)" : "") + ".";
+    if (!confirm("Research " + slug + " with " + who + "?\n\nIt runs in the background on this machine and can take a long time (a full room is hours of agent work). " + guard + " Nothing is published.")) return;
+    api("/api/run", { slug: slug }).then(function () { startTail(slug, host); loadRooms(); }, function (err) { alert(err.message); });
+  }
+  function stopRoom(slug) {
+    if (!confirm("Stop the run for " + slug + "? Pages written so far are kept.")) return;
+    api("/api/stop", { slug: slug }).then(function () { setTimeout(loadRooms, 1500); }, function (err) { alert(err.message); });
   }
 
   function startTail(slug, host) {
     clearTimeout(tail.timer);
     var old = document.getElementById("logbox"); if (old) old.parentNode.removeChild(old);
     var status = el("p", { class: "sub", id: "logstatus", text: "" });
-    var pre = el("pre", { class: "code log", id: "logpre", text: "" });
-    var box = el("div", { id: "logbox" }, [el("h2", { text: "run.log · " + slug }), status, pre]);
+    var pre = el("pre", { class: "code log", id: "logpre", text: "", hidden: true });
+    var sum = el("div", { class: "logsum", id: "logsum" });
+    var raw = el("button", { class: "st-btn", type: "button", text: "Raw log", onclick: function () { pre.hidden = !pre.hidden; sum.hidden = !pre.hidden; raw.textContent = pre.hidden ? "Raw log" : "Summary"; } });
+    var stop = el("button", { class: "st-btn", type: "button", text: "Stop", onclick: function () { stopRoom(slug); } });
+    var box = el("div", { id: "logbox" }, [el("h2", { text: "run.log · " + slug }), el("div", { class: "row" }, [status, stop, raw]), sum, pre]);
     (host || $("result")).appendChild(box);
     if (!host) $("result").hidden = false;
     tail = { slug: slug, from: -1, timer: null };
@@ -327,14 +389,139 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
       api("/api/log?slug=" + encodeURIComponent(slug) + "&from=" + tail.from).then(function (r) {
         if (tail.slug !== slug) return;
         var atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 8;
-        if (tail.from < 0 || r.size < tail.from) pre.textContent = r.text; else pre.textContent += r.text;
+        if (tail.from < 0 || r.size < tail.from) { pre.textContent = r.text; clear(sum); tail.part = ""; } else pre.textContent += r.text;
+        summarise(sum, r.text);
         tail.from = r.size;
         if (atBottom) pre.scrollTop = pre.scrollHeight;
-        status.textContent = r.running ? "running" : "not running (finished, or started outside this studio)";
+        status.textContent = r.running ? "running" : "not running (finished, stopped, or started outside this studio)";
+        stop.hidden = !r.running;
         tail.timer = setTimeout(poll, r.running ? 1500 : 5000);
       }).catch(function () { tail.timer = setTimeout(poll, 5000); });
     })();
   }
+
+  // One readable line per meaningful event in the engine's JSON stream; everything else stays in Raw log.
+  function summarise(box, text) {
+    var lines = ((tail.part || "") + text).split("\n");
+    tail.part = lines.pop();
+    var atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 8;
+    lines.forEach(function (line) {
+      var tag = "", m = line.match(/^\[(P[0-9][^\]]*)\] (.*)$/);
+      if (m) { tag = m[1] + " · "; line = m[2]; }
+      var out = null;
+      if (line.charAt(0) !== "{") { if (/^\[(run|usage-guard)/.test(line) || /^(ok|FAIL|lint|built)/i.test(line)) out = line; }
+      else {
+        var j; try { j = JSON.parse(line); } catch (e) { return; }
+        if (j.type === "assistant" && j.message) (j.message.content || []).forEach(function (c) {
+          if (c.type === "tool_use") {
+            var i = c.input || {};
+            var what = i.query || i.url || i.file_path || i.pattern || i.description || i.command || "";
+            out = (out ? out + "\n" : "") + c.name + (what ? ": " + String(what).slice(0, 140) : "");
+          } else if (c.type === "text" && c.text.trim()) out = (out ? out + "\n" : "") + "says: " + c.text.trim().slice(0, 200);
+        });
+        else if (j.type === "result") out = "finished" + (j.is_error ? " with an error: " + (j.result || j.subtype) : "") + (j.total_cost_usd ? " · $" + j.total_cost_usd.toFixed(2) : "");
+        else if (j.type === "rate_limit_event") { var w = (j.rate_limit_info || {}).unifiedWindows || {}; out = "plan usage " + Object.keys(w).map(function (k) { return k.replace("_", " ") + " " + Math.round(w[k].utilization * 100) + "%"; }).join(", "); }
+        else if (j.type === "item.completed" && j.item) {
+          var it = j.item;
+          if (it.type === "command_execution") out = "ran: " + String(it.command || "").slice(0, 140);
+          else if (it.type === "web_search") out = "WebSearch: " + (it.query || "");
+          else if (it.type === "file_change") out = "wrote: " + (it.changes || []).map(function (c) { return c.path; }).join(", ").slice(0, 160);
+          else if (it.type === "agent_message") out = "says: " + String(it.text || "").slice(0, 200);
+          else if (it.type === "error") out = "note: " + String(it.message || "").slice(0, 200);
+        } else if (j.type === "turn.failed" || j.type === "error") out = "error: " + String((j.error && j.error.message) || j.message || "").slice(0, 200);
+      }
+      if (out) box.appendChild(el("div", {}, [el("span", { class: "t", text: tag }), out]));
+    });
+    while (box.childNodes.length > 1500) box.removeChild(box.firstChild);
+    if (atBottom) box.scrollTop = box.scrollHeight;
+  }
+
+  // ---------------------------------------------------------------- setup: doctor, Connect AI, About you
+  var eng = { state: null, picked: null };
+  function engRow(id) { return eng.state ? eng.state.engines.filter(function (e) { return e.id === id; })[0] : null; }
+  function loadDoctor() {
+    return api("/api/doctor").then(function (d) {
+      var box = $("doctor"); clear(box);
+      var need = d.checks.filter(function (c) { return !c.ok && c.required; });
+      box.hidden = !need.length;
+      if (!need.length) return;
+      box.appendChild(el("b", { text: "Setup: " + need.length + " step" + (need.length === 1 ? "" : "s") + " left before you can research a room" }));
+      box.appendChild(el("ul", {}, d.checks.map(function (c) {
+        return el("li", { class: c.ok ? "ok" : c.required ? "bad" : "opt" }, [c.label, c.fix ? el("span", { class: "fix", text: c.fix }) : null]);
+      })));
+    }).catch(function () {});
+  }
+  function drawEngine() {
+    var st = eng.state, c = st.config, pick = eng.picked || c.engine || (st.engines.filter(function (e) { return e.installed && (e.loggedIn || e.keySet); })[0] || st.engines[0]).id;
+    eng.picked = pick;
+    var cards = $("engcards"); clear(cards);
+    st.engines.forEach(function (e) {
+      var line = !e.installed ? "Not installed · " + e.install : e.loggedIn ? "Signed in (" + e.loginMethod + ")" : e.keySet ? "API key saved (" + e.keyMask + ")" : "Installed, not signed in";
+      var radio = el("input", { type: "radio", name: "engine", value: e.id });
+      radio.checked = e.id === pick;
+      radio.addEventListener("change", function () { eng.picked = e.id; drawEngine(); });
+      cards.appendChild(el("label", { class: "card" + (e.id === pick ? " on" : "") }, [radio, " ", el("b", { text: e.name + (e.version ? " " + e.version.replace(/[^0-9.]/g, " ").trim().split(" ")[0] : "") }), el("span", { class: "sub", text: line })]));
+    });
+    var e = engRow(pick), auth = $("engauth"); clear(auth);
+    var useKey = c.engine === pick ? c.auth === "key" : (!e.loggedIn && e.keySet);
+    var r1 = el("input", { type: "radio", name: "auth", value: "login" }), r2 = el("input", { type: "radio", name: "auth", value: "key" });
+    r1.checked = !useKey; r2.checked = useKey;
+    auth.appendChild(el("label", {}, [r1, " Use my signed-in account" + (e.loggedIn ? "" : " (not signed in: " + e.login + ")")]));
+    auth.appendChild(el("label", {}, [r2, " Use an API key"]));
+    var keyIn = el("input", { type: "password", id: "engkey", placeholder: e.keySet ? "saved " + e.keyMask + " · paste to replace" : e.keyHint, autocomplete: "off", size: "28" });
+    var keyBox = el("span", { class: "row" }, [keyIn,
+      el("button", { class: "st-btn", type: "button", text: "Save key", onclick: function () {
+        var v = keyIn.value.trim(); if (!v) return;
+        api("/api/engine/key", { engine: pick, key: v }).then(function (s) { keyIn.value = ""; eng.state = s; drawEngine(); msg("Key saved in .env. Press Test.", "ok-t"); }, function (err) { msg(err.message, "bad-t"); });
+      } }),
+      e.keySet ? el("button", { class: "st-btn", type: "button", text: "Remove key", onclick: function () {
+        api("/api/engine/key", { engine: pick, key: null }).then(function (s) { eng.state = s; drawEngine(); msg("Key removed from .env.", ""); }, function (err) { msg(err.message, "bad-t"); });
+      } }) : null]);
+    keyBox.hidden = !useKey;
+    r1.addEventListener("change", function () { keyBox.hidden = true; $("engbudgetl").hidden = true; });
+    r2.addEventListener("change", function () { keyBox.hidden = false; $("engbudgetl").hidden = pick !== "claude"; });
+    auth.appendChild(keyBox);
+    $("engmodel").value = c.engine === pick ? c.model : "";
+    $("engmodel").placeholder = e.defaultModel || "your default";
+    $("englimit").value = c.usageLimit;
+    $("engbudget").value = c.maxBudgetUsd || "";
+    $("engbudgetl").hidden = !(useKey && pick === "claude");
+    var t = c.test;
+    if (st.blocked) msg("Not ready: " + st.blocked + ".", t && !t.ok ? "bad-t" : "");
+    else msg("Ready: " + e.name + " answered" + (t && t.usagePct != null ? " · plan usage " + t.usagePct + "% (" + t.usageWindow + ")" : "") + ". Runs stop above " + c.usageLimit + "%.", "ok-t");
+  }
+  function msg(text, cls) { var m = $("engmsg"); m.textContent = text; m.className = cls || ""; }
+  function engSettings() {
+    var auth = document.querySelector("input[name=auth]:checked");
+    return { engine: eng.picked, auth: auth ? auth.value : "login", model: $("engmodel").value.trim(), usageLimit: Number($("englimit").value), maxBudgetUsd: $("engbudget").value === "" ? null : Number($("engbudget").value) };
+  }
+  function loadEngine(fresh) {
+    return api("/api/engine" + (fresh ? "?fresh=1" : "")).then(function (s) { eng.state = s; drawEngine(); });
+  }
+  $("engsave").addEventListener("click", function () {
+    api("/api/engine", engSettings()).then(function (s) { eng.state = s; drawEngine(); loadDoctor(); loadRooms(); }, function (err) { msg(err.message, "bad-t"); });
+  });
+  $("engtest").addEventListener("click", function () {
+    var b = $("engtest"); b.disabled = true; msg("Testing: sending one short message to " + (engRow(eng.picked) || {}).name + "…", "");
+    api("/api/engine", engSettings()).then(function () { return api("/api/engine/test", {}); }).then(function (s) {
+      eng.state = s; drawEngine(); loadDoctor(); loadRooms();
+      if (!s.result.ok) msg("Test failed: " + s.result.error, "bad-t");
+    }, function (err) { msg(err.message, "bad-t"); }).then(function () { b.disabled = false; });
+  });
+  function loadOurs() {
+    return api("/api/ourside").then(function (o) {
+      $("about").hidden = o.exists && !eng.editOurs;
+      var x = o.ours || {};
+      $("osname").value = o.exists ? x.name : ""; $("osorg").value = o.exists ? x.organisation || "" : "";
+      $("osrole").value = x.role || ""; $("osoffer").value = x.offer || "";
+      $("oshandles").value = o.exists ? (x.publicHandles || []).join("\n") : ""; $("oshooks").value = o.exists ? (x.overlapHooks || []).join("\n") : "";
+      $("osfacts").value = o.facts || "";
+    });
+  }
+  $("ossave").addEventListener("click", function () {
+    api("/api/ourside", { name: $("osname").value, organisation: $("osorg").value, role: $("osrole").value, offer: $("osoffer").value, publicHandles: $("oshandles").value, overlapHooks: $("oshooks").value, facts: $("osfacts").value })
+      .then(function () { $("osmsg").textContent = "Saved."; $("osmsg").className = "ok-t"; eng.editOurs = false; loadDoctor(); setTimeout(loadOurs, 800); }, function (err) { $("osmsg").textContent = err.message; $("osmsg").className = "bad-t"; });
+  });
 
   // ---------------------------------------------------------------- connectors
   // The estimate always comes first; the run needs a second, explicit click on the confirm button.
@@ -422,7 +609,7 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
   }
   function loadRooms() {
     return api("/api/state").then(function (s) {
-      state.modes = s.modes; state.orgTypes = s.orgTypes; state.runEnabled = s.runEnabled;
+      state.modes = s.modes; state.orgTypes = s.orgTypes; state.runEnabled = s.runEnabled; state.runBlocked = s.runBlocked;
       if (s.deadlineKinds) state.deadlineKinds = s.deadlineKinds;
       if (s.personPages) state.personPages = s.personPages;
       drawChips(); drawOrg();
@@ -437,14 +624,15 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
         var sc = r.score == null ? "" : r.score >= 80 ? "hi" : r.score >= 50 ? "mid" : "lo";
         var acts = [el("a", { href: "/preview/" + encodeURIComponent(r.slug) + "/", target: "_blank", rel: "noopener", text: "Preview" })];
         if (r.hasLog) acts.push(el("a", { href: "#", text: "Log", onclick: function (e) { e.preventDefault(); startTail(r.slug); $("result").scrollIntoView({ behavior: "smooth" }); } }));
-        if (state.runEnabled && r.hasRun && !r.running) acts.push(el("a", { href: "#", text: "Run", onclick: function (e) {
-          e.preventDefault();
-          api("/api/run", { slug: r.slug }).then(function () { startTail(r.slug); loadRooms(); }, function (err) { alert(err.message); });
-        } }));
-        if (r.running) acts.push(el("span", { class: "sub", text: "running" }));
+        if (!r.running) acts.push(state.runEnabled
+          ? el("a", { href: "#", text: "Run", onclick: function (e) { e.preventDefault(); runRoom(r.slug); $("result").scrollIntoView({ behavior: "smooth" }); } })
+          : el("span", { class: "sub", title: "Not ready: " + (state.runBlocked || ""), text: "Run (set up first)" }));
+        if (r.running) acts.push(el("a", { href: "#", text: "Stop", onclick: function (e) { e.preventDefault(); stopRoom(r.slug); } }));
         return el("tr", {}, [
           el("td", {}, [el("b", { text: r.title }), el("span", { class: "sub", text: r.slug + (r.people.length ? " · " + r.people.join(", ") : "") }), r.goal ? el("div", { class: "sub", text: r.goal }) : null,
-            r.nextMeeting || r.openDeadlines ? el("div", { class: "sub", text: (r.nextMeeting ? "next meeting " + r.nextMeeting : "no meeting set") + (r.openDeadlines ? " · " + r.openDeadlines + " open deadline" + (r.openDeadlines === 1 ? "" : "s") : "") }) : null]),
+            r.nextMeeting || r.openDeadlines ? el("div", { class: "sub", text: (r.nextMeeting ? "next meeting " + r.nextMeeting : "no meeting set") + (r.openDeadlines ? " · " + r.openDeadlines + " open deadline" + (r.openDeadlines === 1 ? "" : "s") : "") }) : null,
+            r.lastRun ? el("div", { class: "sub " + (r.lastRun.code === 0 ? "ok-t" : "bad-t"), text: "last run " + ago(r.lastRun.endedAt) + ": " + (r.lastRun.stopped === "usage" ? "stopped at " + r.lastRun.usagePct + "% plan usage (limit " + r.lastRun.usageLimit + "%)" : r.lastRun.stopped === "user" ? "stopped by you" : r.lastRun.code === 0 ? "finished" : "failed" + (r.lastRun.failedStages && r.lastRun.failedStages.length ? " (" + r.lastRun.failedStages.join(", ") + ")" : "")) }) : null,
+            r.questions ? el("details", {}, [el("summary", { class: "sub", text: "Open questions from the run" }), el("div", { class: "qs", text: r.questions })]) : null]),
           el("td", { class: "hide-sm" }, [r.modes.join(", ") || "–", el("div", { class: "sub", text: (r.orgType || "–") + " · " + r.tier })]),
           el("td", { class: "num", text: String(r.pages) }),
           el("td", { class: "num", text: r.skeletonPct + "%" }),
@@ -464,6 +652,7 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
       .then(function () { b.disabled = false; loadRooms(); });
   });
 
+  loadDoctor(); loadEngine().catch(function (e) { msg("Could not check the engines: " + e.message, "bad-t"); }); loadOurs();
   loadRooms().then(function () { infer(); $("people").focus(); });
 })();
 </script>

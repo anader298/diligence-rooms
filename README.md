@@ -10,6 +10,8 @@ Due diligence on a company and the people you are about to meet. Type who you ar
 
 **Case study:** [How a private room prepares you for the people across the table](https://dandoungroup.com/case-studies/#diligence)
 
+**Run it yourself:** clone it, connect your own Claude Code or Codex, and build rooms on your machine. See [Launch it on your machine](#launch-it-on-your-machine).
+
 **A person's section.** Headshot frame, the verdict, what he judges on, and what drives him under four headings.
 
 ![Dan Ellison's section: headshot frame, verdict, what he judges on, his brief and what drives him](docs/person.png)
@@ -171,7 +173,7 @@ Use: Analyze. Lever: commercial and risk. Before a negotiation, partnership talk
 
 - **Playbook or agent, and why.** Mostly a playbook (`pipeline/STANDARD.md`, briefs P0 to P10). Research fans out to agents because the reading is broad and independent; one render step writes the pages; the companion is two fixed calls per question.
 - **How it was built.** Personas that graded their own practice questions agreed with themselves, so grading moved to a separate agent.
-- **How it's checked.** 84 tests (`npm test`). `npm run lint` fails the synthetic sample at 67/100: 16 pages against 40+, and 11 pages with no source link. Card accuracy is not measured yet.
+- **How it's checked.** 94 tests (`npm test`). `npm run lint` fails the synthetic sample at 67/100: 16 pages against 40+, and 11 pages with no source link. Card accuracy is not measured yet.
 - **Limits.** Card JSON is read with a regex, the fast lane defaults to an Opus-class model, and the research number check is a model. Next: structured outputs, a small fast model, a code tie-out and a labelled question set. See [Limits](#limits).
 
 How I build with AI: [github.com/anader298/how-i-build-with-ai](https://github.com/anader298/how-i-build-with-ai)
@@ -180,19 +182,44 @@ How I build with AI: [github.com/anader298/how-i-build-with-ai](https://github.c
 
 Anthony Nader, Dandoun Group. Read the [diligence rooms case study](https://dandoungroup.com/case-studies/#diligence).
 
-## Run it locally
+## Launch it on your machine
 
-Requires Node 23.6 or later.
+Everything runs locally, with your own AI account. Nothing is sent anywhere except the engine's own calls and the public sources it reads.
+
+**You need:** Node 23.6 or later, git, and one of these, signed in or with an API key:
+- [Claude Code](https://docs.claude.com/en/docs/claude-code) (`npm install -g @anthropic-ai/claude-code`, then run `claude` and type `/login`), or
+- [Codex](https://github.com/openai/codex) (`npm install -g @openai/codex`, then `codex login`).
 
 ```sh
+git clone https://github.com/anader298/diligence-rooms.git
+cd diligence-rooms
 npm install
+npm run doctor          # checks Node, the engines, your sign-in and setup; prints the fix for anything missing
 npm run studio          # http://localhost:8877, bound to this machine only
 ```
 
-Type who you are meeting, their company and the purpose, for example `Dan Ellison` / `Northwind Logistics` / `win a network-planning contract`. The studio picks the mode and organisation type and shows the page list. Press **Build all**, then **Preview** on the Northwind row, to read the finished synthetic room. Filling a new room needs Claude Code with model access (`STUDIO_RUN=1 npm run studio`).
+In the studio:
+
+1. **Connect AI.** Pick Claude Code or Codex. Use the account you are signed in to, or paste an API key (saved only in `.env` on your machine; the page shows the last four characters and nothing else). Leave Model blank for the default. Press **Test**: it sends one short message and shows your current plan usage.
+2. **Set the usage limit.** A run stops itself when your plan usage goes above this (default 65%), so a long build cannot use up your plan. Pages written before the stop are kept; press Run again after the window resets. With an API key, set a max spend instead (Claude Code).
+3. **About you.** Your name, organisation, public profiles and the facts the room may quote. Used for the mirror and the people map, never on the pages about them.
+4. **Start a room.** Type who you are meeting, their company and what you want, add the meeting and any deadlines, and press **Start**.
+5. **Licensed data (optional).** If you have provider keys, the Licensed data panel shows the credit estimate and spends nothing until you confirm.
+6. **Run research.** Confirm the engine and limit, and the run starts in the background. Follow it in the log (a readable summary, or the raw log), or **Stop** it. Claude Code runs the orchestrator, which starts its own agents; Codex runs each stage as a separate call, so the people stages never see your side. Questions only you can answer are listed on the room's row and marked `[FILL: …]` on the pages.
+7. **Build and preview.** **Build all**, then **Preview**. Nothing is published.
+
+The same run works from a terminal: `rooms/<slug>/RUN.sh` (or `npm run run-room -- <slug>`), using the engine you connected in the studio.
+
+**Cost.** Each run uses your own Claude or ChatGPT plan, or bills your API key. A light room is a shorter run; a full room is hours of agent work. The usage limit and max spend are there to cap it.
+
+**Try it without an engine.** Press **Build all**, then **Preview** on the Northwind row, to read the finished synthetic room.
+
+**Publish your own copy.** Connect your fork to Netlify, keep `netlify.toml`, set `ROOM_COOKIE_SECRET` and one `ROOM_PASSWORD_<SLUG>` per room, and enable AI Gateway for the companion. Rooms you build locally are in `rooms/`; commit only the ones you mean to publish, and keep the repo private if they hold real research.
+
+### Other commands
 
 ```sh
-npm test                # 84 tests
+npm test                # 94 tests
 npm run build           # every room into site/
 npm run lint            # depth score per room; the 16-page sample scores 67/100 (fails)
 npm run preview         # http://localhost:8888, no password
@@ -209,5 +236,3 @@ npm run new-room -- acme "Acme Corp"
 # fill in rooms/acme/pages/*.html, drop the sections you do not need
 # set ROOM_PASSWORD_ACME, then npm run build
 ```
-
-Deploy on Netlify: connect the repo, keep `netlify.toml`, set `ROOM_COOKIE_SECRET` and one `ROOM_PASSWORD_<SLUG>` per room, and enable AI Gateway for the companion.

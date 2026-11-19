@@ -11,3 +11,4 @@ rooms/*/work/
 config/facts.md
 /work/
 config/connectors.json
+config/engine.json
