@@ -36,7 +36,7 @@ Nobody is watching this run: never ask a question or wait for an answer. Append 
 user can answer to rooms/${slug}/work/questions.md (one line each: stage, question) and carry on.
 Do not run npm run enrich (licensed data is fetched from the studio, with the user's yes; if
 rooms/${slug}/work/connectors/merged.json exists, use it as leads). Do not deploy, commit or push.
-Do not delete files outside rooms/${slug}/work/.`;
+Never delete files (deleting is blocked): overwrite them instead.`;
 
 /**
  * The stages as waves: every stage in a wave may run at once; waves run in order.

@@ -507,7 +507,7 @@ orchestrator above:
 - Do not run npm run enrich and do not spend licensed-data credits. The studio fetches licensed
   data with the user's yes before the run; if rooms/${slug}/work/connectors/merged.json exists,
   use it as leads.
-- Never deploy, commit or push. Do not delete files outside rooms/${slug}/work/.
+- Never deploy, commit or push. Never delete files (deleting is blocked): overwrite them instead.
 `;
 }
 
