@@ -959,6 +959,10 @@ export function departureFrom(text, subject) {
   // 2. "<subject> quits / leaves / resigns" within the same clause, not after "succeed(s) ... who"
   const lv = after.match(new RegExp(`^[^.;]{0,90}?\\b${LEFT_VERB}\\b`, "i"));
   if (lv && !/\b(succeed|replac|follow|after|who|whose)\w*\b/i.test(lv[0].slice(hit.n.length)) && !othersLeave(lv[0].slice(hit.n.length))) {
+    // "left Kestrel Labs to lead Tessellate": the object of the verb is another employer, so this is how
+    // they came to the company, not news that they left it
+    const obj = after.slice(lv[0].length).match(/^\s+([A-Z][\w&.'’-]*(?:\s+[A-Z][\w&.'’-]*){0,3})/);
+    if (obj && !isOwn(obj[1]) && !/^(The|Its|Their|His|Her|Our|After|In|On|At|As|To|For|This|That|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.test(obj[1].split(/\s+/)[0])) return null;
     const j = after.match(new RegExp(`\\b(?:to (?:join|take up [^.]{0,40}? at|become [^.]{0,60}? (?:at|of))|for|joins|joining)\\s+${ORG}`));
     const nc = j && !isOwn(j[1]) && !/^(the|a|an|personal|family|other)\b/i.test(j[1]) ? clean(j[1]) : null;
     return { left: true, newCompany: nc, why: "says they left" };

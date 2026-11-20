@@ -2,7 +2,7 @@
 // false-positive patterns found by hand-labelling. Fictional people and companies only.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadWeights, identityProb, sourceFamily, corroborate, isPrimary, overlap } from "../scripts/osint/weights.mjs";
@@ -205,4 +205,53 @@ test("stale seat: search snippets that still give the old title drop to Weak; hi
   ];
   markStale(rows, "2026-11-14", "L-9");
   assert.deepEqual(rows.map((r) => r.grade), ["w", "w", "p", "p"]);
+});
+
+test("round 2: 8-K text ends on a sentence; leaving another employer to lead this one is not a departure", async () => {
+  const { wholeSentences } = await import("../scripts/osint/modules/50-sec.mjs");
+  const { departureFrom } = await import("../scripts/osint/colib.mjs");
+  const long = "- On March 3, 2026, the Board appointed Mara Quill as Chief Operating Officer. " + "She will report to the Chief Executive Officer and oversee manufacturing. ".repeat(6);
+  const w = wholeSentences(long, 200);
+  assert.ok(w.length <= 200 && /\.$/.test(w), w);
+  assert.ok(!w.startsWith("-"));
+  assert.ok(/…$/.test(wholeSentences("word ".repeat(100), 50)));
+  const s = { name: "Mara Quill", company: "Tessellate" };
+  assert.equal(departureFrom("Why Mara Quill left Kestrel Labs to lead $3 billion Tessellate", s), null);
+  assert.ok(departureFrom("Mara Quill left Tessellate in June", s)?.left);
+});
+
+test("round 2: a one-word company in a headline needs a business word to be more than Weak", async () => {
+  const { BUSINESS_CUE } = await import("../scripts/osint/modules/56-profile.mjs");
+  assert.ok(!BUSINESS_CUE.test("Mayor celebrates completion of Varga Highway project"));
+  assert.ok(BUSINESS_CUE.test("Varga reports third quarter revenue"));
+  assert.ok(BUSINESS_CUE.test("Varga unveils new engine line"));
+});
+
+test("round 2: a sanctions-list hit on the name alone is Weak, a clean screen is Verified", async () => {
+  const records = (await import("../scripts/osint/modules/22-records.mjs")).default;
+  const csv = (rows) => rows.join("\n");
+  const sdn = csv(['1,"QUILL, Mara",individual,SDGT,-0-,-0-,-0-,-0-,-0-,-0-,-0-,-0-']);
+  const f = async (url) => {
+    const u = String(url);
+    if (/sdn\.csv/.test(u)) return new Response(sdn);
+    if (/alt\.csv/.test(u)) return new Response("");
+    if (/oig|leie|UPDATED/i.test(u)) return new Response("LASTNAME,FIRSTNAME,MIDNAME\n");
+    return new Response("", { status: 404 });
+  };
+  const dir = mkdtempSync(join(tmpdir(), "osint-acc-"));
+  const prev = process.env.OSINT_LISTS_DIR;
+  const lists = mkdtempSync(join(tmpdir(), "osint-lists-"));
+  writeFileSync(join(lists, "sdn.csv"), sdn + "\n");
+  writeFileSync(join(lists, "alt.csv"), "\n");
+  writeFileSync(join(lists, "leie.csv"), "LASTNAME,FIRSTNAME,MIDNAME\n");
+  process.env.OSINT_LISTS_DIR = lists;
+  try {
+    const res = await runOsint(SUBJ, { outDir: dir, modules: [{ ...records, budgetMs: 20000 }], log: () => {}, fetchImpl: f });
+    const hit = res.rows.find((r) => r.var === "rec.sanctions");
+    assert.match(hit.value, /Possible match/);
+    assert.equal(hit.grade, "w");
+  } finally {
+    if (prev === undefined) delete process.env.OSINT_LISTS_DIR;
+    else process.env.OSINT_LISTS_DIR = prev;
+  }
 });

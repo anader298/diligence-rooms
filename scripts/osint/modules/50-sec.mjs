@@ -30,6 +30,16 @@ export function secBase(ctx) {
   return ctx.shared._sec;
 }
 
+/** Up to `max` characters ending at a sentence end (or a word end with "…"), never mid-word. */
+export function wholeSentences(text, max = 360) {
+  const t = String(text || "").replace(/^[-–;,.\s]+/, "").replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const end = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("; "));
+  if (end > max * 0.4) return cut.slice(0, end + 1);
+  return cut.replace(/\s+\S*$/, "") + "…";
+}
+
 const titleCase = (s) => String(s || "").toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase());
 const ref = (shared, key, row) => {
   if (row?.id) (shared.refs ||= {})[key] = row.id;
@@ -83,7 +93,7 @@ const company = {
           const d = departureFrom(body, ctx.subject);
           if (d) (shared.departures ||= []).push({ ...d, newCompany: null, date: f.date, url: f.url, text: body.slice(0, 300), source: "sec 8-K item 5.02" });
         }
-        add({ var: "co.exec_changes", value: `${f.date}: ${(what || lead || body).slice(0, 320)}`, url: f.url, grade: r.ok ? "v" : "w", tier: "A", date: f.date, detail: { items: f.items } });
+        add({ var: "co.exec_changes", value: `${f.date}: ${wholeSentences(what || lead || body, 360)}`, url: f.url, grade: r.ok ? "v" : "w", tier: "A", date: f.date, detail: { items: f.items } });
       }),
     );
     if (!changes.length) miss("co.exec_changes", `no 8-K item 5.02 since ${cutoff} in EDGAR submissions`);
@@ -112,7 +122,10 @@ const company = {
     const niq = latestFact(fx.data, ["NetIncomeLoss", "ProfitLoss"], { duration: "quarter" });
     if (niq && rev?.quarter && niq.end === rev.quarter.end) add({ var: "co.quarter", value: `Net income ${money(niq.val)} for quarter ending ${niq.end}`, url: furl, grade: "v", tier: "A", date: niq.end, detail: niq });
     const rpo = latestFact(fx.data, ["RevenueRemainingPerformanceObligation"]);
-    if (rpo) add({ var: "co.kpis", value: `RPO ${money(rpo.val)} at ${rpo.end}`, url: furl, grade: "v", tier: "A", date: rpo.end, detail: rpo });
+    // a concept the filer stopped tagging years ago is not the current figure
+    const newestEnd = rev?.quarter?.end || rev?.annual?.end || null;
+    if (rpo && newestEnd && (Date.parse(newestEnd) - Date.parse(rpo.end)) / 864e5 > 550) miss("co.kpis", `RPO last tagged in XBRL at ${rpo.end}; not current, not shown`);
+    else if (rpo) add({ var: "co.kpis", value: `RPO ${money(rpo.val)} at ${rpo.end}`, url: furl, grade: "v", tier: "A", date: rpo.end, detail: rpo });
     // each balance-sheet figure carries its own date; a debt value more than a year older than the
     // cash date is a concept the filer stopped using, so it is reported as stale, never as current
     const cash = latestFact(fx.data, CASH);

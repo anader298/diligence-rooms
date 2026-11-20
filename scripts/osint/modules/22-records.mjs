@@ -88,7 +88,7 @@ export default {
       checked.push(`${LISTS[l.id].label} (${rows.toLocaleString("en-US")} rows)`);
       perList.push({ list: LISTS[l.id].label, rows, matches: h.length, names: h.slice(0, 3).map((x) => x.name).join("; ") || null, url: LISTS[l.id].url });
       // A per-list row only when the list names someone: a clean screen lives in the summary.
-      if (h.length) ctx.add({ var: "rec.sanctions_detail", value: `${LISTS[l.id].label}: ${h.length} name match(es): ${h.slice(0, 3).map((x) => x.name).join("; ")} (${rows.toLocaleString("en-US")} rows screened)`, url: LISTS[l.id].url, grade: "p", tier: "A", detail: { list: l.id, hits: h.slice(0, 10), rows } });
+      if (h.length) ctx.add({ var: "rec.sanctions_detail", value: `${LISTS[l.id].label}: ${h.length} name match(es): ${h.slice(0, 3).map((x) => x.name).join("; ")} (${rows.toLocaleString("en-US")} rows screened)`, url: LISTS[l.id].url, grade: "w", tier: "A", detail: { list: l.id, hits: h.slice(0, 10), rows } });
       hits.push(...h.map((x) => ({ ...x, list: LISTS[l.id].label })));
     }
 
@@ -107,7 +107,7 @@ export default {
     } else ctx.miss("rec.sanctions", "OpenSanctions (PEPs, global lists) not checked: needs OPENSANCTIONS_API_KEY");
 
     if (checked.length) {
-      ctx.add({ var: "rec.sanctions", value: hits.length ? `Possible match on ${[...new Set(hits.map((h) => h.list))].join(", ")}: ${hits.slice(0, 3).map((h) => h.name).join("; ")} — check identity before relying on it` : `Clear: no match for ${subject.name} on ${checked.join(", ")}`, url: LISTS.sdn.url, grade: hits.length ? "p" : "v", tier: "A", detail: { lists: perList, hits: hits.slice(0, 10) } });
+      ctx.add({ var: "rec.sanctions", value: hits.length ? `Possible match on ${[...new Set(hits.map((h) => h.list))].join(", ")}: ${hits.slice(0, 3).map((h) => h.name).join("; ")} — check identity before relying on it` : `Clear: no match for ${subject.name} on ${checked.join(", ")}`, url: LISTS.sdn.url, grade: hits.length ? "w" : "v", tier: "A", detail: { lists: perList, hits: hits.slice(0, 10) } });
     }
 
     if (env.COURTLISTENER_TOKEN) {

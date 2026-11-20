@@ -11,6 +11,8 @@ import { secBase } from "./50-sec.mjs";
 // the record names the company itself, not another company sharing a word with it
 const same = (a, b) => sameCompany(a, b);
 
+export const BUSINESS_CUE = /\b(inc|corp|co\.|company|shares?|stocks?|earnings|revenue|quarter(?:ly)?|results|sales|profit|loss|ceo|cfo|cto|coo|executive|plant|factory|layoffs?|jobs|hiring|acquir\w*|acquisition|merger|deal|launch\w*|announc\w*|reports?|partner\w*|engines?|products?|customers?|guidance|investors?|nasdaq|nyse|ipo|funding|raises?|valuation|hires|appoints?|names|startup|software|platform|unveils|expands|opens|recall|lawsuit|sues|sued|contract|order)\b/i;
+
 /**
  * True when a one-word company name in a headline is a person's surname: "Kim Varga breaks
  * silence" or "Varga might not be available" (an athlete), not Varga Inc.
@@ -120,8 +122,11 @@ const gdelt = {
     // the headline: "Kim Varga breaks silence" is an athlete, not Varga Inc.
     const asPerson = (t) => headlineIsPerson(t, subject.company);
     const named = (t) => phrase.trim().length > 1 && (" " + normName(t) + " ").includes(phrase) && !asPerson(t);
+    // a one-word name is also a street, a surname, a physics term: without a business word in the
+    // headline the article is only Weak ("Varga Highway project", "lattice phonons")
+    const businessy = (t) => !/^\S+$/.test(phrase.trim()) || BUSINESS_CUE.test(t) || (subject.domain && String(t).toLowerCase().includes(subject.domain.toLowerCase()));
     arts.sort((a, b) => named(b.title) - named(a.title));
-    for (const a of arts) push(a.title, a.domain, a.url, a.seendate ? `${a.seendate.slice(0, 4)}-${a.seendate.slice(4, 6)}-${a.seendate.slice(6, 8)}` : null, "GDELT", named(a.title) ? "p" : "w");
+    for (const a of arts) push(a.title, a.domain, a.url, a.seendate ? `${a.seendate.slice(0, 4)}-${a.seendate.slice(4, 6)}-${a.seendate.slice(6, 8)}` : null, "GDELT", named(a.title) && businessy(a.title) ? "p" : "w");
     if (n) return;
     // fallback: Google News RSS, titles that name the company only
     const g = await http.get(`https://news.google.com/rss/search?q=${encodeURIComponent(q + " when:90d")}&hl=en-US&gl=US&ceid=US:en`, { timeout: 10000 });
@@ -132,7 +137,7 @@ const gdelt = {
       const src = decode(x.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1] || "");
       const pd = x.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1];
       if (!title || !named(title.replace(/ - [^-]+$/, ""))) continue;
-      push(title.replace(/ - [^-]+$/, ""), src, link, pd ? new Date(pd).toISOString().slice(0, 10) : null, "Google News RSS");
+      push(title.replace(/ - [^-]+$/, ""), src, link, pd ? new Date(pd).toISOString().slice(0, 10) : null, "Google News RSS", businessy(title) ? "p" : "w");
     }
     if (!n) miss("news.company", `no company-named articles in 90 days: GDELT ${r.data ? "0 hits" : r.status === 429 || /limit requests/i.test(r.text || "") ? "rate-limited (one call per 5 s)" : r.status || r.error}; Google News RSS ${g.ok ? "no title naming the company" : g.status || g.error}`);
   },
