@@ -62,12 +62,12 @@ test("states: filled (best grade), searched-and-empty, couldn't check, no tool y
     const dir = fixtureRoom(base, {
       rows: [
         { var: "social.accounts", value: "linkedin.com/in/janedoe", url: "https://www.linkedin.com/in/janedoe", grade: "p" },
-        { var: "co.filings", value: "10-K 2025", url: "https://www.sec.gov/x", grade: "v" },
+        { var: "co.filings", module: "sec", value: "10-K 2025", url: "https://www.sec.gov/x", grade: "v" },
         { var: "co.filings", value: "8-K", url: "https://www.sec.gov/y", grade: "w" },
         { var: "role.status", value: "current", grade: "p" }, // a var no bucket knows
       ],
       misses: [{ module: "records", var: "rec.courts", searched: "CourtListener: no case naming Jane Doe" }, { module: "sec-person", var: "money.trades", searched: "SEC lookup blocked (HTTP 403): not checked" }],
-      modules: [{ id: "accounts", status: "ok" }, { id: "sec", status: "ok" }, { id: "sec-person", status: "blocked", why: "403" }, { id: "dns", status: "skipped", why: "needs domain" }, { id: "records", status: "ok" }],
+      modules: [{ id: "accounts", status: "ok" }, { id: "sec", status: "ok", found: 1 }, { id: "sec-person", status: "blocked", why: "403" }, { id: "dns", status: "skipped", why: "needs domain" }, { id: "records", status: "ok" }],
     });
     const form = roomForm(dir, { moduleVars: MV });
     const get = (k) => form.buckets.find((b) => b.key === k);

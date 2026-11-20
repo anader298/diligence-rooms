@@ -51,7 +51,15 @@ export const CLAUDE_ALLOWED = [
   "Bash(curl:*)", "Bash(node:*)", "Bash(npm run:*)", "Bash(python3:*)", "Bash(yt-dlp:*)", "Bash(mkdir:*)",
   "Bash(ls:*)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)", "Bash(grep:*)", "Bash(jq:*)", "Bash(sort:*)",
 ];
-export const CLAUDE_DENIED = ["Bash(rm:*)", "Bash(git push:*)", "Bash(git commit:*)", "Bash(git reset:*)", "Bash(netlify:*)", "Bash(npx netlify:*)", "Bash(sudo:*)"];
+export const CLAUDE_DENIED_BASH = ["Bash(rm:*)", "Bash(git push:*)", "Bash(git commit:*)", "Bash(git reset:*)", "Bash(netlify:*)", "Bash(npx netlify:*)", "Bash(sudo:*)"];
+// The ledgers are written only by code (the scripted pass, npm run entry). Claude Code's Edit
+// rules cover every built-in tool that edits files (Edit, Write, MultiEdit, NotebookEdit; a
+// Write(...) rule would not match, per the permissions docs) and shell redirects or tee into
+// those paths. "/" anchors at the run's working directory, the repository root (run-room.mjs).
+// A node or python script that opens the file itself is not covered; npm run entry is such a
+// script, which is how entries still get in.
+export const CLAUDE_DENIED_PATHS = ["Edit(/rooms/*/work/osint/**)"];
+export const CLAUDE_DENIED = [...CLAUDE_DENIED_BASH, ...CLAUDE_DENIED_PATHS];
 
 /**
  * What is actually blocked in an unattended run, per engine, for the prompts (stages.mjs and the
@@ -59,11 +67,12 @@ export const CLAUDE_DENIED = ["Bash(rm:*)", "Bash(git push:*)", "Bash(git commit
  * buildCommand, so it says what the code does.
  */
 export function guardText() {
-  const denied = CLAUDE_DENIED.map((d) => d.replace(/^Bash\((.*?)(?::\*)?\)$/, "$1"));
+  const denied = CLAUDE_DENIED_BASH.map((d) => d.replace(/^Bash\((.*?)(?::\*)?\)$/, "$1"));
   return [
     "Never delete files: overwrite them instead. That is an instruction you keep, not a lock.",
     `What is actually blocked: under Claude Code, these shell commands are refused: ${denied.join(", ")}. node, python3 and curl are allowed and can still delete or overwrite files, so do not use them to delete.`,
-    "Under Codex, the run is in a workspace-write sandbox: it can write only inside this repository (and the temp folder), and nothing inside the repository is blocked.",
+    `Under Claude Code, direct edits to the ledgers are refused too (${CLAUDE_DENIED_PATHS.join(", ")}): hand facts in with npm run entry, which grades them.`,
+    "Under Codex, the run is in a workspace-write sandbox: it can write only inside this repository (and the temp folder), and nothing inside the repository is blocked. Codex has no rule that can refuse edits to the ledgers, so on Codex \"never edit ledger.jsonl or osint.json by hand\" is an instruction only; the form regrades every row when it reads it either way.",
     "Every other rule here is an instruction too, not something the engine enforces.",
   ].join("\n");
 }

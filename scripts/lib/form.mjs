@@ -19,6 +19,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { regradeRows, primaryFromRuns } from "../osint/weights.mjs";
 
 export const FORM_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "config", "form");
 export const COMPANY_LEDGER = "_company";
@@ -192,7 +193,29 @@ export function loadLedgers(roomDir) {
     if (!rows.length && !osint) continue;
     out[e.name] = { name: e.name, rows, misses: osint?.misses || [], modules: osint?.modules || [], ran: !!osint, subject: osint?.subject || null };
   }
+  regradeLedgers(out, selectionFor(roomDir).intake);
   return out;
+}
+
+/**
+ * A stored grade is never trusted: every row is regraded on read with the same rule the writers
+ * use (weights.mjs regradeRows), against the same context entries.mjs uses (a person's ledger
+ * with the company ledger; the company ledger with all of them). A row with no agent mark counts
+ * as a primary record only when its module wrote rows in that ledger's run (osint.json modules),
+ * so a row typed straight into ledger.jsonl cannot claim to be the SEC's record.
+ */
+function regradeLedgers(ledgers, intake = {}) {
+  const Ls = Object.values(ledgers);
+  if (!Ls.length) return;
+  const primaryOk = primaryFromRuns(Object.fromEntries(Ls.map((L) => [L.name, L.modules])));
+  const anySubject = Ls.find((L) => L.subject)?.subject || {};
+  // context is read from the rows as stored, before any ledger is regraded, so order does not matter
+  const stored = Object.fromEntries(Ls.map((L) => [L.name, L.rows.map((r) => ({ ...r }))]));
+  for (const L of Ls) {
+    const subject = { ...(L.subject || anySubject), company: (L.subject || anySubject).company || intake.company || null, domain: (L.subject || anySubject).domain || intake.domain || null };
+    const context = Ls.filter((o) => o.name !== L.name && (L.name === COMPANY_LEDGER || o.name === COMPANY_LEDGER)).flatMap((o) => stored[o.name]);
+    regradeRows(L.rows, subject, { context, primaryOk });
+  }
 }
 
 /** Find a cited row: "dan-x/L-0003", or "L-0003" in the home ledger. */

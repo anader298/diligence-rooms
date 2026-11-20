@@ -1,8 +1,9 @@
 // Entries: how agents hand in what they found. An entry names a bucket of the room's form, a
 // value, the source URL and a note; it goes into the same ledger as the script rows and through
 // the same two-source rule (scripts/osint/weights.mjs). An agent never sets a grade: it may ask
-// for Verified, and the row keeps it only when a second, independent source agrees. An agent's row
-// is never a primary record: code marks it origin "agent". AI judgement slots (kind "ai") hold
+// for Verified, and the row keeps it only when a script row from another, independent source
+// agrees; another agent's row does not count. An agent's row is never a primary record: code
+// marks it origin "agent". The form regrades every row again when it reads the ledgers. AI judgement slots (kind "ai") hold
 // text that cites the ledger ids it rests on; every id must exist, and a "none found" entry is
 // refused on them.
 //
@@ -10,35 +11,33 @@
 //     -> { row, bucket, ledger, warnings }      throws on a bad entry, with the reason
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname, basename } from "node:path";
 import { makeLedger } from "../osint/core.mjs";
 import { loadVariables } from "../osint/run.mjs";
-import { corroborate, loadWeights, isAgentRow } from "../osint/weights.mjs";
+import { regradeRows, primaryFromRuns, loadWeights } from "../osint/weights.mjs";
 import { loadPacks, selectPacks, selectionFor, instances, loadLedgers, resolveRef, COMPANY_LEDGER } from "./form.mjs";
 
 const HTTP = /^https?:\/\/[^\s]+$/i;
 
 /**
- * Grade a ledger the way the scripted pass does, after a new row: every row that was cut from
- * Verified for having one source, and every agent row (origin "agent", whatever module name it
- * carries; older agent rows are marked here), goes back to the grade it claimed, then
- * the two-source rule runs again over this ledger plus `context` rows (other ledgers, read only).
+ * Grade a ledger the way the scripted pass does, after a new row: every row goes back to the
+ * grade it claimed (weights.mjs claimedGrade; agent rows are origin "agent", whatever module name
+ * they carry; older agent rows are marked here), then the two-source rule runs again over this
+ * ledger plus `context` rows (other ledgers, read only). A row counts as a primary record only
+ * when its module wrote rows in that ledger's scripted run (osint.json modules). `modules`:
+ * { ledger name: modules[] } for the context ledgers; the home ledger's are read from its folder.
  * Writes the ledger file. Returns the ledger's rows.
  */
-export function regrade(ledger, { subject = {}, context = [] } = {}) {
-  for (const r of ledger.rows) {
-    const agent = isAgentRow(r);
-    if (agent && r.origin !== "agent") r.origin = "agent";
-    const cut = r.graded_from === "v" && /^one source/.test(r.grade_basis || "");
-    if (cut || (agent && r.claim)) {
-      r.grade = r.claim || r.graded_from;
-      for (const k of ["graded_from", "grade_basis", "signals", "corroborated_by"]) delete r[k];
-    }
+export function regrade(ledger, { subject = {}, context = [], modules = {} } = {}) {
+  const dir = dirname(ledger.file);
+  const home = basename(dir);
+  let own = [];
+  try {
+    own = existsSync(join(dir, "osint.json")) ? JSON.parse(readFileSync(join(dir, "osint.json"), "utf8")).modules || [] : [];
+  } catch {
+    own = [];
   }
-  // other ledgers' rows are read only, and cited by their qualified id ("<ledger>/L-0001")
-  const ctx = context.map((r) => ({ ...r, id: r.ref || r.id }));
-  const all = [...ledger.rows, ...ctx];
-  corroborate(all, subject, loadWeights());
+  regradeRows(ledger.rows, subject, { context, primaryOk: primaryFromRuns({ ...modules, [home]: own }, home), weights: loadWeights() });
   writeFileSync(ledger.file, ledger.rows.map((r) => JSON.stringify(r)).join("\n") + (ledger.rows.length ? "\n" : ""));
   return ledger.rows;
 }
@@ -112,7 +111,8 @@ export function submitEntry(roomDir, e, { formDir } = {}) {
   if (!added) throw new Error("nothing to add");
   const subject = ledgers[home]?.subject || Object.values(ledgers).find((L) => L.subject)?.subject || { name: null, company: sel.intake.company, domain: sel.intake.domain };
   const context = Object.values(ledgers).filter((L) => L.name !== home && (inst.scope === "company" || L.name === COMPANY_LEDGER)).flatMap((L) => L.rows);
-  regrade(ledger, { subject: { ...subject, domain: subject.domain || sel.intake.domain }, context });
+  const modules = Object.fromEntries(Object.values(ledgers).map((L) => [L.name, L.modules]));
+  regrade(ledger, { subject: { ...subject, domain: subject.domain || sel.intake.domain }, context, modules });
   syncOsintJson(dir, ledger.rows);
   return { row: ledger.rows.find((r) => r.id === added.id), bucket: inst, ledger: home, warnings };
 }

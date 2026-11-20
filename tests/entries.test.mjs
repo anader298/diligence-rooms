@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { submitEntry, regrade } from "../scripts/lib/entries.mjs";
 import { makeLedger } from "../scripts/osint/core.mjs";
-import { isPrimary } from "../scripts/osint/weights.mjs";
+import { isPrimary, corroborate } from "../scripts/osint/weights.mjs";
 import { roomForm, formGate } from "../scripts/lib/form.mjs";
 import { fixtureRoom } from "./fixtures/form-room.mjs";
 
@@ -155,6 +155,8 @@ test("regrade: every agent-origin row goes back to its claim and through the two
       { id: "L-0003", module: "sec", var: "co.filings", value: "10-K filed 2026-02-01", url, grade: "v", key: "c" },
     ];
     writeFileSync(join(d, "ledger.jsonl"), old.map((r) => JSON.stringify(r)).join("\n") + "\n");
+    // the scripted run's report: the SEC module wrote rows in this ledger
+    writeFileSync(join(d, "osint.json"), JSON.stringify({ subject: { company: "Acme Freight" }, rows: [], misses: [], modules: [{ id: "sec", status: "ok", found: 1 }] }));
     const ledger = makeLedger(d, []);
     regrade(ledger, { subject: { company: "Acme Freight", domain: "acme.example" } });
     const byId = Object.fromEntries(readFileSync(join(d, "ledger.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l)).map((r) => [r.id, r]));
@@ -193,6 +195,64 @@ test("AI slots: a none-found entry is refused at submit time and does not clear 
     assert.equal(form.buckets.find((b) => b.key === "jane-doe/persona.verdict").state, "filled");
     gate = formGate(form);
     assert.ok(!gate.errors.some((e) => /persona.verdict/.test(e)), gate.errors.join("\n"));
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("two agents do not make Verified: agent rows from two sites stay Partly until a script row agrees", () => {
+  const base = mkdtempSync(join(tmpdir(), "agent-pair-"));
+  try {
+    const dir = fixtureRoom(base, { rows: [], modules: [] });
+    const a = submitEntry(dir, { bucket: "seat.title", person: "jane-doe", value: "Jane Doe, Chief Operating Officer", url: "https://acme-freight.example/team" });
+    const b = submitEntry(dir, { bucket: "seat.title", person: "jane-doe", value: "Chief Operating Officer Jane Doe", url: "https://news.example/jane-doe-coo" });
+    assert.equal(a.row.grade, "p");
+    assert.equal(b.row.grade, "p", "another agent's row from another site is not an independent signal");
+    assert.match(b.row.grade_basis, /one of them a script row/);
+    for (const r of ledgerRows(dir, "jane-doe")) assert.equal(r.grade, "p", r.id);
+    // the form, regrading on read, agrees
+    const form = roomForm(dir, { moduleVars: MV });
+    assert.equal(form.buckets.find((x) => x.key === "jane-doe/seat.title").grade, "p");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+  // the rule itself: agent + agent stays Partly; agent + script row is Verified
+  const agentRow = (id, url) => ({ id, module: "agent", origin: "agent", claim: "v", var: "role.title", value: "Chief Operating Officer", url, grade: "v" });
+  const pair = corroborate([agentRow("L-1", "https://a.example/x"), agentRow("L-2", "https://b.example/y")], {});
+  assert.deepEqual(pair.map((r) => r.grade), ["p", "p"]);
+  const withScript = corroborate([agentRow("L-1", "https://a.example/x"), agentRow("L-2", "https://b.example/y"), { id: "L-3", module: "leadership", var: "role.title", value: "Chief Operating Officer", url: "https://c.example/z", grade: "p" }], {});
+  assert.deepEqual(withScript.slice(0, 2).map((r) => r.grade), ["v", "v"]);
+  assert.deepEqual(withScript[0].corroborated_by, ["L-3"], "only the script row counts");
+  // an agent row's own signalSources are not trusted
+  const forged = corroborate([{ ...agentRow("L-1", "https://a.example/x"), detail: { signalSources: ["sec", "linkedin"] } }], {});
+  assert.equal(forged[0].grade, "p");
+});
+
+test("a stored grade is never trusted: rows hand-edited to Verified are regraded on read", () => {
+  const base = mkdtempSync(join(tmpdir(), "hand-edit-"));
+  try {
+    const dir = fixtureRoom(base, {
+      rows: [
+        // typed straight into ledger.jsonl: a "sec" row with no origin, but the SEC module wrote nothing in this run
+        { var: "co.filings", module: "sec", value: "10-K 2025", url: "https://www.sec.gov/x", grade: "v", grade_basis: "primary record" },
+        // an agent row whose grade was edited from Partly to Verified, the cut marks removed
+        { var: "role.title", module: "agent", origin: "agent", entry: "fact", bucket: "seat.title", claim: "v", value: "Chief Operating Officer", url: "https://news.example/coo", grade: "v", grade_basis: "2 independent sources" },
+        // a script row cut to Partly and edited back to Verified
+        { var: "role.title", module: "leadership", value: "Chief Operating Officer", url: "https://news.example/team", grade: "v" },
+      ],
+      modules: [{ id: "sec", status: "ok", found: 0 }, { id: "leadership", status: "ok", found: 1 }],
+    });
+    const form = roomForm(dir, { moduleVars: MV });
+    assert.equal(form.buckets.find((x) => x.key === "filings.recent").grade, "p", "a module that wrote no rows in the run is not a primary record");
+    assert.equal(form.buckets.find((x) => x.key === "jane-doe/seat.title").grade, "p", "one source family: Partly, whatever the file says");
+    // the file is left as written; only the reading is regraded
+    assert.equal(ledgerRows(dir, "jane-doe")[0].grade, "v");
+    // once the run really wrote SEC rows, the same row is a primary record again
+    const osintFile = join(dir, "work", "osint", "jane-doe", "osint.json");
+    const o = JSON.parse(readFileSync(osintFile, "utf8"));
+    o.modules[0].found = 3;
+    writeFileSync(osintFile, JSON.stringify(o));
+    assert.equal(roomForm(dir, { moduleVars: MV }).buckets.find((x) => x.key === "filings.recent").grade, "v");
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

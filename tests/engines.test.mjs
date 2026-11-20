@@ -6,7 +6,7 @@ import { mkdtempSync, writeFileSync, readFileSync, statSync, rmSync, chmodSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
-import { buildCommand, envFor, setEnvVar, usageFromLine, mergeEngineConfig, defaultConfig, notReady, plainError, runEngine, CLAUDE_DENIED, CLAUDE_ALLOWED } from "../scripts/lib/engines.mjs";
+import { buildCommand, envFor, setEnvVar, usageFromLine, mergeEngineConfig, defaultConfig, notReady, plainError, runEngine, CLAUDE_DENIED, CLAUDE_ALLOWED, guardText } from "../scripts/lib/engines.mjs";
 import { stagePlan } from "../scripts/lib/stages.mjs";
 import { REPO } from "../scripts/lib/compose.mjs";
 
@@ -220,4 +220,16 @@ test("progress: pages drive the bar, Codex waves name the stage, a clean finish 
   } finally {
     rmSync(d, { recursive: true, force: true });
   }
+});
+
+test("ledger files: Claude Code refuses direct edits to rooms/*/work/osint; Codex is told it is an instruction only", () => {
+  const { args } = buildCommand("claude", { auth: "login" });
+  const from = args.indexOf("--disallowedTools");
+  assert.ok(from > 0);
+  assert.ok(args.slice(from).includes("Edit(/rooms/*/work/osint/**)"), "the Edit deny rule is in the argv");
+  assert.ok(!args.some((a) => /^Write\(/.test(a)), "Write(...) rules do not match in Claude Code; Edit(...) covers Write");
+  assert.ok(args.includes("Bash(npm run:*)"), "npm run entry still runs");
+  const g = guardText();
+  assert.match(g, /direct edits to the ledgers are refused too \(Edit\(\/rooms\/\*\/work\/osint\/\*\*\)\)/);
+  assert.match(g, /Codex has no rule that can refuse edits to the ledgers/);
 });
