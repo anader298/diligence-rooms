@@ -41,3 +41,11 @@ export function hideNoneRows(html) {
     return grades.length && grades.every((g) => g === "none") ? "" : row;
   });
 }
+
+/**
+ * In a room with a form, a checklist table no row of which carries a grade is a skeleton left
+ * unfilled: the form block on the page holds those findings. Drop the table and its heading.
+ */
+export function dropEmptyChecklists(html) {
+  return String(html).replace(/(<h2>[^<]*<\/h2>\s*)?<div class="tw"><table class="checklist[^"]*">[\s\S]*?<\/table><\/div>\s*/gi, (m) => (/class="grade [a-z-]+"/.test(m) ? m : ""));
+}

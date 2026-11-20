@@ -3,8 +3,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const WAVES = ["inventory", "harvest", "research", "people-osint", "personas", "mirror", "synthesis", "verification", "corrections", "render", "one-card"];
-const WAVE_LABEL = { inventory: "Inventory", harvest: "Collecting sources", research: "Company research", "people-osint": "People research", personas: "Personas", mirror: "How they see us", synthesis: "Writing banks and pages", verification: "Checking the facts", corrections: "Applying fixes", render: "Rendering pages", "one-card": "One card and summary" };
+const WAVES = ["inventory", "harvest", "research", "people-osint", "personas", "mirror", "synthesis", "verification", "corrections", "ai-slots", "render", "one-card"];
+const WAVE_LABEL = { inventory: "Inventory", harvest: "Collecting sources", research: "Company research", "people-osint": "People research", personas: "Personas", mirror: "How they see us", synthesis: "Writing banks and pages", verification: "Checking the facts", corrections: "Applying fixes", "ai-slots": "AI judgement slots", render: "Rendering pages", "one-card": "One card and summary" };
 
 const has = (files, re) => files.some((f) => re.test(f));
 

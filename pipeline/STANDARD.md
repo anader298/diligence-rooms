@@ -127,12 +127,9 @@ A section with no `group` is placed by its id (mode packs under `role`, org-type
 - `companion`: how to use the live companion in this room's meetings: the setup checklist, the consent rule and who has agreed, and what it must never surface (sec. 15).
 - `meeting-1`: the brief before the meeting and the debrief written within the hour after it. Copy to `meeting-<n>` for each later meeting or round.
 
-**G. Answers, drills, vocabulary**
-- `answer-bank`: 100 to 200 questions, each answered in the first person and graded by someone other than the writer.
-- `practice-bank`: questions in each persona's voice, push-back drills (new fact or no new fact), mini-cases, and the grading rule.
-- `push-back-gym`: 15 vague prompts, 20 push-backs and 10 "what else" moments, with a scoring sheet.
-- `mock-transcripts`: a short screen, the full meeting, the worst case, and 12 one-breath lines.
-- `glossary`: 250+ terms for a full room: term, plain meaning, how they use it.
+**G. Vocabulary** (and the optional practice pack)
+- `glossary`: 40+ terms for a full room: term, plain meaning, how they use it.
+- Practice pack, off by default (`templates/skeleton/extras/practice`; studio "Practice pages", `new-room --practice`): `answer-bank` (about 20 questions, answered in the first person, graded by someone other than the writer), `practice-bank` (questions in each persona's voice, a few push-backs), `push-back-gym` (short), `mock-transcripts` (one short screen and 12 one-breath lines).
 
 **H. Our side, as they will see it** (the mirror, sec. 5.4)
 - `our-side`: what a cold search of our side returns, compared with the facts file, with conflicts and fixes.
@@ -369,6 +366,8 @@ Intake classifies the counterparty; the matching pack adds the pages and sources
 
 ## 9. Marking: one legend, enforced
 
+**The form comes first.** Every room fills the same buckets (`config/form/`: core per person, core company, one pack per mode and org type, optional extras; the list is in `docs/form-buckets.md`). Facts are ledger rows (`rooms/<slug>/work/osint/*/ledger.jsonl`): the scripted pass writes them, agents hand in entries with `npm run entry`, and code grades every row with the two-source rule, so an agent cannot write Verified. Code computes each bucket's state (filled with grade and source, searched and empty, couldn't check, no tool yet) and renders it on its page and on the form page. AI judgement (persona verdict, drivers, summary, the line) is an entry that cites the ledger ids it rests on, labelled as AI judgement. Before the build, the form check (`npm run form -- <slug> --check`) fails a room with a required bucket left with no entry, an AI entry citing ids that do not exist, an empty Start here, or a selected pack with no file; `run-room` does not build it unless run with `--draft`. The grades below are the same for ledger rows and for anything written on pages.
+
 **Fact grades** (the exact classes the build counts), in this order:
 
 | Grade | Span | Shorthand | Means |
@@ -405,19 +404,24 @@ Render expands the shorthands to the spans in both HTML and markdown pages. Weak
 
 | # | Stage | Who | Search budget | Output |
 |---|---|---|---|---|
-| 0 | **Intake**: parse the line, read `config/our-side.json`, detect org type, ask at most 3 questions only if missing (meeting date and deadlines, people, the ask); write `meetings[]` and `deadlines[]` into `room.json` and `intake.json` | orchestrator | 5 | `intake.json`, a new room from the skeleton |
+| 0 | **Intake**: parse the line (company, website domain, people, the ask), read `config/our-side.json`, detect org type, ask at most 3 questions only if missing (meeting date and deadlines, people, the ask); write `meetings[]` and `deadlines[]` into `room.json` and `intake.json` | orchestrator | 5 | `intake.json`, a new room from the skeleton |
 | 1 | **Inventory**: what we already hold on them (prior rooms, notes, mail threads, the facts file) | 1 agent, offline | 0 | `INVENTORY.md` |
 | 2 | **Harvest** (scripted): sitemap crawl and text extract; EDGAR, 990, Form D, ADV pulls; podcast and video transcripts; staff page and profile captures; Wayback captures of key pages | scripts plus 1 agent | 20 (curl is unlimited) | `corpus/` with an index and a term-count file |
 | 2b | **Enrich** (licensed data and own exports): `npm run enrich -- <slug>` prints a credit estimate per provider and stops; with the user's yes, `--yes` fetches, normalises and merges with per-field provenance and lists conflicts (sec. 5.6) | script; the orchestrator asks for the yes | 0 (credits shown first) | `work/connectors/merged.json`, `conflicts.json`, `run.json` |
 | 3 | **Research wave** (online): who they are; money and public financials; rules; outside view (partners, reviews, forums, news, domain and tech); org chart and people map; mode intel | 3 agents at a time | about 50 each | graded notes |
-| 3b | **People OSINT** (online, cold): names first, then socials, personal life and interests, partner socials, LinkedIn deep read, education, writing, network, public record, financials, timeline and their circles, every checklist row run and logged in the OSINT log, one agent per person | 1 per person | about 50 each | notes per person, OSINT log rows |
+| 3a | **Scripted OSINT pass** (no AI): every module per person, with the company and its domain; the ledgers | script | 0 | `work/osint/<person>/` |
+| 3b | **People OSINT** (online, cold): work the person's unfilled buckets and hand in entries; names first, then socials, personal life and interests, partner socials, LinkedIn deep read, education, writing, network, public record, financials, timeline and their circles, every checklist row run and logged in the OSINT log, one agent per person | 1 per person | about 50 each | notes per person, OSINT log rows |
 | 3c | **Personas** (cold): the verdict and claims against the record, what drives them, the 11 sections, "How they think and behave" and own words, from 3b and the transcripts | 1 per person | about 15 each | `PERSONA - name.md`, `OWN WORDS - name.md` |
 | 3d | **Mirror** (online, blind to the room): the 3b profile run on our side | 1 agent | about 30 | `MIRROR.md` |
 | 4 | **Synthesis** (offline): translation, mode pack pages, banks, glossary, our-side comparison | 4 to 6 agents | 0 | notes |
 | 5 | **Verification**: (a) re-fetch every source and recompute every figure; (b) coverage matrix of our prep against their library; (c) independent grader on the banks; (d) facts-file reconciliation; (e) re-run the OSINT log and mark new hits | 3 agents, different briefs | 40 | `ACCURACY REVIEW.md`, `GAP REVIEW.md`, fixes applied |
-| 6 | **Render**: notes into `rooms/<slug>/room.json` and `pages/*.html`; lint; build; local preview | 1 agent plus build | 0 | the room |
+| 5b | **AI slots** (offline): judgement entries (persona verdict and drivers, company drivers, Start here) that cite ledger ids; persona slots cold | 1 per person plus 1 | 0 | ledger entries |
+| 5c | **Form check** (code): required buckets, cites, Start here, packs; a failure stops the build unless `--draft` | script | 0 | `work/form.json` |
+| 6 | **Render**: notes into `rooms/<slug>/room.json` and `pages/*.html` (narrative only; the build renders the form's buckets); lint; build; local preview | 1 agent plus build | 0 | the room |
 | 7 | **One card and summary last**: written after everything else, aimed at the specific person in the room; the summary paragraph goes into `room.json` | orchestrator | 0 | `one-card`, `room.json.summary` |
 | 8 | **Loop**: after each meeting, debrief within the hour, then reconciliation, the corrections log, a new meeting section, and an OSINT re-run before the next meeting | the person who was in the room gives notes | 20 | updated room |
+
+`run-room` runs these in a fixed order for both engines, one fresh engine call per stage: scripted pass, stages 1 to 5, AI slots, form check, then lint and build.
 
 **The only tasks for our side's person:**
 1. Answer at most 3 intake questions (including the meeting date and deadlines, if missing).
@@ -430,7 +434,7 @@ Render expands the shorthands to the spans in both HTML and markdown pages. Weak
 
 ## 11. Tiers and depth targets
 
-**Light** (1 day, 10 to 14 pages plus the person pages): one-card, who-they-are, money, rules, people-map, per person persona + interests + names + socials + public-record + financials (the other person pages kept, each checklist row at least "Unknown: not searched in light tier"), duty-map plus 2 mode pages, answer-bank, osint-log, our-side.
+**Light** (1 day, 10 to 14 pages plus the person pages): one-card, who-they-are, money, rules, people-map, per person persona + interests + names + socials + public-record + financials (the other person pages kept, each checklist row at least "Unknown: not searched in light tier"), duty-map plus 2 mode pages, osint-log, our-side (answer-bank only with the practice pack).
 **Full** (1 to 3 days, 40+ pages): everything in the core, the mode pack and the org-type pack.
 
 A room fails lint if it is under these targets, unless the gap ledger on `sources` explains why:
@@ -443,7 +447,8 @@ A room fails lint if it is under these targets, unless the gap ledger on `source
 | Sources cited | 150+ | 40+ |
 | Share of fact lines graded verified or partly | 70%+ | 60%+ |
 | Their documents indexed | all reachable | top 25 |
-| Glossary terms | 250+ | 60+ |
+| Glossary terms | 40+ | 20+ |
+| Form check | passes: required buckets answered, AI entries cite real ledger rows, Start here filled | passes |
 | Filings bank instruments | 25+ (where they file) | 10+ |
 | Persona per named person | 1, all 11 sections, 5+ own quotes, 10+ questions | 1 |
 | Verdict and drivers per persona | the verdict (Proven / Mixed / Unproven), 3+ claims against the record, all four drivers graded | the verdict, 1+ claim, four drivers |
@@ -460,8 +465,8 @@ A room fails lint if it is under these targets, unless the gap ledger on `source
 | Partners listed | 15+ | 5+ |
 | OSINT log rows | 150+ | 40+ |
 | Mirror | full profile on our side | socials and record |
-| Answer bank | 150+ | 40+ |
-| Mock transcripts | 3 | 1 |
+| Answer bank (practice pack only) | 20+ | 10+ |
+| Mock transcripts (practice pack only) | 1 | 0 |
 | Open questions per "Them" page | 5+ | 3+ |
 
 ---

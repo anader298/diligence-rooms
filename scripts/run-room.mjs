@@ -1,13 +1,19 @@
 #!/usr/bin/env node
 // Run a room's research with the engine chosen in the studio (config/engine.json).
 //
-//   node --env-file-if-exists=.env scripts/run-room.mjs <slug>
+//   node --env-file-if-exists=.env scripts/run-room.mjs <slug> [--draft]
 //
-// rooms/<slug>/RUN.sh calls this, and the studio's Run button runs RUN.sh.
-// Claude Code: one call with the P0 orchestrator prompt (rooms/<slug>/work/P0.md); it spawns
-// its own subagents. Codex: one fresh call per stage (scripts/lib/stages.mjs), at most three
-// web-searching calls at once. Then lint and build. Never deploys.
-// Exit codes: 0 done, 1 failed, 2 not set up, 3 stopped by the usage guard, 130 stopped by the user.
+// rooms/<slug>/RUN.sh calls this, and the studio's Run button runs RUN.sh. The order is fixed
+// by code, for both engines (Claude Code and Codex):
+//   1. the scripted OSINT pass per person (no AI): the ledgers
+//   2. the stages of pipeline/PROMPTS.md (scripts/lib/stages.mjs), one fresh engine call each,
+//      at most three web-searching calls at once: agents hand in entries (npm run entry)
+//   3. the AI slots stage: judgement entries that cite ledger ids
+//   4. the form check (scripts/lib/form.mjs): a failed check stops here; --draft builds anyway
+//   5. lint (report) and build. Never deploys.
+// Exit codes: 0 done, 1 failed (a stage, or the form check), 2 not set up, 3 stopped by the
+// usage guard, 130 stopped by the user.
+// Tests: DR_ROOMS and DR_ENGINE_CONFIG point at other folders.
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -15,13 +21,17 @@ import { spawnSync } from "node:child_process";
 import { REPO, SLUG_RE } from "./lib/compose.mjs";
 import { ENGINES, loadEngineConfig, notReady, runEngine, modelFor } from "./lib/engines.mjs";
 import { stagePlan, pool } from "./lib/stages.mjs";
+import { roomForm, formGate } from "./lib/form.mjs";
+import { moduleVars } from "./osint/run.mjs";
 
 const slug = process.argv[2];
+const draft = process.argv.includes("--draft") || process.env.RUN_DRAFT === "1";
 if (!SLUG_RE.test(slug || "")) {
   console.error("usage: node scripts/run-room.mjs <slug>");
   process.exit(2);
 }
-const roomDir = join(REPO, "rooms", slug);
+const roomsRoot = process.env.DR_ROOMS || join(REPO, "rooms");
+const roomDir = join(roomsRoot, slug);
 const workDir = join(roomDir, "work");
 if (!existsSync(join(roomDir, "intake.json"))) {
   console.error(`rooms/${slug}/intake.json not found; start the room in the studio first`);
@@ -29,7 +39,7 @@ if (!existsSync(join(roomDir, "intake.json"))) {
 }
 mkdirSync(workDir, { recursive: true });
 
-const cfg = loadEngineConfig(join(REPO, "config", "engine.json"));
+const cfg = loadEngineConfig(process.env.DR_ENGINE_CONFIG || join(REPO, "config", "engine.json"));
 const why = notReady(cfg);
 if (why) {
   console.error(`Not ready to run: ${why}. Open the studio (npm run studio) and use Connect AI.`);
@@ -90,19 +100,9 @@ function finish(code, extra = {}) {
 
 say(`engine ${ENGINES[cfg.engine].name} (${cfg.auth === "key" ? "API key" : "signed-in account"}), model ${modelFor(cfg) || "default"}, usage limit ${cfg.usageLimit}%`);
 
-if (cfg.engine === "claude") {
-  const promptFile = join(workDir, "P0.md");
-  if (!existsSync(promptFile)) {
-    console.error(`rooms/${slug}/work/P0.md not found; press Start for this room in the studio again`);
-    process.exit(2);
-  }
-  const r = await runEngine({ engineId: "claude", cfg, prompt: readFileSync(promptFile, "utf8"), cwd: REPO, log: (l) => console.log(l), usageState: usage });
-  if (r.stoppedForUsage) stopped = "usage";
-  if (r.error && !stopped) say(`error: ${r.error}`);
-  finish(stopped === "usage" ? 3 : stopped === "user" ? 130 : r.error ? 1 : 0);
-}
-
-// ---------------------------------------------------------------- Codex: stage by stage
+// ---------------------------------------------------------------- stages, in a fixed order
+// Both engines run the same plan, one fresh call per stage, so the cold stages never see our
+// side and the order does not depend on a model following an orchestrator prompt.
 
 const intake = JSON.parse(readFileSync(join(roomDir, "intake.json"), "utf8"));
 let ours = {};
@@ -120,7 +120,7 @@ for (const w of waves) {
     if (stopped) return;
     say(`-> ${s.id} started`);
     const tag = `[${s.id}] `;
-    const r = await runEngine({ engineId: "codex", cfg, prompt: s.prompt, cwd: REPO, log: (l) => console.log(tag + l), usageState: usage, lastMessageFile: join(workDir, `stage-${s.id.replace(/\s+/g, "-")}.md`) });
+    const r = await runEngine({ engineId: cfg.engine, cfg, prompt: s.prompt, cwd: REPO, log: (l) => console.log(tag + l), usageState: usage, lastMessageFile: join(workDir, `stage-${s.id.replace(/\s+/g, "-")}.md`) });
     if (r.stoppedForUsage) stopped = "usage";
     if (r.error && !stopped) {
       failed.push(s.id);
@@ -129,11 +129,28 @@ for (const w of waves) {
   });
 }
 
+// The form check before the build: required buckets have a state, AI entries cite real ledger
+// rows, Start here is filled, the selected packs exist. A failed check stops the build unless
+// this is a draft (--draft or RUN_DRAFT=1).
+let formFailed = false;
 if (!stopped) {
+  say("form check");
+  const room = JSON.parse(readFileSync(join(roomDir, "room.json"), "utf8"));
+  const form = roomForm(roomDir, { moduleVars: await moduleVars(), pageIds: new Set((room.sections || []).flatMap((s) => (s.pages || []).map((p) => p.id))) });
+  const gate = formGate(form);
+  if (form) writeFileSync(join(workDir, "form.json"), JSON.stringify({ ...form, gate }, null, 1));
+  if (form) say(`form: ${form.buckets.length} buckets: ${form.counts.filled} filled, ${form.counts.empty} searched and empty, ${form.counts.blocked} couldn't check, ${form.counts["no-tool"]} no tool yet`);
+  for (const e of gate.errors.slice(0, 40)) say(`form: ${e}`);
+  if (!gate.ok) {
+    formFailed = true;
+    say(draft ? `form check FAILED (${gate.errors.length}); building anyway as a draft` : `form check FAILED (${gate.errors.length}): not building. Fix the entries, or run again with --draft to build a draft.`);
+  } else say("form check passed");
+}
+if (!stopped && (!formFailed || draft)) {
   say("lint and build");
   for (const script of ["lint.mjs", "build.mjs"]) {
-    const r = spawnSync(process.execPath, [join(REPO, "scripts", script), slug], { cwd: REPO, encoding: "utf8" });
+    const r = spawnSync(process.execPath, [join(REPO, "scripts", script), slug], { cwd: REPO, encoding: "utf8", env: process.env });
     console.log((r.stdout + r.stderr).trim());
   }
 }
-finish(stopped === "usage" ? 3 : stopped === "user" ? 130 : failed.length ? 1 : 0, { failedStages: failed });
+finish(stopped === "usage" ? 3 : stopped === "user" ? 130 : failed.length || (formFailed && !draft) ? 1 : 0, { failedStages: failed, formFailed, draft });

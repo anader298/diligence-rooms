@@ -24,7 +24,7 @@
 import { readFileSync, writeFileSync, mkdirSync, rmSync, readdirSync, existsSync, copyFileSync, cpSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readPageBody, isPersonPage, hideNoneRows, stripComments } from "./lib/pages.mjs";
+import { readPageBody, isPersonPage, hideNoneRows, stripComments, dropEmptyChecklists } from "./lib/pages.mjs";
 import { summaryHtml, asideHtml, oneCardWhen, processBlock } from "./lib/schedule.mjs";
 import { GROUPS, groupOf, partOf } from "./lib/compose.mjs";
 import {
@@ -181,6 +181,7 @@ function buildRoom(slug) {
       const pg = page._generated && form ? { body: formPage(form, gate) } : readPageBody(dir, page.id);
       if (!pg) fail(`missing page rooms/${slug}/pages/${page.id}.html (or .md)`);
       if (form && !page._generated) {
+        pg.body = dropEmptyChecklists(pg.body);
         const mine = form.buckets.filter((b) => b.pageId === page.id);
         if (mine.length) pg.body = page.id === "one-card" ? insertAfterLead(pg.body, formBlock(mine)) : insertBeforeTail(pg.body, formBlock(mine));
       }

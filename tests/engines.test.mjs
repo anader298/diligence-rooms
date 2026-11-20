@@ -125,19 +125,24 @@ process.exit(0);
   }
 });
 
-test("Codex stage plan: per-person cold stages carry no trace of our side", () => {
+test("stage plan (both engines): fixed order, AI slots after verification; per-person cold stages carry no trace of our side", () => {
   const md = readFileSync(join(REPO, "pipeline", "PROMPTS.md"), "utf8");
   const intake = { company: "Acme Freight", people: [{ name: "Jane Doe", slug: "jane-doe" }, { name: "Raj Rao", slug: "raj-rao" }], goal: "pitch a contract", modes: ["pitch"], orgType: "other", meetingDate: "2026-12-01", tier: "light", meetings: [], deadlines: [] };
   const ours = { name: "Zed Ourname", organisation: "Ourco Unique", factsFile: "config/facts.md" };
   const waves = stagePlan(md, intake, "acme-freight", ours);
   const names = waves.map((w) => w.wave);
-  assert.deepEqual(names, ["inventory", "harvest", "research", "people-osint", "personas", "mirror", "synthesis", "verification", "corrections", "render", "one-card"]);
+  assert.deepEqual(names, ["inventory", "harvest", "research", "people-osint", "personas", "mirror", "synthesis", "verification", "corrections", "ai-slots", "render", "one-card"]);
+  const slots = waves.find((w) => w.wave === "ai-slots").stages;
+  assert.deepEqual(slots.map((s) => s.id), ["P8a jane-doe", "P8a raj-rao", "P8a company"]);
+  assert.ok(slots[0].cold && !slots[2].cold, "person slots are cold; the company slot may read our side");
+  assert.match(slots[0].prompt, /--cites/);
   const osint = waves.find((w) => w.wave === "people-osint").stages;
   assert.deepEqual(osint.map((s) => s.id), ["P4a jane-doe", "P4a raj-rao"]);
   assert.match(osint[0].prompt, /This stage covers one person only: Jane Doe/);
+  assert.match(osint[0].prompt, /npm run entry -- acme-freight --list --person jane-doe/, "agents hand in entries, by bucket");
   assert.doesNotMatch(osint[0].prompt, /Raj Rao.*\(page suffix/);
   const cold = waves.flatMap((w) => w.stages).filter((s) => s.cold);
-  assert.ok(cold.length >= 5, "P4a x2, P4b x2, P5e");
+  assert.ok(cold.length >= 7, "P4a x2, P4b x2, P5e, P8a x2");
   for (const s of cold) {
     assert.doesNotMatch(s.prompt, /Zed Ourname|Ourco Unique/, s.id);
     assert.match(s.prompt, /must not read config\/our-side\.json/, s.id);
@@ -185,7 +190,7 @@ test("progress: pages drive the bar, Codex waves name the stage, a clean finish 
     const lint = { pages: 40, skeleton: new Array(20).fill("p") };
     let g = roomProgress(d, lint, null, { running: true });
     assert.equal(g.pagesDone, 20);
-    assert.equal(g.label, "Stage 3 of 11: Company research");
+    assert.equal(g.label, "Stage 3 of 12: Company research");
     assert.equal(g.pct, 43);
     writeFileSync(join(d, "work", "ACCURACY REVIEW.md"), "x");
     g = roomProgress(d, { pages: 40, skeleton: [] }, "", { running: true });

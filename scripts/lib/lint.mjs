@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { readPageBody, pageFile } from "./pages.mjs";
 import { sha256, PERSON_PAGES, RENAMED_PAGES } from "./compose.mjs";
+import { roomForm, formGate } from "./form.mjs";
 
 // Glossary and answer-bank targets were cut (250 -> 40, 150 -> 20): the practice pages are an
 // optional pack now, and the answer-bank count is only checked when a room has one.
@@ -176,10 +177,30 @@ export function lintRoom(roomDir, opts = {}) {
     check("pages missing p.meta", r.noMeta.length, 0, true),
     check("missing page files", r.missing.length, 0, true),
   ];
+  // The form check (scripts/lib/form.mjs), for rooms with ledgers: required buckets have a state,
+  // AI entries cite real ledger rows, Start here buckets are filled, the selected packs exist.
+  // In those rooms the form replaces the page checklists: findings are ledger rows rendered by the
+  // build, so blank checklist rows, the interests count and the persona blocks are not judged.
+  const form = roomForm(roomDir, { moduleVars: opts.moduleVars || {}, pageIds: new Set(allIds) });
+  if (form) {
+    const gate = formGate(form);
+    r.form = { counts: form.counts, buckets: form.buckets.length, other: form.other.length, ok: gate.ok, errors: gate.errors, warnings: gate.warnings };
+    r.checks = r.checks.filter((c) => c.name !== "checklist rows with no grade");
+  }
+  // Start here is never empty: the summary, and the one card filled (a room once scored 100 with both empty).
+  const startEmpty = [];
+  const formSummary = form?.buckets.some((b) => b.id === "start.summary" && b.state === "filled");
+  if (!String(room.summary || "").trim() && !formSummary) startEmpty.push("room.json summary");
+  const cardWords = text(String(readPageBody(roomDir, "one-card")?.clean || "").replace(/<h2[\s\S]*?<\/h2>/gi, " ")).split(" ").filter(Boolean).length;
+  if (allIds.includes("one-card") && (r.skeleton.includes("one-card") || cardWords < 20)) startEmpty.push("one-card");
+  r.startEmpty = startEmpty;
   // Rooms composed before the interests page existed have none; the check applies only when they do.
-  if (r.interests.length) r.checks.push(check("people with under 8 interest rows checked", r.interests.filter((x) => x.rows < INTEREST_ROWS).length, 0, true));
-  // Every filled persona opens with the verdict, the claims against the record and what drives them.
-  if (r.personas.length) r.checks.push(check("personas missing the verdict or what drives them", r.personas.filter((x) => x.missing.length).length, 0, true));
+  if (r.interests.length && !form) r.checks.push(check("people with under 8 interest rows checked", r.interests.filter((x) => x.rows < INTEREST_ROWS).length, 0, true));
+  // Every filled persona opens with the verdict, the claims against the record and what drives them
+  // (in a room with a form, the verdict and drivers are required AI slots instead).
+  if (r.personas.length && !form) r.checks.push(check("personas missing the verdict or what drives them", r.personas.filter((x) => x.missing.length).length, 0, true));
+  r.checks.push(check("Start here fields empty", startEmpty.length, 0, true));
+  if (r.form) r.checks.push(check("form check errors", r.form.errors.length, 0, true));
   r.score = Math.round((100 * r.checks.reduce((a, c) => a + c.ratio, 0)) / r.checks.length);
   r.ok = r.checks.every((c) => c.ok);
   r.skeletonShare = r.pages ? r.skeleton.length / r.pages : 0;
@@ -206,6 +227,12 @@ export function formatReport(r) {
   list("missing p.meta", r.noMeta);
   list("personas missing the verdict or what drives them", (r.personas || []).filter((x) => x.missing.length), (x) => `${x.page}: ${x.missing.join("; ")}`);
   list(`personal life pages with under ${INTEREST_ROWS} rows checked (page findings + OSINT log checks)`, (r.interests || []).filter((x) => x.rows < INTEREST_ROWS), (x) => `${x.page}: ${x.rows}`);
+  list("Start here is empty", r.startEmpty || []);
+  if (r.form) {
+    L.push(`  form: ${r.form.buckets} buckets: ${r.form.counts.filled} filled, ${r.form.counts.empty} searched and empty, ${r.form.counts.blocked} couldn't check, ${r.form.counts["no-tool"]} no tool yet; ${r.form.other} other findings`);
+    list("form check (fix, or run with --draft)", r.form.errors);
+    list("form warnings", r.form.warnings);
+  }
   list("[ANTHONY: ...] / [FILL: ...] items", r.anthony, (a) => `${a.page}: [${a.kind}] ${a.text}`);
   return L.join("\n");
 }

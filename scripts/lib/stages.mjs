@@ -1,7 +1,8 @@
-// The stage plan for engines without subagents (Codex): each stage of pipeline/PROMPTS.md
-// becomes its own engine call with a fresh context, so the cold stages (P4a, P4b, P5e) really
-// never see our side, and verification (P7) is done by calls that did not write the pages.
-// Claude Code runs the single P0 orchestrator instead, which spawns its own subagents.
+// The stage plan, for both engines (Claude Code and Codex): each stage of pipeline/PROMPTS.md
+// becomes its own engine call with a fresh context, so the cold stages (P4a, P4b, P5e, the
+// person AI slots) really never see our side, verification (P7) is done by calls that did not
+// write the pages, and the order is fixed by code, not left to a model. run-room.mjs runs the
+// scripted OSINT pass before the first wave and the form check and build after the last.
 
 import { extractSection, fillPrompt } from "./compose.mjs";
 
@@ -84,6 +85,13 @@ export function stagePlan(md, intake, slug, ours = {}) {
   if (Object.keys(p7.parts).length)
     push("corrections", [make("P7-fix", "Apply verification fixes", `Read every review written in the verification stage (ACCURACY REVIEW.md, GAP REVIEW.md, the grader's scores, the boundaries list) in rooms/${slug}/work/. ${p7.tail || "Apply the fixes and log every change in CORRECTIONS LOG.md (date, was, now, why)."}`, { online: false })]);
 
+  // AI judgement slots, after the facts are in and checked: one cold stage per person (persona
+  // verdict, drivers), one for the company and Start here. Entries only, each citing ledger ids.
+  if (sec("P8a"))
+    push("ai-slots", [
+      ...people.map((p) => make(`P8a ${p.slug}`, "AI slots: person", sec("P8a"), { online: false, isCold: true, person: p })),
+      make("P8a company", "AI slots: company and Start here", sec("P8a") + "\n\nThis stage covers the company buckets and Start here only (no person buckets).", { online: false }),
+    ]);
   push("render", [sec("P8") && make("P8", "Render", sec("P8"), { online: false })]);
   push("one-card", [sec("P9") && make("P9", "One card and summary", sec("P9"), { online: false })]);
   return waves;

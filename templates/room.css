@@ -1380,14 +1380,25 @@ nav.jumps a.cur { color: var(--acc-dark); box-shadow: inset 2px 0 0 var(--acc); 
 .doc .tw td:first-child { min-width: 7em; } @media (max-width: 640px) { .doc .tw td:first-child { min-width: 0; } }
 @media (max-width: 640px) { .doc .tw td:has(> a.src:only-child) { max-width: none; } .tw.stack td a.src { white-space: nowrap; } }
 
-/* The form: buckets rendered by code from the ledger (scripts/lib/form-render.mjs). */
+/* The form: buckets rendered by code from the ledger (scripts/lib/form-render.mjs).
+   Purple, pink, lavender and greys only (the dandoungroup scheme): states and grades inside the
+   form differ by label and weight, never by a new hue. */
 .form-note { font-size: var(--t-cap); color: var(--ink-2); }
-table.form tr.fg th { text-align: left; font-size: var(--t-cap); color: var(--ink-2); background: transparent; padding-top: 14px; }
-table.form tr.fb td:first-child { font-weight: 600; }
-.fstate { display: inline-block; font: 600 0.75rem/1.3 var(--sans); padding: 2px 7px; border-radius: 999px; border: 1px dashed var(--rule-2); color: var(--ink-2); white-space: nowrap; }
-.fstate.blocked { border-style: solid; border-color: var(--g-w); color: var(--g-w-ink); }
-.fstate.no-tool { color: var(--ink-3); }
-.fstate.intake { border-style: solid; color: var(--ink); }
-.ai-tag { display: inline-block; font: 650 0.6875rem/1 var(--sans); padding: 3px 6px; border-radius: 4px; background: var(--g-i-bg); color: var(--g-i-ink); }
+table.form tr.fg th { text-align: left; font-size: var(--t-cap); color: var(--acc-text); background: var(--acc-soft); }
+table.form tr.fb td:first-child { font-weight: 600; color: var(--title, var(--ink)); }
+table.form .grade { --gi: var(--acc-text); --gb: var(--acc-soft); }
+table.form .grade.verified { --gs: var(--acc); font-weight: 700; }
+table.form .grade.partly { --gs: linear-gradient(90deg, var(--acc) 50%, transparent 50%); font-weight: 600; }
+table.form .grade.partly::before { box-shadow: inset 0 0 0 1.5px var(--acc); }
+table.form .grade.weak { --gi: var(--g-u-ink); --gb: var(--g-u-bg); --gs: transparent; font-weight: 500; }
+table.form .grade.weak::before { box-shadow: inset 0 0 0 1.5px var(--g-u); }
+table.form .grade.inference { --gi: var(--ink-2); --gb: var(--lav, var(--sunk)); --gs: var(--meet, var(--acc)); font-weight: 500; }
+.doc table.form tr:has(.grade) td:first-child { box-shadow: inset 3px 0 0 var(--acc); }
+.doc table.form tr:has(.grade.weak) td:first-child { box-shadow: inset 3px 0 0 var(--g-u); }
+.fstate { display: inline-block; font: 500 0.75rem/1.3 var(--sans); padding: 2px 7px; border-radius: 999px; border: 1px dashed var(--rule-2); color: var(--ink-2); white-space: nowrap; }
+.fstate.blocked { border-style: solid; border-color: var(--g-u); color: var(--g-u-ink); font-weight: 600; }
+.fstate.no-tool { color: var(--ink-3); font-weight: 400; }
+.fstate.intake { border-style: solid; border-color: var(--rule-2); background: var(--lav, var(--sunk)); color: var(--ink); font-weight: 600; }
+.ai-tag { display: inline-block; font: 650 0.6875rem/1 var(--sans); padding: 3px 6px; border-radius: 4px; background: var(--acc-soft); color: var(--acc-text); }
 .lref { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .cites { color: var(--ink-3); }

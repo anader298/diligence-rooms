@@ -1,4 +1,4 @@
-# Diligence room prompts (v1.1)
+# Diligence room prompts (v1.2)
 
 The fixed prompts the pipeline in `STANDARD.md` runs. Variables are written `{{like_this}}` and filled from `intake.json` and `config/our-side.json`. The orchestrator only briefs, checks and reports; every research and writing step is done by an agent with one of the briefs below. Web research uses the agent's built-in search and fetch; bulk pulls use curl.
 
@@ -7,6 +7,16 @@ Paths:
 - Rendered room: `rooms/{{slug}}/`.
 - Our side: `config/our-side.json` (`name`, `organisation`, `factsFile`, `overlapHooks[]`, `publicHandles[]`).
 - Data: public sources plus our licensed data (our own Apollo account). The client is never asked to connect an account or share an export.
+
+**The form (v1.2).** Facts live in the ledger, not on pages. Every room fills a fixed list of buckets (`config/form/`, read with `npm run entry -- {{slug}} --list`); code renders each bucket on its page with its state (filled with grade and source, searched and empty, couldn't check, no tool yet) and a form page with all of them. Agents hand in **entries**, never fact rows:
+
+```
+npm run entry -- {{slug}} --bucket <id> [--person <slug>] --value "<finding>" --url <source> [--note "..."] [--weak]
+npm run entry -- {{slug}} --bucket <id> [--person <slug>] --none "<tool and exact query>"
+npm run entry -- {{slug}} --bucket <ai slot id> [--person <slug>] --value "<judgement>" --cites L-0003,<ledger>/L-0007
+```
+
+Code grades every entry with the two-source rule: an agent cannot write Verified (a lone source shows as Partly verified; a second independent source lifts it). AI judgement slots must cite the ledger ids they rest on. Pages carry narrative only (the reading, the argument, the questions); never retype a bucket's fact onto a page. `run-room` runs the stages below in a fixed order for both engines, then the form check (`npm run form -- {{slug}} --check`), and builds only when it passes (`--draft` overrides).
 
 ---
 
@@ -34,13 +44,14 @@ You are building a diligence room. Input line: "{{raw_line}}".
    intake.json. Otherwise proceed.
 4. Create the room from the skeleton (core + the mode packs + the org-type pack, person pages
    repeated per person) and the workspace rooms/{{slug}}/work/.
-5. Run the stages in STANDARD.md sec. 10 in order, with prompts P1 to P10 (P2b, Enrich, runs
+5. Run the stages in STANDARD.md sec. 10 in order (run-room does this by code, stage by stage), with prompts P1 to P10 (P2b, Enrich, runs
    between Harvest and Research). Show the P2b credit estimate and wait for a yes before spending.
    No more than 3 web-searching agents at once. Offline agents may run in parallel freely.
    Person OSINT agents (P4a) and persona agents (P4b) never see our side.
 6. After each stage, check the outputs against the depth targets (STANDARD.md sec. 11).
    Re-brief any agent that came back thin, naming exactly what is missing.
-7. Never publish or deploy. Finish with: the local preview URL, the next meeting and the open
+7. Before the build, run npm run form -- {{slug}} --check and fix what it lists (missing entries,
+   bad cites, an empty Start here). Never publish or deploy. Finish with: the local preview URL, the next meeting and the open
    deadlines, the depth-target table (target against actual), every [FILL: …] item, and the gap ledger.
 ```
 
@@ -53,6 +64,9 @@ Room: {{counterparty}} ({{org_type}}). Mode: {{mode}}. Meeting: {{meeting_date}}
 What we want: {{the_ask}}. As-of date: {{today}}.
 
 Rules:
+- Facts go into the ledger as entries (npm run entry, see the top of this file), one per finding,
+  with the source URL; code grades them. Where a bucket has nothing, hand in --none with the search.
+  On pages, write narrative that points at ledger ids (L-0003) instead of restating the facts.
 - Every factual line carries a source link or a local file path, and one grade:
   {v} verified (read at the source in this session), {p} partly verified,
   {w} weak (a single unconfirmed source, or identity not confirmed), {i} inference,
@@ -248,20 +262,24 @@ pitch: recent purchases, budget cycle, budget holder, incumbent vendors and cont
 You are profiling {{person}} ({{title}}, {{counterparty}}) from public sources, the way their side
 would research a counterparty before a meeting. Follow STANDARD.md sec. 4.1 and 5.
 
-Every page you write is a checklist. The skeleton page in rooms/{{slug}}/pages/<id>-<person-slug>.html
-fixes the rows; keep every row, in order. Each row ends in exactly one state:
-  found     the finding, its grade ({v} or {p}) and the source link;
-  weak      written down, graded {w}: one unconfirmed source, or identity not confirmed;
-  none      "None found", graded {n}, and the search: tool and exact query (and which names).
-Never omit a row, never leave a cell blank where a finding, "None found" or a grade belongs.
+The form fixes what you look for: every bucket for this person ends in exactly one state, and
+code computes it from the ledger. You move a bucket by handing in an entry:
+  found     --value and --url (code grades it; a second independent source makes it Verified);
+  weak      --weak as well: one unconfirmed source, or identity not confirmed;
+  none      --none "<tool and exact query (and which names)>".
+The skeleton pages' checklist rows are the same list in page form; the build shows the form block
+on each page, so do not retype findings into those rows. Write your notes (the files below) as
+narrative that cites ledger ids.
 
-0. Start from the scripted pass: rooms/{{slug}}/work/osint/{{person-slug}}/osint.json (and its
-   dossier.html). Every row there has a source, a module and a grade: treat each as a lead, confirm
-   it at the source, and keep its ledger id (L-0001) next to the line it supports. Its "misses" list
-   says what the scripts searched and did not find; its candidate accounts carry an identity score.
-   Then go where scripts cannot: your own web search (image results and the preview snippets that
-   show captions and bios from Instagram, Facebook and LinkedIn pages you cannot open), the pages
-   behind the leads, and the rows below. Add what you find with: node scripts/osint/add.mjs.
+0. Start from the form: npm run entry -- {{slug}} --list --person {{person-slug}} lists every bucket
+   for this person and its state. The scripted pass already filled what it could
+   (rooms/{{slug}}/work/osint/{{person-slug}}/osint.json and dossier.html: every row has a source, a
+   module, a grade and a ledger id L-0001). Work the buckets that are not filled, starting with the
+   required ones and those marked "no tool yet" (each has a hint of where to look). Go where scripts
+   cannot: your own web search (image results and the preview snippets that show captions and bios
+   from Instagram, Facebook and LinkedIn pages you cannot open), the pages behind the leads.
+   Hand in every finding as an entry (--value, --url; --weak when identity is not confirmed) and
+   every empty search as --none "<tool and exact query>". Never write a fact row on a page.
 1. Anchor identity: the official bio and the LinkedIn profile (what we see under our own
    account, or our export; never scraped). Note photo, city, employers. Use LEADS.md and
    work/connectors/merged.json as leads only: confirm each at a public source before using it.
@@ -370,6 +388,8 @@ phrases to use back. If nothing public exists, build a composite for the seat an
 
 ## P5. Synthesis wave (offline; run in parallel)
 
+The banks (P5d) run only when the room has the optional practice pack (intake "practice": true).
+
 ```
 P5a TRANSLATION: from corpus/TERMS.md and the facts file, map their term -> plain meaning ->
   our closest true proof -> their 3 to 5 nearest cases with a sentence to echo (URL). Add words
@@ -378,11 +398,10 @@ P5b MODE PACK: write the {{mode}} pages listed in STANDARD.md sec. 7, plus duty-
 P5c PEOPLE MAP OVERLAPS: from the cold person files and config/our-side.json overlapHooks[] (schools,
   employers, places, languages), fill the "Overlaps with our side" and warm paths tables on the
   people map only. Never write our side onto a person page; their circles is built cold in P4a.
-P5d BANKS: ANSWER BANK (150+ questions, first-person answers aimed at the persona who would ask),
-  PRACTICE BANK (questions in each persona's voice, push-back drills tagged new fact / no new
-  fact, mini-cases), PUSH-BACK GYM, MOCK TRANSCRIPTS (short screen, full meeting, worst case,
-  12 one-breath lines).
-P5e GLOSSARY: 250+ terms: term, plain meaning, how {{counterparty}} uses it (with a corpus cite).
+P5d BANKS (practice pack only): ANSWER BANK (about 20 questions, first-person answers aimed at the
+  persona who would ask), PRACTICE BANK (questions in each persona's voice, a few push-back drills),
+  PUSH-BACK GYM (short), MOCK TRANSCRIPTS (one short screen, 12 one-breath lines).
+P5e GLOSSARY: 40+ terms: term, plain meaning, how {{counterparty}} uses it (with a corpus cite).
 ```
 
 ## P6. Mirror (one agent, online, blind to the room)
@@ -418,9 +437,29 @@ P7d BOUNDARIES: read every note for anything outside STANDARD.md sec. 5.5 (minor
 The orchestrator applies fixes and logs every change in CORRECTIONS LOG.md (date, was, now, why).
 ```
 
+## P8a. AI slots (offline; after verification, before render)
+
+```
+Fill the AI judgement buckets (kind "ai") with entries, never page text: npm run entry -- {{slug}} --list
+shows them (persona verdict, claims against the record, the four drivers, how they judge, red
+flags, rapport hooks, never-raise; the company drivers, who decides; Start here: who decides,
+the line, the summary, numbers to hold; mode slots such as fit or the deal pattern).
+Read the ledger first (rooms/{{slug}}/work/osint/*/ledger.jsonl and the form page). Each entry:
+  npm run entry -- {{slug}} --bucket <id> [--person <slug>] --value "<judgement>" --cites <ids>
+--cites lists the ledger rows the judgement rests on (L-0003 in this person's ledger, or
+<ledger>/L-0003 elsewhere; company slots name the ledger). Code refuses an id that does not exist
+or that is itself an AI entry. A judgement with no evidence behind it is not written: hand in
+--none "<what is missing>" instead. Persona slots are cold: never read our side for them.
+The summary: under 120 words, who, what we want, three things that matter, the main risk.
+Then run npm run form -- {{slug}} --check and fix what it lists.
+```
+
 ## P8. Render (offline)
 
 ```
+The facts are on the form: the build renders every bucket (an "On the form" block on each page, and
+a form page) from the ledger. Never write or edit those rows, and never restate a bucket's fact in a
+page table. Pages carry narrative only.
 Convert the notes into rooms/{{slug}}/: room.json (title, subtitle, asOf, counterparty, people[],
 modes[], orgType, meetings[] and deadlines[] (keep them current; the index counts down to the
 next meeting), process[] with dates, heroes[], sections[] each with a group (start | person | role | company |
@@ -444,6 +483,8 @@ preview. Do not deploy.
 ## P9. One card and summary (orchestrator, last; finishes the render)
 
 ```
+Start from the Start here entries (start.who_decides, start.line, start.summary, start.numbers);
+the build shows them on the one card and uses start.summary when room.json has no summary.
 Who is actually in the room, and what do they judge on (persona sec. 5)? Write the one card for
 that person, not for the topic: the ask in one sentence, the line, 5 numbers to hold (facts file
 only), questions to ask in order, 5 of their terms in plain words, logistics (from room.json

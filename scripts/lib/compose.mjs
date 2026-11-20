@@ -554,7 +554,7 @@ export function writeRunScript(slug, intake, paths = {}) {
 # Engine: config/engine.json (studio > Connect AI). Stops itself above the plan usage limit.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-exec ${command}
+exec ${command} "$@"
 `;
   const runFile = join(roomDir, "RUN.sh");
   writeFileSync(runFile, script);
