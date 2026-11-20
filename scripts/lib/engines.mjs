@@ -43,14 +43,30 @@ export const ENGINES = {
 };
 
 // What a Claude research run may do without asking. Web research, reading and writing files in
-// the repo, subagents, and the shell commands the harvest stage uses. No deletes, no git writes,
-// no deploys.
+// the repo, subagents, and the shell commands the harvest stage uses. The deny list refuses rm,
+// git commit, push and reset, netlify and sudo, but node, python3 and curl stay allowed, so a run
+// can still delete or overwrite files through them: "never delete" is an instruction, not a lock.
 export const CLAUDE_ALLOWED = [
   "WebSearch", "WebFetch", "Read", "Write", "Edit", "MultiEdit", "Glob", "Grep", "Agent", "Task", "TodoWrite",
   "Bash(curl:*)", "Bash(node:*)", "Bash(npm run:*)", "Bash(python3:*)", "Bash(yt-dlp:*)", "Bash(mkdir:*)",
   "Bash(ls:*)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)", "Bash(grep:*)", "Bash(jq:*)", "Bash(sort:*)",
 ];
 export const CLAUDE_DENIED = ["Bash(rm:*)", "Bash(git push:*)", "Bash(git commit:*)", "Bash(git reset:*)", "Bash(netlify:*)", "Bash(npx netlify:*)", "Bash(sudo:*)"];
+
+/**
+ * What is actually blocked in an unattended run, per engine, for the prompts (stages.mjs and the
+ * single-run brief in compose.mjs). Built from CLAUDE_DENIED and the Codex sandbox flags in
+ * buildCommand, so it says what the code does.
+ */
+export function guardText() {
+  const denied = CLAUDE_DENIED.map((d) => d.replace(/^Bash\((.*?)(?::\*)?\)$/, "$1"));
+  return [
+    "Never delete files: overwrite them instead. That is an instruction you keep, not a lock.",
+    `What is actually blocked: under Claude Code, these shell commands are refused: ${denied.join(", ")}. node, python3 and curl are allowed and can still delete or overwrite files, so do not use them to delete.`,
+    "Under Codex, the run is in a workspace-write sandbox: it can write only inside this repository (and the temp folder), and nothing inside the repository is blocked.",
+    "Every other rule here is an instruction too, not something the engine enforces.",
+  ].join("\n");
+}
 
 // ---------------------------------------------------------------- config
 

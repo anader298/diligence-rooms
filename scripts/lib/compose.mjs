@@ -18,6 +18,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, rmSync
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import { guardText } from "./engines.mjs";
 
 export const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const MODES = ["interviewing", "deal", "audit", "pitch"];
@@ -524,7 +525,8 @@ orchestrator above:
 - Do not run npm run enrich and do not spend licensed-data credits. The studio fetches licensed
   data with the user's yes before the run; if rooms/${slug}/work/connectors/merged.json exists,
   use it as leads.
-- Never deploy, commit or push. Never delete files (deleting is blocked): overwrite them instead.
+- Never deploy, commit or push.
+${guardText().split("\n").map((l) => "- " + l).join("\n")}
 `;
 }
 

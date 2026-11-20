@@ -5,6 +5,7 @@
 // scripted OSINT pass before the first wave and the form check and build after the last.
 
 import { extractSection, fillPrompt } from "./compose.mjs";
+import { guardText } from "./engines.mjs";
 
 /** A bold-labelled fenced block, e.g. **Cold add-on** (…):\n```\n…\n``` */
 function addOn(md, label) {
@@ -37,7 +38,7 @@ Nobody is watching this run: never ask a question or wait for an answer. Append 
 user can answer to rooms/${slug}/work/questions.md (one line each: stage, question) and carry on.
 Do not run npm run enrich (licensed data is fetched from the studio, with the user's yes; if
 rooms/${slug}/work/connectors/merged.json exists, use it as leads). Do not deploy, commit or push.
-Never delete files (deleting is blocked): overwrite them instead.`;
+${guardText()}`;
 
 /**
  * The stages as waves: every stage in a wave may run at once; waves run in order.

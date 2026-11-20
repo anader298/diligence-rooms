@@ -6,7 +6,7 @@ import { mkdtempSync, writeFileSync, readFileSync, statSync, rmSync, chmodSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
-import { buildCommand, envFor, setEnvVar, usageFromLine, mergeEngineConfig, defaultConfig, notReady, plainError, runEngine, CLAUDE_DENIED } from "../scripts/lib/engines.mjs";
+import { buildCommand, envFor, setEnvVar, usageFromLine, mergeEngineConfig, defaultConfig, notReady, plainError, runEngine, CLAUDE_DENIED, CLAUDE_ALLOWED } from "../scripts/lib/engines.mjs";
 import { stagePlan } from "../scripts/lib/stages.mjs";
 import { REPO } from "../scripts/lib/compose.mjs";
 
@@ -151,6 +151,23 @@ test("stage plan (both engines): fixed order, AI slots after verification; per-p
   assert.match(p1.prompt, /never ask a question/);
   assert.match(p1.prompt, /Do not run npm run enrich/);
   assert.ok(waves.find((w) => w.wave === "verification").stages.length >= 4);
+});
+
+test("stage header: says what each engine really blocks, and that the rest is an instruction", () => {
+  const md = readFileSync(join(REPO, "pipeline", "PROMPTS.md"), "utf8");
+  const intake = { company: "Acme Freight", people: [{ name: "Jane Doe", slug: "jane-doe" }], goal: "pitch", modes: ["pitch"], orgType: "other", meetingDate: "2026-12-01", tier: "light", meetings: [], deadlines: [] };
+  const p = stagePlan(md, intake, "acme-freight", {})[0].stages[0].prompt;
+  assert.doesNotMatch(p, /deleting is blocked/i, "deleting is not blocked: node, python3 and curl can delete");
+  // the deny list as the Claude argv really passes it
+  for (const d of CLAUDE_DENIED) assert.ok(p.includes(d.replace(/^Bash\((.*?):\*\)$/, "$1")), d);
+  for (const tool of ["node", "python3", "curl"]) assert.ok(CLAUDE_ALLOWED.includes(`Bash(${tool}:*)`), `${tool} is allowed, as the header says`);
+  assert.match(p, /node, python3 and curl are allowed and can still delete or overwrite files/);
+  // Codex: the sandbox flag in its argv, and what it does and does not stop
+  const codex = buildCommand("codex", {}).args;
+  assert.equal(codex[codex.indexOf("--sandbox") + 1], "workspace-write");
+  assert.match(p, /Under Codex, the run is in a workspace-write sandbox: it can write only inside this repository/);
+  assert.match(p, /instruction you keep, not a lock/);
+  assert.match(p, /Every other rule here is an instruction too/);
 });
 
 test("studio never sends a key to the page and refuses other hosts", async () => {
