@@ -31,10 +31,15 @@ import {
   GRADES, esc, text, initials, minutes, longDate, ev, evStatus, donut, legend, verdictChip, headshot, drivesStrip, dealPath,
   bar, crumbs, demoAttrs, pageStatus, liftTldr, sourceChips, fillMarks, jumpBar, searchBox,
 } from "./lib/render.mjs";
+import { roomForm, formGate } from "./lib/form.mjs";
+import { formBlock, formPage, insertAfterLead, insertBeforeTail } from "./lib/form-render.mjs";
+import { moduleVars } from "./osint/run.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 // DR_OUT (tests) builds somewhere else, with the corpus beside it instead of in netlify/functions.
 const out = process.env.DR_OUT || join(root, "site");
+// DR_ROOMS (tests) reads rooms from another folder.
+const roomsRoot = process.env.DR_ROOMS || join(root, "rooms");
 const corpusRoot = process.env.DR_OUT ? join(process.env.DR_OUT, "_corpus") : join(root, "netlify", "functions", "corpus");
 const tpl = (f) => readFileSync(join(root, "templates", f), "utf8");
 const fill = (t, vars) => t.replace(/\{\{(\w+)\}\}/g, (_, k) => (k in vars ? vars[k] : ""));
@@ -43,6 +48,10 @@ const STATUS_LABEL = { found: "Found", weak: "Weak", none: "Empty" };
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 // Footprint pages report found, weak and empty rows rather than a verified share.
 const isFootprint = (id) => /^(socials|partner-socials|names)-/.test(id);
+
+// Which OSINT module fills which ledger variable (from each module's own declaration): the form
+// uses it to tell "searched, nothing found" from "no tool yet".
+const MODULE_VARS = await moduleVars();
 
 function fail(msg) {
   console.error("build: " + msg);
@@ -135,7 +144,7 @@ function facts(room) {
 const pron = (p) => ({ she: ["she", "her", "Her"], he: ["he", "him", "His"] })[p?.pronoun] || ["they", "them", "Their"];
 
 function buildRoom(slug) {
-  const dir = join(root, "rooms", slug);
+  const dir = join(roomsRoot, slug);
   const room = JSON.parse(readFileSync(join(dir, "room.json"), "utf8"));
   if (room.slug !== slug) fail(`rooms/${slug}/room.json has slug "${room.slug}"`);
   if (!/^[a-z0-9][a-z0-9-]{0,40}$/.test(slug)) fail(`room slug "${slug}" must be lower-case letters, digits and dashes`);
@@ -146,6 +155,22 @@ function buildRoom(slug) {
   copyFileSync(join(root, "templates", "room.css"), join(dest, "assets", "room.css"));
   copyFileSync(join(root, "templates", "room.js"), join(dest, "assets", "room.js"));
 
+  // The form (config/form packs + the ledgers in work/osint/), when the room has ledgers. Code
+  // renders every bucket on its page with its state, and a "The form" page with all of them.
+  // Rooms without ledgers build as before.
+  const pageIds0 = new Set(room.sections.flatMap((s) => s.pages.map((p) => p.id)));
+  const form = roomForm(dir, { moduleVars: MODULE_VARS, pageIds: pageIds0 });
+  const gate = form ? formGate(form) : null;
+  if (form) {
+    if (!pageIds0.has("form")) {
+      const home = room.sections.find((s) => s.id === "record") || room.sections.at(-1);
+      home.pages = [...home.pages, { id: "form", title: "The form", blurb: "Every bucket, its state and its source, filled by code from the ledger.", _generated: true }];
+    }
+    // An empty summary is filled from the Start here bucket (AI judgement that cites the ledger).
+    const sum = form.buckets.find((b) => b.id === "start.summary" && b.state === "filled");
+    if (!String(room.summary || "").trim() && sum?.rows[0]) room.summary = String(sum.rows[0].value);
+  }
+
   // Pass 1: read and measure every page.
   const meta = {};
   const bodies = {};
@@ -153,8 +178,13 @@ function buildRoom(slug) {
   const order = [];
   for (const section of room.sections) {
     for (const page of section.pages) {
-      const pg = readPageBody(dir, page.id);
+      const pg = page._generated && form ? { body: formPage(form, gate) } : readPageBody(dir, page.id);
       if (!pg) fail(`missing page rooms/${slug}/pages/${page.id}.html (or .md)`);
+      if (form && !page._generated) {
+        const mine = form.buckets.filter((b) => b.pageId === page.id);
+        if (mine.length) pg.body = page.id === "one-card" ? insertAfterLead(pg.body, formBlock(mine)) : insertBeforeTail(pg.body, formBlock(mine));
+      }
+      pg.clean = stripComments(pg.body);
       if (isPersonPage(page.id)) {
         pg.body = hideNoneRows(pg.body);
         pg.clean = stripComments(pg.body);
@@ -466,9 +496,9 @@ rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
 const only = process.argv[2];
-const slugs = readdirSync(join(root, "rooms"), { withFileTypes: true })
+const slugs = readdirSync(roomsRoot, { withFileTypes: true })
   .filter((d) => d.isDirectory() && (!only || d.name === only))
-  .filter((d) => existsSync(join(root, "rooms", d.name, "room.json")) || (console.warn(`build: skipping rooms/${d.name}/ (no room.json)`), false))
+  .filter((d) => existsSync(join(roomsRoot, d.name, "room.json")) || (console.warn(`build: skipping rooms/${d.name}/ (no room.json)`), false))
   .map((d) => d.name);
 if (!slugs.length) fail("no rooms found in rooms/");
 
