@@ -88,7 +88,7 @@ test("intl-registries: France picks the entity, lists dirigeants, and names the 
   assert.ok(rows.some((r) => r.var === "co.leadership"));
   const role = rows.find((r) => r.var === "role.title");
   assert.ok(role, "role row for the subject");
-  assert.equal(role.grade, "v");
+  assert.equal(role.grade, "p"); // matched to the subject by name: Partly until a second source agrees
   assert.ok(parseFrance(fr, ["Danone"]).officers.length >= 1);
 });
 
@@ -181,13 +181,13 @@ test("sec-frames: a private company is a miss", async () => {
 
 const BC_HIT = (crd, first, last, firms = [], other = [], disc = "N") => ({ _source: { ind_source_id: crd, ind_firstname: first, ind_lastname: last, ind_other_names: other, ind_bc_scope: "Active", ind_ia_scope: "NotInScope", ind_bc_disclosure_fl: disc, ind_current_employments: firms.map(([firm_name, branch_city, branch_state]) => ({ firm_name, branch_city, branch_state })) } });
 
-test("brokercheck-iapd: employer match verifies; disclosures get their own row; terms carried", async () => {
+test("brokercheck-iapd: employer match is Partly; disclosures get their own row; terms carried", async () => {
   const search = { hits: { total: 3, hits: [BC_HIT("111", "Jane", "Doe", [["ACME ROBOTICS SECURITIES LLC", "Austin", "TX"]], [], "Y"), BC_HIT("222", "Janet", "Doe", [["OTHER FIRM", "Boise", "ID"]]), BC_HIT("333", "John", "Doe")] } };
   const detail = { hits: { hits: [{ _source: { content: JSON.stringify({ currentEmployments: [{ firmName: "ACME ROBOTICS SECURITIES LLC", registrationBeginDate: "1/2/2020", branchOfficeLocations: [{ city: "Austin", state: "TX" }] }], previousEmployments: [{ firmName: "OLD FIRM", registrationBeginDate: "1/1/2010", registrationEndDate: "1/1/2019" }], productExamCategory: [{ examCategory: "Series 7", examTakenDate: "1/1/2010" }], disclosures: [{ disclosureType: "Customer Dispute", eventDate: "3/3/2021", disclosureResolution: "Settled" }] }) } }] } };
   const f = fakeFetch([[/brokercheck\.finra\.org\/search\/individual\/111/, { body: detail }], [/search\/individual\?/, { body: search }]]);
   const res = await run(JANE, [broker], f);
   const lic = rowsOf(res, "brokercheck-iapd").filter((r) => r.var === "career.licenses");
-  assert.equal(lic[0].grade, "v");
+  assert.equal(lic[0].grade, "p"); // name + employer match: Partly until a second source agrees
   assert.match(lic[0].value, /CRD 111/);
   assert.match(lic[0].value, /previously OLD FIRM/);
   assert.match(lic[0].detail.terms, /permitted uses/);
@@ -206,7 +206,7 @@ test("brokercheck-iapd: nobody registered is a checked-none row", async () => {
 
 // ------------------------------------------------------------------ licenses
 
-test("licenses: NY attorney with the company as employer verifies and gives the law school", async () => {
+test("licenses: NY attorney with the company as employer is Partly and gives the law school", async () => {
   const f = fakeFetch([
     [/data\.ny\.gov/, { body: [{ registration_number: "1000001", first_name: "JANE", last_name: "DOE", company_name: "ACME ROBOTICS INC", city: "AUSTIN", state: "TX", year_admitted: "2010", law_school: "Example Law School", status: "Currently registered" }] }],
     [/npiregistry/, { body: { result_count: 0, results: [] } }],
@@ -216,7 +216,7 @@ test("licenses: NY attorney with the company as employer verifies and gives the 
   const res = await run(JANE, [licenses], f);
   const rows = rowsOf(res, "licenses");
   const lic = rows.find((r) => r.var === "career.licenses");
-  assert.equal(lic.grade, "v");
+  assert.equal(lic.grade, "p"); // name + employer match: Partly until a second source agrees
   assert.deepEqual(lic.anchors, ["name", "company", "place"]);
   assert.match(rows.find((r) => r.var === "career.education").value, /Example Law School/);
 });
@@ -312,13 +312,13 @@ test("sanctions-csl: a failed download with no cache is blocked, not clear", asy
 
 // ------------------------------------------------------------------ lobbying-fara
 
-test("lobbying-fara: lobbyist tied to the company verifies; FARA registrant by company name", async () => {
+test("lobbying-fara: lobbyist tied to the company is Partly; FARA registrant by company name", async () => {
   const lda = { count: 2, results: [{ id: 9, first_name: "JANE", middle_name: "Q", last_name: "DOE", registrant: { id: 77, name: "ACME ROBOTICS INC", city: "AUSTIN", state: "TX" } }, { id: 10, first_name: "JOHN", last_name: "DOE", registrant: { id: 78, name: "X" } }] };
   const fara = { REGISTRANTS_ACTIVE: { ROW: [{ Name: "Acme Robotics, Inc.", Registration_Number: 9999, Registration_Date: "1/2/2024", City: "Austin", State: "TX" }, { Name: "Other Agents LLC", Registration_Number: 1 }] } };
   const f = fakeFetch([[/lda\.gov\/api\/v1\/lobbyists/, { body: lda }], [/efile\.fara\.gov/, { body: fara }]]);
   const res = await run(JANE, [lobbying], f);
   const rows = rowsOf(res, "lobbying-fara");
-  assert.equal(rows.find((r) => r.var === "politics.person_lobbying").grade, "v");
+  assert.equal(rows.find((r) => r.var === "politics.person_lobbying").grade, "p"); // name match: Partly until a second source agrees
   const fr = rows.find((r) => r.var === "politics.company_pac");
   assert.equal(fr.date, "2024-01-02");
   assert.equal(matchLobbyists(lda, JANE).length, 1);

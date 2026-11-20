@@ -125,6 +125,16 @@
         "note": "named executive officer table in the issuer's proxy"
       },
       {
+        "module": "sec-proxy",
+        "family": "sec",
+        "note": "pay tables in the issuer's own proxy, keyed by the issuer CIK"
+      },
+      {
+        "module": "registries",
+        "family": "gleif",
+        "note": "GLEIF parent and child relationships, keyed by the company's LEI"
+      },
+      {
         "module": "records",
         "family": "sanctions",
         "note": "full-list screens of OFAC SDN and HHS-OIG LEIE"

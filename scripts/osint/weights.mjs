@@ -67,8 +67,13 @@ const round = (x) => Math.round(x * 100) / 100;
 // ---------------------------------------------------------------- source families
 
 const FAMILIES = [
+  [/(^|\.)adviserinfo\.sec\.gov$/, "finra"],
   [/(^|\.)sec\.gov$/, "sec"],
   [/(^|\.)fec\.gov$/, "fec"],
+  [/(^|\.)gleif\.org$/, "gleif"],
+  [/(^|\.)finra\.org$|(^|\.)adviserinfo\.sec\.gov$/, "finra"],
+  [/(^|\.)fara\.gov$/, "fara"],
+  [/(^|\.)trade\.gov$/, "sanctions"],
   [/(^|\.)usaspending\.gov$/, "usaspending"],
   [/(^|\.)lda\.gov$|(^|\.)senate\.gov$/, "lda"],
   [/(^|\.)dol\.gov$/, "dol"],
@@ -160,6 +165,8 @@ export function isPrimary(row, subject, w = loadWeights()) {
 export const DEFAULT_PRIMARY = [
   { module: "sec", family: "sec" },
   { module: "sec-person", family: "sec", anchor: "sec-owner-cik" },
+  { module: "sec-proxy", family: "sec" },
+  { module: "registries", family: "gleif" },
   { module: "sec-person", family: "sec", anchor: "proxy-neo" },
   { module: "records", family: "sanctions" },
   { module: "dns", family: "dns" },
