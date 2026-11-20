@@ -1,7 +1,7 @@
 // Run the OSINT modules for one subject and write the ledger, osint.json and dossier.html.
 // Modules run in lanes: fast (APIs, all at once), sweep (many small checks), slow (big reads),
-// late (estimates). Each module gets a time budget; a module that fails or times out is
-// recorded, never fatal. A module whose key calls were refused sets ctx.status("blocked", why),
+// heavy (opt-in Python sidecars and binaries: --heavy), late (identity, estimates). Each module
+// gets a time budget; a module that fails or times out is recorded, never fatal. A module whose key calls were refused sets ctx.status("blocked", why),
 // so the run report never says "ok, found 0" for something it could not check.
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, renameSync, copyFileSync } from "node:fs";
@@ -116,7 +116,7 @@ export function departureCheck(subject, rows, shared = {}) {
  * subject: { name, company, domain, title, city, state, handles[], aliases[], ticker, cik, photo }
  * Returns { subject, rows, misses, alerts, modules: [{ id, status, ms, found, error, why }] }.
  */
-export async function runOsint(subject, { outDir, only = null, log = console.log, fetchImpl, budgetMs = 90000, modules = null } = {}) {
+export async function runOsint(subject, { outDir, only = null, log = console.log, fetchImpl, budgetMs = 90000, modules = null, heavy = null, opts = {} } = {}) {
   mkdirSync(outDir, { recursive: true });
   const moved = prepareOutDir(outDir, subject);
   if (moved) log(`note: ${moved}`);
@@ -128,7 +128,13 @@ export async function runOsint(subject, { outDir, only = null, log = console.log
   const report = [];
   const alerts = [];
 
+  // Heavy modules are opt-in: --heavy <ids|all>, or named in --only.
+  const heavyOn = (m) => heavy === "all" || (Array.isArray(heavy) && (heavy.includes("all") || heavy.includes(m.id))) || (only || []).includes(m.id);
   const runOne = async (m) => {
+    if (m.lane === "heavy" && !heavyOn(m)) {
+      report.push({ id: m.id, label: m.label, lane: m.lane, status: "skipped", why: `opt-in: add --heavy ${m.id}${m.flag ? ` (or ${m.flag})` : ""}`, ms: 0, found: 0 });
+      return;
+    }
     const missing = (m.needs || []).filter((k) => !(subject[k] || shared[k]));
     if (missing.length) {
       report.push({ id: m.id, label: m.label, status: "skipped", why: `needs ${missing.join(", ")}`, ms: 0, found: 0 });
@@ -142,6 +148,9 @@ export async function runOsint(subject, { outDir, only = null, log = console.log
       shared,
       http,
       env: process.env,
+      opts,
+      outDir,
+      rows: ledger.rows, // read-only view of the ledger so far (heavy and late modules build on it)
       log: (s) => log(`[${m.id}] ${s}`),
       add: (f) => ledger.add(m.id, { ms: f.ms ?? Date.now() - t0, ...f }),
       miss: (v, searched) => ledger.miss(m.id, v, searched),
@@ -168,7 +177,7 @@ export async function runOsint(subject, { outDir, only = null, log = console.log
   };
 
   const t0 = Date.now();
-  for (const lane of ["fast", "sweep", "slow", "late"]) {
+  for (const lane of ["fast", "sweep", "slow", "heavy", "late"]) {
     // before the estimates: did anything say the subject has left?
     if (lane === "late" && subject.name) {
       const dep = departureCheck(subject, ledger.rows, shared);

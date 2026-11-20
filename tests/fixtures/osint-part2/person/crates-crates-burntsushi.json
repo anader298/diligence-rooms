@@ -1,0 +1,25 @@
+{
+ "crates": [
+  {
+   "name": "memchr",
+   "downloads": 1782921952,
+   "updated_at": "2026-07-08T00:49:54.408285Z",
+   "description": "Provides extremely fast (uses SIMD on x86_64, aarch64 and wasm32) routines for\n1, 2 or 3 byte search and single substring search.\n"
+  },
+  {
+   "name": "aho-corasick",
+   "downloads": 1417125471,
+   "updated_at": "2026-08-03T11:44:11.111398Z",
+   "description": "Fast multiple substring searching."
+  },
+  {
+   "name": "byteorder",
+   "downloads": 973483902,
+   "updated_at": "2023-10-06T00:45:57.877036Z",
+   "description": "Library for reading/writing numbers in big-endian and little-endian."
+  }
+ ],
+ "meta": {
+  "total": 78
+ }
+}

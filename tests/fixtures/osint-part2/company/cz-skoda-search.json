@@ -1,0 +1,21 @@
+{
+ "pocetCelkem": 2,
+ "ekonomickeSubjekty": [
+  {
+   "ico": "00177041",
+   "obchodniJmeno": "Škoda Auto a.s.",
+   "datumVzniku": "1990-11-20",
+   "sidlo": {
+    "textovaAdresa": "tř. Václava Klementa 869, Mladá Boleslav II, 29301 Mladá Boleslav"
+   }
+  },
+  {
+   "ico": "07700903",
+   "obchodniJmeno": "Nadační fond Škoda Auto",
+   "datumVzniku": "2018-12-05",
+   "sidlo": {
+    "textovaAdresa": "tř. Václava Klementa 869, Mladá Boleslav II, 29301 Mladá Boleslav"
+   }
+  }
+ ]
+}

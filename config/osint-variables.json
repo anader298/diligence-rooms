@@ -605,6 +605,108 @@
    "label": "Decision window (estimate)",
    "group": "Estimates",
    "tab": "estimates"
+  },
+  {
+   "id": "social.proofs",
+   "label": "Verified links and proofs",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.dev_activity",
+   "label": "Developer community activity",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.games",
+   "label": "Games (chess and similar)",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "bio.wikipedia",
+   "label": "Wikipedia article",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.publications",
+   "label": "Publications and research",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.books",
+   "label": "Books (as author)",
+   "group": "Voice",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.transcripts",
+   "label": "Talk and interview transcripts",
+   "group": "Voice",
+   "tab": "professional"
+  },
+  {
+   "id": "politics.person_lobbying",
+   "label": "Registered lobbyist or foreign agent",
+   "group": "Politics",
+   "tab": "politics"
+  },
+  {
+   "id": "rec.disclosures",
+   "label": "Regulatory disclosures (FINRA, SEC)",
+   "group": "Records",
+   "tab": "records"
+  },
+  {
+   "id": "co.identifiers",
+   "label": "Company identifiers (CIK, LEI, Wikidata, registry)",
+   "group": "Identity",
+   "tab": "company"
+  },
+  {
+   "id": "co.structure",
+   "label": "Parent and subsidiaries",
+   "group": "Identity",
+   "tab": "company"
+  },
+  {
+   "id": "co.registry",
+   "label": "National company registry record",
+   "group": "Identity",
+   "tab": "company"
+  },
+  {
+   "id": "co.enforcement",
+   "label": "Environmental and safety enforcement",
+   "group": "Market and risk",
+   "tab": "records"
+  },
+  {
+   "id": "co.exec_pay",
+   "label": "Executive pay table (proxy)",
+   "group": "Money",
+   "tab": "money"
+  },
+  {
+   "id": "news.attention",
+   "label": "Attention spikes (Wikipedia pageviews)",
+   "group": "In the news",
+   "tab": "news"
+  },
+  {
+   "id": "news.article_text",
+   "label": "Article text (extracted)",
+   "group": "In the news",
+   "tab": "news"
+  },
+  {
+   "id": "doc.metadata",
+   "label": "Document metadata (authors, software, dates)",
+   "group": "Records",
+   "tab": "records"
   }
  ]
 }

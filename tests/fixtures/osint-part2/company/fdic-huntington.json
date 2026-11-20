@@ -1,0 +1,55 @@
+{
+ "data": [
+  {
+   "data": {
+    "NAMEHCR": "HUNTINGTON BANCSHARES INC",
+    "CITY": "Columbus",
+    "ROA": 1.0857401002170708,
+    "REPDTE": "06/30/2026",
+    "OFFDOM": 1477,
+    "STNAME": "Ohio",
+    "ASSET": 283073605,
+    "CERT": 6560,
+    "NETINC": 1431831,
+    "ESTYMD": "01/06/1866",
+    "DEP": 227123103,
+    "NAME": "The Huntington National Bank",
+    "ID": "6560"
+   }
+  },
+  {
+   "data": {
+    "NAMEHCR": "UBANK HOLDINGS INC",
+    "CITY": "Huntington",
+    "ROA": 1.416956424858921,
+    "REPDTE": "06/30/2026",
+    "OFFDOM": 8,
+    "STNAME": "Texas",
+    "ASSET": 1046394,
+    "CERT": 18344,
+    "NETINC": 6836,
+    "ESTYMD": "01/23/1961",
+    "DEP": 945730,
+    "NAME": "UBank",
+    "ID": "18344"
+   }
+  },
+  {
+   "data": {
+    "NAMEHCR": "NORTHEAST INDIANA BCORP INC",
+    "CITY": "Huntington",
+    "ROA": 1.2742919003846467,
+    "REPDTE": "06/30/2026",
+    "OFFDOM": 9,
+    "STNAME": "Indiana",
+    "ASSET": 553577,
+    "CERT": 29690,
+    "NETINC": 3547,
+    "ESTYMD": "01/01/1932",
+    "DEP": 459869,
+    "NAME": "First Federal Savings Bank",
+    "ID": "29690"
+   }
+  }
+ ]
+}

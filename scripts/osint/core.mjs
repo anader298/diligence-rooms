@@ -33,6 +33,18 @@ const HOST_GAP = {
   "yandex.com": 1500,
   "api.gdeltproject.org": 5500,
   "crt.sh": 1000,
+  // Part 2 sources (limits from their docs or measured 19 Nov 2026)
+  "lda.gov": 4000, // 15 a minute without a key
+  "api.discogs.com": 2500, // 25 a minute
+  "lichess.org": 1000,
+  "api.semanticscholar.org": 1100, // shared anonymous pool, about 1 a second
+  "openlibrary.org": 1000,
+  "api.stackexchange.com": 400,
+  "api.gravatar.com": 300,
+  "api.brokercheck.finra.org": 400,
+  "api.adviserinfo.sec.gov": 400,
+  "echodata.epa.gov": 500,
+  "api.uspto.gov": 600,
   default: 250,
 };
 

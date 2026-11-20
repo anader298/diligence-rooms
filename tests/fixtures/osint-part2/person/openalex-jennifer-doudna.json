@@ -1,0 +1,93 @@
+{
+ "results": [
+  {
+   "id": "https://openalex.org/A5067184382",
+   "orcid": "https://orcid.org/0000-0001-9161-999X",
+   "display_name": "Jennifer A. Doudna",
+   "works_count": 736,
+   "cited_by_count": 132144,
+   "summary_stats": {
+    "h_index": 157
+   },
+   "last_known_institutions": [
+    {
+     "display_name": "QB3"
+    },
+    {
+     "display_name": "Gladstone Institutes"
+    },
+    {
+     "display_name": "Howard Hughes Medical Institute"
+    },
+    {
+     "display_name": "Lawrence Berkeley National Laboratory"
+    },
+    {
+     "display_name": "University of California, San Francisco"
+    },
+    {
+     "display_name": "Innovative Genomics Institute"
+    },
+    {
+     "display_name": "University of California, Berkeley"
+    }
+   ],
+   "affiliations": [
+    {
+     "institution": {
+      "display_name": "QB3"
+     }
+    },
+    {
+     "institution": {
+      "display_name": "Gladstone Institutes"
+     }
+    },
+    {
+     "institution": {
+      "display_name": "Howard Hughes Medical Institute"
+     }
+    },
+    {
+     "institution": {
+      "display_name": "Harvard University"
+     }
+    }
+   ],
+   "topics": [
+    {
+     "display_name": "CRISPR and Genetic Engineering"
+    },
+    {
+     "display_name": "RNA regulation and disease"
+    },
+    {
+     "display_name": "RNA and protein synthesis mechanisms"
+    }
+   ]
+  },
+  {
+   "id": "https://openalex.org/A5126655441",
+   "orcid": null,
+   "display_name": "2026 Priestley medalist Jennifer Doudna",
+   "works_count": 1,
+   "cited_by_count": 1,
+   "summary_stats": {
+    "h_index": 1
+   },
+   "last_known_institutions": [],
+   "affiliations": [],
+   "topics": [
+    {
+     "display_name": "CRISPR and Genetic Engineering"
+    },
+    {
+     "display_name": "RNA regulation and disease"
+    },
+    {
+     "display_name": "History of Science and Medicine"
+    }
+   ]
+  }
+ ]
+}

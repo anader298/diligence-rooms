@@ -142,14 +142,15 @@ The research agents (P4a) start from this ledger, confirm each row at its source
 
 ![OSINT dossier (synthetic subject)](docs/osint-dossier.png)
 
-29 modules in four lanes (fast, sweep, slow, late), each with a time budget; a module that fails or is blocked is recorded, never fatal:
+53 default modules in four lanes (fast, sweep, slow, late), plus five opt-in heavy modules, each with a time budget; a module that fails or is blocked is recorded, never fatal:
 
 | Area | Modules and sources |
 |---|---|
-| Company | SEC EDGAR filings and XBRL financials; the 10-Q/10-K read for segments, KPIs, themes and litigation; the company's leadership page and press; job boards (Greenhouse, Lever, Ashby, Gem, SmartRecruiters, Workable, Recruitee, Jobvite, Paylocity, Workday, BambooHR); DOL Form 5500 benefit plans; Wikidata; news (GDELT, Google News RSS); DNS (mail provider and SaaS stack from TXT records); certificate transparency; the web archive |
-| The person, professional | SEC Forms 3 and 4 (title, trades, holdings), the proxy (pay table, bio), 8-Ks; patents as inventor; Hacker News |
-| The person, personal | web search (DuckDuckGo, SearXNG, Bing; Brave Search API with a key); a username sweep across about 35 sites that counts a hit only when the profile's name matches; public profiles (GitHub, Bluesky, Mastodon and others); YouTube talks; quotes attributed to them; former and maiden names; image search and reverse image search on the headshot (Bing, Yandex, Wikimedia) |
-| Politics and records | FEC donations and the company PAC; lobbying (lda.gov); federal awards (USAspending); OFAC and HHS-OIG exclusion lists; OpenSanctions and CourtListener with a free key |
+| Company | SEC EDGAR filings and XBRL financials; peers in the same SIC from XBRL frames; the 10-Q/10-K read for segments, KPIs, themes and litigation; one resolved identity (SEC CIK, GLEIF LEI, Wikidata QID) with GLEIF parents and subsidiaries; national registries by country (France, Norway, Czech Republic; UK Companies House with a free key) with officers; FDIC and NCUA for banks and credit unions; the company's leadership page and press; job boards (Greenhouse, Lever, Ashby, Gem, SmartRecruiters, Workable, Recruitee, Jobvite, Paylocity, Workday, BambooHR); DOL Form 5500 benefit plans; Wikidata; news (GDELT, Google News RSS); DNS (mail provider and SaaS stack from TXT records); RDAP domain registration; certificate transparency; the web archive; EPA ECHO enforcement |
+| The person, professional | SEC Forms 3 and 4 (title, trades, holdings), the proxy (pay table, bio), 8-Ks; FINRA BrokerCheck and SEC IAPD registrations and disclosures; NPI and state licence and bar registries; patents as inventor (Google Patents; USPTO Open Data Portal with a free key); publications (ORCID, OpenAlex, Semantic Scholar, Crossref); Wikipedia and its pageview spikes; books (Open Library); podcasts (iTunes; Podcast Index with a key); Hacker News and Stack Exchange |
+| The person, personal | web search (DuckDuckGo, SearXNG, Bing; Brave Search API with a key); a username sweep across about 35 sites that counts a hit only when the profile's name matches; Mastodon search by name; Gravatar and GitHub commits by work email; Keybase proofs, Mastodon verified links and GitHub social accounts; Linktree and `rel=me` link pages; public profiles (GitHub, Bluesky, Mastodon and others); blog, Medium, Substack and YouTube feeds; package registries (crates.io, RubyGems); Discogs, Letterboxd and chess.com; YouTube talks; quotes attributed to them; former and maiden names; image search and reverse image search on the headshot (Bing, Yandex, Wikimedia) |
+| Politics and records | FEC donations and the company PAC; lobbying (lda.gov) for the company and the person; FARA foreign-agent registrants; federal awards (USAspending); OFAC and HHS-OIG exclusion lists; the trade.gov Consolidated Screening List (OFAC SDN, BIS Entity List and ten more); OpenSanctions and CourtListener with a free key |
+| Heavy, opt-in (`--heavy`, `--transcribe`) | headshot against every candidate avatar (multi-crop perceptual hash); article text with trafilatura; talk captions and podcast audio (Whisper); document metadata in the room's corpus (exiftool); every named executive's proxy pay (edgartools). Python sidecars, started only when there is input; a missing library is an error row with the install line |
 | Late | an identity score for every candidate account (log-odds over name, employer, city, shared handles and headshot reuse; verified needs two kinds of evidence); estimates for team size, budget, pay, growth, deal size and timing, each a range with its inputs and formula |
 
 **Tested on three real people (19 to 20 November 2026), scripted pass only:** a public-company EVP: 141 findings across 41 variables in 32 s (proxy pay to the dollar, Form 4 title and trades, revenue and ARR, segments, litigation, leadership and education, 27 open roles). A VP at a private manufacturer: 62 findings in 46 s (leadership bio and patents, 13 open roles, benefit-plan headcount, SaaS stack). A recruiter at a private software company: 70 findings in 30 s. The personal side is the weak half: unless the person posts publicly, hobbies, family and causes come back empty, and the dossier says so rather than guess. An independent audit of 168 rows found 93% of rows graded verified exactly right and every SEC and Form 5500 number exact; the errors it found (namesakes, nicknames, units, stale figures) are fixed and tested. See [docs/osint.md](docs/osint.md) for the audit, the measured sources, what blocks and the free keys that help.
@@ -201,7 +202,7 @@ Use: Analyze. Lever: commercial and risk. Before a negotiation, partnership talk
 
 - **Playbook or agent, and why.** Mostly a playbook (`pipeline/STANDARD.md`, briefs P0 to P10). Research fans out to agents because the reading is broad and independent; one render step writes the pages; the companion is two fixed calls per question.
 - **How it was built.** Personas that graded their own practice questions agreed with themselves, so grading moved to a separate agent.
-- **How it's checked.** 159 tests (`npm test`). `npm run lint` fails the synthetic sample at 67/100: 16 pages against 40+, and 11 pages with no source link. Card accuracy is not measured yet.
+- **How it's checked.** 224 tests (`npm test`). `npm run lint` fails the synthetic sample at 67/100: 16 pages against 40+, and 11 pages with no source link. Card accuracy is not measured yet.
 - **Limits.** Card JSON is read with a regex, the fast lane defaults to an Opus-class model, and the research number check is a model. Next: structured outputs, a small fast model, a code tie-out and a labelled question set. See [Limits](#limits).
 
 How I build with AI: [github.com/anader298/how-i-build-with-ai](https://github.com/anader298/how-i-build-with-ai)
@@ -247,7 +248,7 @@ The same run works from a terminal: `rooms/<slug>/RUN.sh` (or `npm run run-room 
 ### Other commands
 
 ```sh
-npm test                # 159 tests
+npm test                # 224 tests
 npm run build           # every room into site/
 npm run lint            # depth score per room; the 16-page sample scores 67/100 (fails)
 npm run preview         # http://localhost:8888, no password

@@ -118,7 +118,7 @@ export function fixFor(m) {
   if (/FEC/i.test(t)) return "set FEC_API_KEY (free at api.data.gov) or retry in an hour";
   if (/duckduckgo|ddg|searx|web search|site:/i.test(t)) return "set BRAVE_API_KEY (free tier) or retry in a few minutes";
   if (/GDELT/i.test(t)) return "retry in a minute (one call per 5 s per IP)";
-  if (/patents/i.test(t)) return "retry in an hour, or set PATENTSVIEW_API_KEY (free)";
+  if (/patents/i.test(t)) return "retry in an hour, or set USPTO_API_KEY (free, USPTO Open Data Portal)";
   if (/linkedin|999/i.test(t)) return "LinkedIn refuses scripts; read the profile by hand";
   if (/instagram|threads|facebook|reddit/i.test(t)) return "not readable by script; covered by site: search";
   if (/429|rate/i.test(t)) return "rate limited: retry later";
@@ -803,7 +803,7 @@ function client() {
   }
   function renderRun() {
     const mods = D.modules.filter((m) => qPass([m.id, m.label, m.lane, m.status, m.error, m.why].join(" ")));
-    const order = { fast: 0, sweep: 1, slow: 2, late: 3 };
+    const order = { fast: 0, sweep: 1, slow: 2, heavy: 3, late: 4 };
     mods.sort((a, b) => (order[a.lane] ?? 9) - (order[b.lane] ?? 9) || (b.ms || 0) - (a.ms || 0));
     const maxMs = Math.max(1, ...D.modules.map((m) => m.ms || 0));
     const c = {};

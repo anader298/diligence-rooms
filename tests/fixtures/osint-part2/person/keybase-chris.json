@@ -1,0 +1,64 @@
+{
+ "status": {
+  "code": 0,
+  "name": "OK"
+ },
+ "them": [
+  {
+   "id": "23260c2ce19420f97b58d7d95b68ca00",
+   "basics": {
+    "username": "chris"
+   },
+   "profile": {
+    "full_name": "Chris Coyne",
+    "location": "Maine"
+   },
+   "proofs_summary": {
+    "all": [
+     {
+      "proof_type": "twitter",
+      "nametag": "malgorithms",
+      "state": 1,
+      "service_url": "https://twitter.com/malgorithms",
+      "human_url": "https://twitter.com/malgorithms/status/433640580220874754"
+     },
+     {
+      "proof_type": "github",
+      "nametag": "malgorithms",
+      "state": 1,
+      "service_url": "https://github.com/malgorithms",
+      "human_url": "https://gist.github.com/2d5bed094c6429c63f21"
+     },
+     {
+      "proof_type": "reddit",
+      "nametag": "malgorithms",
+      "state": 1,
+      "service_url": "https://reddit.com/user/malgorithms",
+      "human_url": "https://www.reddit.com/r/KeybaseProofs/comments/7qsbzv/my_keybase_proof_redditmalgorithms_keybasechris/"
+     },
+     {
+      "proof_type": "hackernews",
+      "nametag": "malgorithms",
+      "state": 1,
+      "service_url": "https://news.ycombinator.com/user?id=malgorithms",
+      "human_url": "https://news.ycombinator.com/user?id=malgorithms"
+     },
+     {
+      "proof_type": "dns",
+      "nametag": "chriscoyne.com",
+      "state": 1,
+      "service_url": "http://chriscoyne.com",
+      "human_url": "dns://chriscoyne.com"
+     },
+     {
+      "proof_type": "generic_web_site",
+      "nametag": "chriscoyne.com",
+      "state": 1,
+      "service_url": "https://chriscoyne.com",
+      "human_url": "https://chriscoyne.com/keybase.txt"
+     }
+    ]
+   }
+  }
+ ]
+}

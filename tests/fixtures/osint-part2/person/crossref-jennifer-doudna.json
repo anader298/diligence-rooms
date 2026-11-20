@@ -1,0 +1,141 @@
+{
+ "message": {
+  "items": [
+   {
+    "DOI": "10.1038/547162e",
+    "title": [
+     "CRISPR book review — Doudna responds"
+    ],
+    "container-title": [
+     "Nature"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2017,
+       7,
+       13
+      ]
+     ]
+    },
+    "author": [
+     {
+      "given": "Jennifer",
+      "family": "Doudna",
+      "affiliation": []
+     }
+    ]
+   },
+   {
+    "DOI": "10.1038/528s6a",
+    "title": [
+     "Perspective: Embryo editing needs scrutiny"
+    ],
+    "container-title": [
+     "Nature"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2015,
+       12
+      ]
+     ]
+    },
+    "author": [
+     {
+      "given": "Jennifer",
+      "family": "Doudna",
+      "affiliation": []
+     }
+    ]
+   },
+   {
+    "DOI": "10.1096/fasebj.27.1_supplement.450.1",
+    "title": [
+     "Defending the Genome: Regulatory RNA in Humans and Bacteria"
+    ],
+    "container-title": [
+     "The FASEB Journal"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2013,
+       4
+      ]
+     ]
+    },
+    "author": [
+     {
+      "given": "Jennifer",
+      "family": "Doudna",
+      "affiliation": [
+       {
+        "name": "Molecular &amp; Cell Biology, Dept. of Chemistry Howard Hughes Medical Institute University of California, Berkeley Berkeley CA"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "DOI": "10.1142/9789813273290_0005",
+    "title": [
+     "CRISPR System: From Adaptive Immunity to Genome Editing"
+    ],
+    "container-title": [
+     "The Promise of Science"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2019,
+       5,
+       2
+      ]
+     ]
+    },
+    "author": [
+     {
+      "given": "Jennifer",
+      "family": "Doudna",
+      "affiliation": [
+       {
+        "name": "Howard Hughes Medical Institute, University of California, Berkeley, CA 94720-3220, USA"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "DOI": "10.1126/science.aba1751",
+    "title": [
+     "CRISPR's unwanted anniversary"
+    ],
+    "container-title": [
+     "Science"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2019,
+       11,
+       15
+      ]
+     ]
+    },
+    "author": [
+     {
+      "given": "Jennifer",
+      "family": "Doudna",
+      "affiliation": [
+       {
+        "name": "Jennifer Doudna is the executive director of the Innovative Genomics Institute, a Howard Hughes Medical Institute investigator, and holds the Li Ka Shing Chancellor's Chair in Biomedical and Health Sciences at the University of California at Berkeley, California, USA. She is also a senior investigator at the Gladstone Institutes, San Francisco, California, USA."
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

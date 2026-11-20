@@ -1,0 +1,18 @@
+# Optional: the opt-in heavy lane of npm run osint (--heavy, --transcribe). Not needed for the
+# default run. Install into any Python 3.10+ (a venv is fine; point OSINT_PYTHON at its python):
+#   python3 -m venv ~/.venvs/osint && ~/.venvs/osint/bin/pip install -r scripts/osint/py/requirements.txt
+#   export OSINT_PYTHON=~/.venvs/osint/bin/python
+# Versions tested 20 Nov 2026. Licences: imagehash BSD-2-Clause, Pillow MIT-CMU, trafilatura
+# Apache-2.0, youtube-transcript-api MIT, faster-whisper MIT, edgartools MIT. All are installed
+# libraries called from the sidecars; none of their code is copied into this repo.
+# ExifTool (doc-metadata) is a separate program: brew install exiftool, or set OSINT_EXIFTOOL.
+imagehash==4.3.2
+pillow==13.0.0
+trafilatura==2.3.1
+youtube-transcript-api==1.2.5
+edgartools==6.3.0
+# Only for --transcribe on podcast audio (large: pulls CTranslate2 and onnxruntime, which had no
+# Python 3.14 wheels on 20 Nov 2026: use Python 3.12 or 3.13). faster-whisper 1.2.1 needs av<16.
+# The first run downloads the model (OSINT_WHISPER_MODEL, default base.en; tiny.en is smaller).
+# faster-whisper==1.2.1
+# av==15.1.0

@@ -400,3 +400,27 @@ export function looksLikeEducation(s) {
   const t = String(s || "");
   return t.length > 3 && t.length < 260 && EDU_RE.test(t) && !NOT_EDU.test(t);
 }
+
+/**
+ * Work emails to try, most likely first: --email (given), then the common company patterns on
+ * --domain (first.last@, first@, flast@, firstlast@). Given ones are marked so a hit on them
+ * counts as tied to the person; a hit on a guessed pattern only ties to the company domain.
+ */
+export function emailCandidates(subject, shared = {}) {
+  const out = [];
+  const seen = new Set();
+  const push = (email, source) => {
+    const e = String(email || "").trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(e) || seen.has(e)) return;
+    seen.add(e);
+    out.push({ email: e, source });
+  };
+  for (const e of [].concat(subject.email || [], subject.emails || [], shared.emails || [])) push(e, "given");
+  const { first, last } = nameParts(subject.name);
+  const dom = String(subject.domain || "").toLowerCase().replace(/^www\./, "");
+  if (dom && first && last) {
+    const f = first.replace(/[^a-z]/g, ""), l = last.replace(/[^a-z]/g, "");
+    for (const p of [`${f}.${l}`, `${f}`, `${f[0]}${l}`, `${f}${l}`]) push(`${p}@${dom}`, "pattern");
+  }
+  return out;
+}

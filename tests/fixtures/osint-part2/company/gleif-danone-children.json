@@ -1,0 +1,85 @@
+{
+ "meta": {
+  "goldenCopy": {
+   "publishDate": "2026-11-20T00:00:00Z"
+  },
+  "pagination": {
+   "currentPage": 1,
+   "perPage": 4,
+   "from": 1,
+   "to": 4,
+   "total": 27,
+   "lastPage": 7
+  }
+ },
+ "data": [
+  {
+   "id": "25490098FD284IOXFH69",
+   "type": "lei-records",
+   "attributes": {
+    "entity": {
+     "legalName": {
+      "name": "CÔNG TY TNHH DANONE VIỆT NAM",
+      "language": "vi"
+     },
+     "legalAddress": {
+      "city": "Hồ Chí Minh",
+      "country": "VN"
+     },
+     "status": "ACTIVE"
+    }
+   }
+  },
+  {
+   "id": "213800X2Q2Y7F3A9P412",
+   "type": "lei-records",
+   "attributes": {
+    "entity": {
+     "legalName": {
+      "name": "DANONE PENSION MANAGEMENT GMBH",
+      "language": "en"
+     },
+     "legalAddress": {
+      "city": "HAAR",
+      "country": "DE"
+     },
+     "status": "ACTIVE"
+    }
+   }
+  },
+  {
+   "id": "2138009CIGRGKTA87Q98",
+   "type": "lei-records",
+   "attributes": {
+    "entity": {
+     "legalName": {
+      "name": "DANONE NUTRICIA NEDERLAND B.V.",
+      "language": "en"
+     },
+     "legalAddress": {
+      "city": "RIJSWIJK",
+      "country": "NL"
+     },
+     "status": "ACTIVE"
+    }
+   }
+  },
+  {
+   "id": "213800OUQMN638IXC560",
+   "type": "lei-records",
+   "attributes": {
+    "entity": {
+     "legalName": {
+      "name": "DANONE NUTRICIA SPA",
+      "language": "en"
+     },
+     "legalAddress": {
+      "city": "MILANO",
+      "country": "IT"
+     },
+     "status": "ACTIVE"
+    }
+   }
+  }
+ ]
+}

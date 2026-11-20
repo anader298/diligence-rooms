@@ -1,9 +1,45 @@
 // Patents where he is an inventor. Google Patents' xhr/query endpoint answers JSON with no key
 // (measured 19 Nov 2026, under a second). Family members (US, EP, WO copies of one invention)
-// are collapsed by title. With PATENTSVIEW_API_KEY (free) the PatentsView inventor endpoint
-// adds the inventor's last known city and state.
+// are collapsed by title. With USPTO_API_KEY (free, USPTO Open Data Portal; PatentsView moved
+// there on 20 Mar 2026 and search.patentsview.org no longer resolves) the ODP patent application
+// search adds US applications by inventor name, with the inventor's city and state.
 
-import { nameParts, normName, companyIn, hobbiesIn, stripTags, blockedMiss } from "../person-lib.mjs";
+import { nameParts, normName, companyIn, placeIn, hobbiesIn, stripTags, blockedMiss, firstForms } from "../person-lib.mjs";
+
+const ODP = "https://api.uspto.gov/api/v1/patent/applications/search";
+
+/**
+ * USPTO ODP application search results naming the subject as inventor: [{ title, application,
+ * patent, filed, granted, applicant, inventor, city, region, country, url }].
+ */
+export function odpApplications(json, subject) {
+  const { first, last } = nameParts(subject.name);
+  const forms = firstForms(first);
+  const out = [];
+  for (const w of json?.patentFileWrapperDataBag || []) {
+    const m = w.applicationMetaData || {};
+    const inv = (m.inventorBag || []).find((i) => {
+      const n = normName(i.inventorNameText || [i.firstName, i.lastName].join(" ")).split(" ");
+      return n.includes(last) && forms.some((f) => n.includes(f));
+    });
+    if (!inv) continue;
+    const addr = (inv.correspondenceAddressBag || [])[0] || {};
+    out.push({
+      title: m.inventionTitle || null,
+      application: w.applicationNumberText || m.applicationNumberText || null,
+      patent: m.patentNumber || null,
+      filed: m.filingDate || null,
+      granted: m.grantDate || null,
+      applicant: m.firstApplicantName || (m.applicantBag || [])[0]?.applicantNameText || null,
+      inventor: inv.inventorNameText || null,
+      city: addr.cityName || null,
+      region: addr.geographicRegionCode || addr.geographicRegionName || null,
+      country: addr.countryCode || null,
+      url: w.applicationNumberText ? `https://data.uspto.gov/patent-file-wrapper/search/details/${w.applicationNumberText}` : null,
+    });
+  }
+  return out;
+}
 
 /** Collapse Google Patents results to one per invention, keeping those that name the subject. */
 export function patentsFrom(json, subject) {
@@ -27,10 +63,10 @@ export function patentsFrom(json, subject) {
 
 export default {
   id: "patents",
-  label: "Patents as inventor (Google Patents; PatentsView with key)",
+  label: "Patents as inventor (Google Patents; USPTO Open Data Portal with key)",
   lane: "fast",
   needs: ["name"],
-  env: ["PATENTSVIEW_API_KEY"],
+  env: ["USPTO_API_KEY"],
   budgetMs: 20000,
   async run(ctx) {
     const { subject, http, env, shared } = ctx;
@@ -42,7 +78,7 @@ export default {
       r = await http.json(pu, { timeout: 12000 });
     }
     if (!r.ok) {
-      blockedMiss(ctx, "career.patents", "Google Patents", r, `${env.PATENTSVIEW_API_KEY ? "" : "set PATENTSVIEW_API_KEY (free) for a second source, or "}retry in an hour (Google's unusual-traffic page clears on its own)`);
+      blockedMiss(ctx, "career.patents", "Google Patents", r, `${env.USPTO_API_KEY ? "" : "set USPTO_API_KEY (free, USPTO Open Data Portal) for a second source, or "}retry in an hour (Google's unusual-traffic page clears on its own)`);
     } else {
       const pats = patentsFrom(r.data, subject);
       if (!pats.length) ctx.miss("career.patents", `Google Patents: no patents with inventor ${first} ${last}`);
@@ -69,18 +105,28 @@ export default {
       shared.patents = pats;
     }
 
-    if (env.PATENTSVIEW_API_KEY) {
-      const q = JSON.stringify({ _and: [{ inventor_name_first: first.replace(/^./, (c) => c.toUpperCase()) }, { inventor_name_last: last.replace(/^./, (c) => c.toUpperCase()) }] });
-      const f = JSON.stringify(["inventor_id", "inventor_name_first", "inventor_name_last", "inventor_lastknown_city", "inventor_lastknown_state", "inventor_lastknown_country", "inventor_num_patents"]);
-      const pv = await http.json(`https://search.patentsview.org/api/v1/inventor/?q=${encodeURIComponent(q)}&f=${encodeURIComponent(f)}`, { headers: { "X-Api-Key": env.PATENTSVIEW_API_KEY }, timeout: 12000 });
-      for (const inv of pv.data?.inventors || []) {
-        const city = inv.inventor_lastknown_city, st = inv.inventor_lastknown_state;
-        if (!city) continue;
-        ctx.add({ var: "place.home_metro", value: `${city}, ${st || inv.inventor_lastknown_country} (PatentsView inventor's last known city, ${inv.inventor_num_patents ?? "?"} patents)`, url: `https://datatool.patentsview.org/#search/inventor&inv=${inv.inventor_id}`, grade: "p", tier: "A", anchors: ["name"], detail: inv });
+    if (env.USPTO_API_KEY) {
+      const q = `applicationMetaData.inventorBag.inventorNameText:"${first} ${last}"`;
+      const od = await http.json(`${ODP}?q=${encodeURIComponent(q)}&limit=50&offset=0`, { headers: { "X-API-KEY": env.USPTO_API_KEY }, timeout: 12000 });
+      if (!od.ok) {
+        if ([401, 403].includes(od.status)) ctx.miss("career.patents", `USPTO Open Data Portal: HTTP ${od.status} (check USPTO_API_KEY), not checked`);
+        else if (od.status !== 404) blockedMiss(ctx, "career.patents", "USPTO Open Data Portal", od, "retry later", { partial: true });
       }
-      if (!pv.ok) ctx.miss("place.home_metro", `PatentsView: HTTP ${pv.status || pv.error}`);
-    } else if (shared.patents?.length) {
-      ctx.miss("place.home_metro", "inventor city not read: Google Patents does not expose it; set PATENTSVIEW_API_KEY (free) to add it");
+      const apps = odpApplications(od.data, subject);
+      const web = `https://data.uspto.gov/patent-file-wrapper/search?q=${encodeURIComponent(q)}`;
+      if (apps.length) {
+        const co = apps.filter((a) => companyIn(a.applicant || "", subject));
+        ctx.add({ var: "career.patents", value: `USPTO: ${od.data?.count ?? apps.length} US application(s) with inventor ${first} ${last}; applicants ${[...new Set(apps.map((a) => a.applicant).filter(Boolean))].slice(0, 5).join(", ") || "?"}${co.length ? ` (${co.length} for ${subject.company})` : ""}`, url: web, grade: co.length ? "p" : "w", tier: "A", anchors: co.length ? ["name", "company"] : ["name"], detail: { count: od.data?.count ?? apps.length, applications: apps.slice(0, 25) } });
+        const cities = new Map();
+        for (const a of apps) if (a.city) cities.set(`${a.city}|${a.region || a.country}`, (cities.get(`${a.city}|${a.region || a.country}`) || []).concat(a));
+        for (const [k, list] of [...cities].sort((a, b) => b[1].length - a[1].length).slice(0, 2)) {
+          const [city, reg] = k.split("|");
+          const tied = list.some((a) => companyIn(a.applicant || "", subject)) || placeIn(`${city} ${reg}`, subject, shared);
+          ctx.add({ var: "place.home_metro", value: `${city}, ${reg} (USPTO inventor address on ${list.length} application(s)${list[0].applicant ? `, e.g. for ${list[0].applicant}` : ""})`, url: list[0].url || web, grade: tied ? "p" : "w", tier: "A", anchors: tied ? ["name", "company"] : ["name"], date: list.map((a) => a.filed).filter(Boolean).sort().at(-1) || null, detail: { applications: list.map((a) => a.application) } });
+        }
+      } else if (od.ok) ctx.miss("career.patents", `USPTO Open Data Portal: no US applications with inventor "${first} ${last}"`);
+    } else {
+      ctx.miss("career.patents", "USPTO Open Data Portal not checked: set USPTO_API_KEY (free at data.uspto.gov) for US applications by inventor and the inventor's city");
     }
   },
 };

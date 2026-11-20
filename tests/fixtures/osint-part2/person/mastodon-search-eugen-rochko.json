@@ -1,0 +1,32 @@
+{
+ "accounts": [
+  {
+   "id": "1",
+   "username": "Gargron",
+   "acct": "Gargron",
+   "display_name": "Eugen Rochko",
+   "url": "https://mastodon.social/@Gargron",
+   "note": "<p>Executive Strategy &amp; Product Advisor of <span class=\"h-card\" translate=\"no\"><a href=\"https://mastodon.social/@Mastodon\" class=\"u-url mention\">@<span>Mastodon</span></a></span>. Film photography, prog metal, Dota 2. Likes all things analog. Luddite.</p>",
+   "avatar": "https://files.mastodon.social/accounts/avatars/000/000/001/original/6b2384b33799a0dd.png",
+   "followers_count": 381409,
+   "statuses_count": 82891,
+   "last_status_at": "2026-11-20",
+   "created_at": "2016-03-16T00:00:00.000Z",
+   "bot": false,
+   "fields": [
+    {
+     "name": "GitHub",
+     "value": "<a href=\"https://github.com/Gargron\" target=\"_blank\" rel=\"nofollow noopener me\" translate=\"no\"><span class=\"invisible\">https://</span><span class=\"\">github.com/Gargron</span><span class=\"invisible\"></span></a>",
+     "verified_at": "2023-02-07T23:24:40.347+00:00"
+    },
+    {
+     "name": "Portfolio",
+     "value": "<a href=\"https://eugenrochko.com\" target=\"_blank\" rel=\"nofollow noopener me\" translate=\"no\"><span class=\"invisible\">https://</span><span class=\"\">eugenrochko.com</span><span class=\"invisible\"></span></a>",
+     "verified_at": "2024-07-06T01:06:10.801+00:00"
+    }
+   ]
+  }
+ ],
+ "hashtags": [],
+ "statuses": []
+}

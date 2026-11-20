@@ -1,0 +1,21 @@
+{
+ "type": "standard",
+ "title": "Satya Nadella",
+ "titles": {
+  "canonical": "Satya_Nadella"
+ },
+ "description": "Indian-American business executive (born 1967)",
+ "extract": "Satya Narayana Nadella is an Indian-American business executive. He is the chairman and chief executive officer (CEO) of Microsoft, succeeding Steve Ballmer in 2014 as CEO and John W. Thompson in 2021 as chairman. Before becoming CEO, he was the executive vice president of Microsoft's cloud and enterprise group, responsible for building and running the company's computing platforms.",
+ "thumbnail": {
+  "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/MS-Exec-Nadella-Satya-2017-08-31-22_%28cropped%29.jpg/330px-MS-Exec-Nadella-Satya-2017-08-31-22_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "width": 330,
+  "height": 422
+ },
+ "wikibase_item": "Q7426870",
+ "timestamp": "2026-11-17T08:33:33Z",
+ "content_urls": {
+  "desktop": {
+   "page": "https://en.wikipedia.org/wiki/Satya_Nadella"
+  }
+ }
+}

@@ -1,0 +1,32 @@
+[{
+  "SourceFile": "DOCS/arxiv-attention.pdf",
+  "Author": "",
+  "Creator": "LaTeX with hyperref",
+  "Producer": "pdfTeX-1.40.25",
+  "CreateDate": "2024:04:10 21:11:43Z",
+  "ModifyDate": "2024:04:10 21:11:43Z",
+  "Title": "",
+  "FileType": "PDF"
+},
+{
+  "SourceFile": "DOCS/fed-statement.pdf",
+  "Author": "Federal Reserve",
+  "Creator": "Federal Reserve",
+  "Producer": "Microsoft® Word for Microsoft 365",
+  "CreatorTool": "Microsoft® Word for Microsoft 365",
+  "CreateDate": "2024:01:31 12:10:50-05:00",
+  "ModifyDate": "2024:01:31 12:12:00-05:00",
+  "Title": "Federal Reserve issues FOMC statement",
+  "FileType": "PDF"
+},
+{
+  "SourceFile": "DOCS/irs-w9.pdf",
+  "Author": "SE:W:CAR:MP",
+  "Creator": "SE:W:CAR:MP",
+  "Producer": "Designer 6.5",
+  "CreatorTool": "Designer 6.5",
+  "CreateDate": "2024:03:06 08:18:13-05:00",
+  "ModifyDate": "2024:03:06 08:18:13-05:00",
+  "Title": "Form W-9 (Rev. March 2024)",
+  "FileType": "PDF"
+}]

@@ -1,0 +1,180 @@
+{
+ "filing": {
+  "form": "DEF 14A",
+  "date": "2026-10-21",
+  "accession": "0001193125-26-427849",
+  "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312526427849/d61756ddef14a.htm",
+  "company": "Microsoft Corporation"
+ },
+ "pvp": {
+  "peo_name": null,
+  "peo_total_comp": 90628977.0,
+  "peo_actually_paid_comp": 30083543.0,
+  "neo_avg_total_comp": 28986966.0,
+  "neo_avg_actually_paid_comp": 12793419.0,
+  "tsr": 143.0,
+  "peer_tsr": 260.0,
+  "net_income": 133749000000.0,
+  "selected_measure": "Microsoft Incentive Plan Revenue",
+  "selected_measure_value": 330560000000.0,
+  "measures": [
+   "Microsoft Incentive Plan Revenue",
+   "Relative TSR as compared to the S&P 500",
+   "Azure and Other Cloud Services Revenue",
+   "Microsoft Cloud Revenue, excluding Azure and Other Cloud Services",
+   "Microsoft Incentive Plan Operating Income"
+  ],
+  "fiscal_year_end": null
+ },
+ "sct": [
+  {
+   "name": "Satya Nadella Chairman and",
+   "title": "CEO",
+   "year": 2026,
+   "salary": 2500000,
+   "bonus": 0,
+   "stock_awards": 77570774,
+   "option_awards": null,
+   "non_equity_incentive": 10299000,
+   "pension_change": null,
+   "other_compensation": 259203,
+   "total": 90628977
+  },
+  {
+   "name": "Satya Nadella Chairman and",
+   "title": "CEO",
+   "year": 2025,
+   "salary": 2500000,
+   "bonus": 0,
+   "stock_awards": 84245496,
+   "option_awards": null,
+   "non_equity_incentive": 9555000,
+   "pension_change": null,
+   "other_compensation": 196294,
+   "total": 96496790
+  },
+  {
+   "name": "Satya Nadella Chairman and",
+   "title": "CEO",
+   "year": 2024,
+   "salary": 2500000,
+   "bonus": 0,
+   "stock_awards": 71236392,
+   "option_awards": null,
+   "non_equity_incentive": 5200000,
+   "pension_change": null,
+   "other_compensation": 169791,
+   "total": 79106183
+  },
+  {
+   "name": "Amy E. Hood Executive Vice President and",
+   "title": "CFO",
+   "year": 2026,
+   "salary": 1000000,
+   "bonus": 0,
+   "stock_awards": 29136390,
+   "option_awards": null,
+   "non_equity_incentive": 3488000,
+   "pension_change": null,
+   "other_compensation": 92399,
+   "total": 33716789
+  },
+  {
+   "name": "Amy E. Hood Executive Vice President and",
+   "title": "CFO",
+   "year": 2025,
+   "salary": 1000000,
+   "bonus": 0,
+   "stock_awards": 25037360,
+   "option_awards": null,
+   "non_equity_incentive": 3421000,
+   "pension_change": null,
+   "other_compensation": 23191,
+   "total": 29481551
+  },
+  {
+   "name": "Amy E. Hood Executive Vice President and",
+   "title": "CFO",
+   "year": 2024,
+   "salary": 1000000,
+   "bonus": 0,
+   "stock_awards": 21094956,
+   "option_awards": null,
+   "non_equity_incentive": 3642750,
+   "pension_change": null,
+   "other_compensation": 61500,
+   "total": 25799206
+  }
+ ],
+ "pay_ratio": {
+  "ceo": 90628977.0,
+  "median": null,
+  "ratio": 421.0
+ },
+ "directors": [
+  {
+   "name": "Carmine Di Sibio",
+   "fees_earned": 6720,
+   "stock_awards": 12000,
+   "option_awards": null,
+   "non_equity_incentive": null,
+   "pension_change": null,
+   "other_compensation": 0,
+   "total": 18720
+  },
+  {
+   "name": "Reid G. Hoffman",
+   "fees_earned": 125000,
+   "stock_awards": 250000,
+   "option_awards": null,
+   "non_equity_incentive": null,
+   "pension_change": null,
+   "other_compensation": 15000,
+   "total": 390000
+  },
+  {
+   "name": "Hugh F. Johnston",
+   "fees_earned": 170000,
+   "stock_awards": 250000,
+   "option_awards": null,
+   "non_equity_incentive": null,
+   "pension_change": null,
+   "other_compensation": 0,
+   "total": 420000
+  },
+  {
+   "name": "Teri L. List",
+   "fees_earned": 140000,
+   "stock_awards": 250000,
+   "option_awards": null,
+   "non_equity_incentive": null,
+   "pension_change": null,
+   "other_compensation": 15000,
+   "total": 405000
+  }
+ ],
+ "audit_fees": {
+  "auditor_name": "",
+  "current_year": 2026.0,
+  "prior_year": 2025.0,
+  "audit_fees_current": 55800000.0,
+  "audit_fees_prior": 53880000.0,
+  "audit_related_current": 21059000.0,
+  "audit_related_prior": 19470000.0,
+  "tax_fees_current": 4842000.0,
+  "tax_fees_prior": 5105000.0,
+  "other_fees_current": 10000.0,
+  "other_fees_prior": 10000.0,
+  "total_current": 81711000.0,
+  "total_prior": 78465000.0
+ },
+ "proposals": [
+  "Election of 12 Directors",
+  "Advisory Vote to Approve",
+  "Ratification of the Selection",
+  "Additional Disclosures Meeting Climate Commitments",
+  "Report on Human Rights Due Diligence",
+  "Report on Data Operations in Human Rights and Conflict Hotspots",
+  "Board Chair and CEO Separation"
+ ]
+}

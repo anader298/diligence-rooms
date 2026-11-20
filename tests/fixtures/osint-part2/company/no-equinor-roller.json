@@ -1,0 +1,88 @@
+{
+ "rollegrupper": [
+  {
+   "roller": [
+    {
+     "avregistrert": false,
+     "person": {
+      "navn": {
+       "etternavn": "Opedal",
+       "fornavn": "Anders"
+      }
+     },
+     "rekkefolge": 0,
+     "type": {
+      "beskrivelse": "Daglig leder",
+      "kode": "DAGL"
+     }
+    }
+   ],
+   "sistEndret": "2020-11-02",
+   "type": {
+    "_links": {
+     "self": {
+      "href": "https://data.brreg.no/enhetsregisteret/api/roller/rollegruppetyper/DAGL"
+     }
+    },
+    "beskrivelse": "Daglig leder",
+    "kode": "DAGL"
+   }
+  },
+  {
+   "roller": [
+    {
+     "avregistrert": false,
+     "person": {
+      "navn": {
+       "etternavn": "Roth",
+       "fornavn": "Jarle Kjell"
+      }
+     },
+     "rekkefolge": 0,
+     "type": {
+      "beskrivelse": "Styrets leder",
+      "kode": "LEDE"
+     }
+    },
+    {
+     "avregistrert": true,
+     "person": {
+      "navn": {
+       "etternavn": "Ruyter",
+       "fornavn": "Finn Bjørn"
+      }
+     },
+     "rekkefolge": 1,
+     "type": {
+      "beskrivelse": "Styremedlem",
+      "kode": "MEDL"
+     }
+    },
+    {
+     "avregistrert": false,
+     "person": {
+      "navn": {
+       "etternavn": "Bruun-Hanssen",
+       "fornavn": "Haakon Stephen"
+      }
+     },
+     "rekkefolge": 2,
+     "type": {
+      "beskrivelse": "Styremedlem",
+      "kode": "MEDL"
+     }
+    }
+   ],
+   "sistEndret": "2026-09-04",
+   "type": {
+    "_links": {
+     "self": {
+      "href": "https://data.brreg.no/enhetsregisteret/api/roller/rollegruppetyper/STYR"
+     }
+    },
+    "beskrivelse": "Styre",
+    "kode": "STYR"
+   }
+  }
+ ]
+}

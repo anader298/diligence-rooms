@@ -1,0 +1,77 @@
+{
+ "objectClassName": "domain",
+ "ldhName": "MICROSOFT.COM",
+ "events": [
+  {
+   "eventAction": "registration",
+   "eventDate": "1991-05-02T04:00:00Z"
+  },
+  {
+   "eventAction": "expiration",
+   "eventDate": "2027-05-03T04:00:00Z"
+  },
+  {
+   "eventAction": "last changed",
+   "eventDate": "2026-01-29T18:46:57Z"
+  },
+  {
+   "eventAction": "last update of RDAP database",
+   "eventDate": "2026-11-20T06:04:12Z"
+  }
+ ],
+ "status": [
+  "client delete prohibited",
+  "client transfer prohibited",
+  "client update prohibited",
+  "server delete prohibited",
+  "server transfer prohibited",
+  "server update prohibited"
+ ],
+ "nameservers": [
+  {
+   "ldhName": "NS1-39.AZURE-DNS.COM"
+  },
+  {
+   "ldhName": "NS2-39.AZURE-DNS.NET"
+  },
+  {
+   "ldhName": "NS3-39.AZURE-DNS.ORG"
+  },
+  {
+   "ldhName": "NS4-39.AZURE-DNS.INFO"
+  }
+ ],
+ "secureDNS": {
+  "delegationSigned": false
+ },
+ "entities": [
+  {
+   "roles": [
+    "registrar"
+   ],
+   "vcardArray": [
+    "vcard",
+    [
+     [
+      "version",
+      {},
+      "text",
+      "4.0"
+     ],
+     [
+      "fn",
+      {},
+      "text",
+      "MarkMonitor Inc."
+     ]
+    ]
+   ],
+   "publicIds": [
+    {
+     "type": "IANA Registrar ID",
+     "identifier": "292"
+    }
+   ]
+  }
+ ]
+}

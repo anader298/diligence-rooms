@@ -1,0 +1,30 @@
+{
+ "nbHits": 9985,
+ "hits": [
+  {
+   "created_at": "2024-03-11T12:57:11Z",
+   "story_title": "The Best Essay",
+   "comment_text": "In earlier drafts I wrote &quot;the existence of some set of best\nessays follows necessarily&quot; but it sounded so pedantic that it didn&#x27;t seem worth keeping just to protect myself from being accused of not understanding the distinction between a partial and total order. I assumed anyone read"
+  },
+  {
+   "created_at": "2023-08-27T01:29:42Z",
+   "story_title": "If you're interested in eye-tracking, I'm interested in funding you",
+   "comment_text": "It&#x27;s not available yet. And in any case if this is the future there should be multiple companies doing it, not just Apple."
+  },
+  {
+   "created_at": "2022-12-18T21:09:11Z",
+   "story_title": "Paul Graham is leaving Twitter for now",
+   "comment_text": "Thanks, but as I learned when I was running HN, being a regular user of a forum (which the moderator necessarily is) and writing essays are fundamentally incompatible.<p>If you&#x27;re known to be a regular user of a forum, then when someone says something about you and you don&#x27;t reply, it read"
+  },
+  {
+   "created_at": "2022-12-18T20:38:29Z",
+   "story_title": "Paul Graham is leaving Twitter for now",
+   "comment_text": "I&#x27;m not leaving Twitter. It seems more likely than not that Elon will reverse the ban on links to other social media sites. I just don&#x27;t want to hang out there in the meantime. Plus given the way things are going, it seemed like a good time to learn about alternatives.<p>I still think Elon"
+  },
+  {
+   "created_at": "2020-03-22T12:04:55Z",
+   "story_title": "Paul Graham donates to flexport.org for healthcare worker protective gear in SF",
+   "comment_text": "Yes. The root of the problem is that the hospitals&#x27; supply chain is brittle, and broke under the stress. One hopes it will get redesigned to be more robust. But in the meantime Flexport can get PPE now, and now is when it&#x27;s needed."
+  }
+ ]
+}
