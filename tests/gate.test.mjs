@@ -55,7 +55,7 @@ test("gate: fails on an empty required bucket, an AI slot not written and an emp
     const f = join(dir, "work", "osint", "_company", "ledger.jsonl");
     writeFileSync(f, readFileSync(f, "utf8").split("\n").filter((l) => !l.includes('"bucket":"start.line"')).join("\n"));
     gate = formGate(roomForm(dir, { moduleVars: mv }));
-    assert.deepEqual(gate.errors, ['Start here: "The line" is not filled (Searched, nothing found: AI slot not written yet)']);
+    assert.deepEqual(gate.errors, ['Start here: "The line" is not filled (Not written yet: no AI entry yet)']);
     // lint carries the form check into its score and verdict
     const rep = lintRoom(dir, { skeletonDir: join(REPO, "templates", "skeleton"), moduleVars: mv });
     const c = rep.checks.find((x) => x.name === "form check errors");

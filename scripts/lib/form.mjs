@@ -24,6 +24,8 @@ export const FORM_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", ".."
 export const COMPANY_LEDGER = "_company";
 export const KINDS = ["fact", "list", "ai"];
 export const STATES = ["filled", "empty", "blocked", "no-tool"];
+/** The label shown for a bucket's state; an AI slot nobody wrote reads "Not written yet". */
+export const stateLabel = (b) => (b.aiOpen ? "Not written yet" : STATE_LABEL[b.state]);
 export const STATE_LABEL = { filled: "Filled", empty: "Searched, nothing found", blocked: "Couldn't check", "no-tool": "No tool yet" };
 const FILL_GRADES = ["v", "p", "w", "i"]; // best first
 const NONE_GRADES = ["n", "np", "u"];
@@ -259,7 +261,7 @@ export function computeStates(insts, ledgers, { moduleVars = {}, intake = {} } =
       if (good.length) return done("filled", { grade: "i", rows: good.map((c) => c.r), refs: good.map((c) => c.r.ref), badCites: bad });
       const none = checked.find((c) => c.none);
       if (none) return done("empty", { why: none.r.note || none.r.value, badCites: bad });
-      return done("empty", { why: rows.length ? "AI entry cites ledger ids that do not exist" : "AI slot not written yet", badCites: bad, aiOpen: true });
+      return done("empty", { why: rows.length ? "AI entry cites ledger ids that do not exist" : "no AI entry yet", badCites: bad, aiOpen: true });
     }
 
     const fill = rows.filter((r) => FILL_GRADES.includes(r.grade));
@@ -276,7 +278,8 @@ export function computeStates(insts, ledgers, { moduleVars = {}, intake = {} } =
 
     const misses = Ls.flatMap((L) => L.misses.filter((m) => inst.vars.includes(m.var)));
     const realMiss = misses.find((m) => !isBlockedMiss(m));
-    if (realMiss) return done("empty", { why: `${realMiss.module}: ${realMiss.searched}` });
+    // a per-platform bucket (match) is not answered by a miss on the whole var: go by the modules
+    if (realMiss && !inst.match) return done("empty", { why: `${realMiss.module}: ${realMiss.searched}` });
 
     const feed = feeders(inst.vars);
     if (inst.intake && !feed.length) return done("empty", { why: "not given in the intake" });
@@ -346,7 +349,7 @@ export function formGate(form) {
   for (const id of form.missingPacks) errors.push(`selected pack ${id} has no file in config/form/: its buckets are missing`);
   for (const b of form.buckets) {
     const who = b.personName ? ` (${b.personName})` : "";
-    if (b.start && b.state !== "filled") errors.push(`Start here: "${b.label}"${who} is not filled (${STATE_LABEL[b.state]}${b.why ? `: ${b.why}` : ""})`);
+    if (b.start && b.state !== "filled") errors.push(`Start here: "${b.label}"${who} is not filled (${stateLabel(b)}${b.why ? `: ${b.why}` : ""})`);
     else if (b.required && b.state === "no-tool") errors.push(`required bucket "${b.label}"${who} [${b.id}] has no tool and no entry: hand in an entry or a "none found" with what was searched`);
     else if (b.required && b.state === "blocked" && /has not run/.test(b.why || "")) errors.push(`required bucket "${b.label}"${who} [${b.id}]: the scripted pass has not run`);
     else if (b.required && b.kind === "ai" && b.aiOpen) errors.push(`required AI slot "${b.label}"${who} [${b.id}] is not written`);

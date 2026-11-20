@@ -2,7 +2,7 @@
 // their states; and one "The form" page with every bucket, Other findings and the form check.
 // The AI never edits these rows. Uses the room's existing classes (grade spans, a.src, .tw).
 import { esc } from "./render.mjs";
-import { STATE_LABEL, GRADE_CLASS, GRADE_LABEL } from "./form.mjs";
+import { stateLabel, STATE_LABEL, GRADE_CLASS, GRADE_LABEL } from "./form.mjs";
 
 const hostOf = (u) => {
   try {
@@ -40,7 +40,7 @@ export function bucketRows(b, { max = 5, withPage = false } = {}) {
       })
       .join("");
   }
-  return `<tr ${attrs}>${head}<td><small>${esc(clip(b.why || "", 220))}</small></td><td><span class="fstate ${b.state}">${STATE_LABEL[b.state]}</span></td><td></td></tr>`;
+  return `<tr ${attrs}>${head}<td><small>${esc(clip(b.why || "", 220))}</small></td><td><span class="fstate ${b.state}">${stateLabel(b)}</span></td><td></td></tr>`;
 }
 
 const tableOf = (rows) => `<div class="tw"><table class="form"><tr><th>Bucket</th><th>Finding</th><th>State</th><th>Source</th></tr>${rows}</table></div>`;

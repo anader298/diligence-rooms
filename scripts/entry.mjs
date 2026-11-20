@@ -19,7 +19,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { REPO, SLUG_RE } from "./lib/compose.mjs";
 import { submitEntry } from "./lib/entries.mjs";
-import { roomForm, STATE_LABEL } from "./lib/form.mjs";
+import { roomForm, stateLabel } from "./lib/form.mjs";
 import { moduleVars } from "./osint/run.mjs";
 
 let values, positionals;
@@ -37,15 +37,15 @@ try {
   process.exit(2);
 }
 const slug = positionals[0];
-if (!SLUG_RE.test(slug || "") || !existsSync(join(REPO, "rooms", slug || "", "room.json"))) {
+if (!SLUG_RE.test(slug || "") || !existsSync(join(process.env.DR_ROOMS || join(REPO, "rooms"), slug || "", "room.json"))) {
   console.error("usage: npm run entry -- <slug> --bucket <id> [--person <slug>] --value <text> --url <https://...> [--note t] [--weak] | --none <what was searched> | --cites L-0001,...   (or --list)");
   process.exit(2);
 }
-const roomDir = join(REPO, "rooms", slug);
+const roomDir = join(process.env.DR_ROOMS || join(REPO, "rooms"), slug);
 if (values.list) {
   const form = roomForm(roomDir, { moduleVars: await moduleVars(), force: true });
   for (const b of form.buckets.filter((b) => !values.person || b.person === values.person))
-    console.log(`${(b.person ? b.person + " " : "") + b.id}`.padEnd(44), b.kind.padEnd(5), STATE_LABEL[b.state].padEnd(24), b.label);
+    console.log(`${(b.person ? b.person + " " : "") + b.id}`.padEnd(44), b.kind.padEnd(5), stateLabel(b).padEnd(24), b.label);
   process.exit(0);
 }
 if (!values.bucket) {

@@ -9,7 +9,7 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { REPO, SLUG_RE } from "./lib/compose.mjs";
-import { loadPacks, roomForm, formGate, bucketTable, STATE_LABEL, GRADE_LABEL } from "./lib/form.mjs";
+import { loadPacks, roomForm, formGate, bucketTable, STATE_LABEL, stateLabel, GRADE_LABEL } from "./lib/form.mjs";
 import { moduleVars } from "./osint/run.mjs";
 
 const args = process.argv.slice(2);
@@ -33,7 +33,7 @@ if (!SLUG_RE.test(slug || "")) {
   console.error("usage: npm run form -- <slug> [--check] [--json] | --table | --packs");
   process.exit(2);
 }
-const roomDir = join(REPO, "rooms", slug);
+const roomDir = join(process.env.DR_ROOMS || join(REPO, "rooms"), slug);
 if (!existsSync(join(roomDir, "room.json"))) {
   console.error(`rooms/${slug}/room.json not found`);
   process.exit(2);
@@ -55,7 +55,7 @@ else if (form) {
     last = head;
     const g = b.state === "filled" ? ` ${GRADE_LABEL[b.grade] || b.grade}` : "";
     const src = b.state === "filled" ? (b.refs.length ? `  ${b.refs.slice(0, 3).join(", ")}${b.refs.length > 3 ? ` +${b.refs.length - 3}` : ""}` : `  ${b.why || ""}`) : `  ${b.why || ""}`;
-    console.log(`  ${b.required ? "*" : " "} ${b.id.padEnd(28)} ${(STATE_LABEL[b.state] + g).padEnd(34)}${src.slice(0, 120)}`);
+    console.log(`  ${b.required ? "*" : " "} ${b.id.padEnd(28)} ${(stateLabel(b) + g).padEnd(34)}${src.slice(0, 120)}`);
   }
   console.log(`\nOther findings (rows in no bucket): ${form.other.length}`);
   console.log(`States: ${Object.entries(form.counts).map(([k, v]) => `${STATE_LABEL[k]} ${v}`).join(" · ")}  (${form.buckets.length} buckets; packs ${form.packs.map((p) => p.id).join(", ")})`);
