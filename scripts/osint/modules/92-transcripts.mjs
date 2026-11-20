@@ -73,12 +73,12 @@ export default {
     const { subject, shared, opts = {} } = ctx;
     const { videos, audio } = mediaOf(ctx.rows || [], shared, opts);
     const whisper = !!opts.transcribe && audio.length > 0;
-    if (!videos.length && !whisper) return ctx.miss("voice.transcripts", `transcripts not run: no YouTube talks found by the talk modules${audio.length ? " (podcast audio needs --transcribe)" : ""}`);
+    if (!videos.length && !whisper) return ctx.miss("voice.transcripts", `transcripts not run: no YouTube talks found by the talk modules${audio.length ? " (podcast audio needs --transcribe)" : ""}`, { blocked: true });
     const r = await runSidecar("transcript", { videos: videos.map((v) => ({ id: v.id })), audio: whisper ? audio.map((a) => ({ url: a.url })) : [], whisper, whisper_model: ctx.env.OSINT_WHISPER_MODEL || "base.en", max_audio_seconds: 3600, user_agent: UA }, { timeoutMs: whisper ? 230000 : 60000, env: ctx.env });
     if (r.missing) return depMiss(ctx, "voice.transcripts", "transcripts", r.missing, null, ["youtube_transcript_api", ...(whisper ? ["faster_whisper"] : [])]);
     if (!r.ok) {
       ctx.status("error", `sidecar: ${r.error}`);
-      return ctx.miss("voice.transcripts", `transcripts not run: sidecar failed (${r.error})`);
+      return ctx.miss("voice.transcripts", `transcripts not run: sidecar failed (${r.error})`, { blocked: true });
     }
     const byId = new Map(videos.map((v) => [v.id, v]));
     let blocked = 0;
@@ -86,7 +86,7 @@ export default {
       const v = byId.get(t.id);
       if (t.error || !t.segments?.length) {
         if (/RequestBlocked|IpBlocked|TooManyRequests/i.test(t.error || "")) blocked++;
-        ctx.miss("voice.transcripts", `YouTube captions for "${v?.title || t.id}": ${t.error ? (/RequestBlocked|IpBlocked|TooManyRequests/i.test(t.error) ? `blocked (${t.error.split(":")[0]}), unknown` : `none (${t.error.split(":")[0]})`) : "empty"}`);
+        ctx.miss("voice.transcripts", `YouTube captions for "${v?.title || t.id}": ${t.error ? (/RequestBlocked|IpBlocked|TooManyRequests/i.test(t.error) ? `blocked (${t.error.split(":")[0]}), unknown` : `none (${t.error.split(":")[0]})`) : "empty"}`, { blocked: /RequestBlocked|IpBlocked|TooManyRequests/i.test(t.error || "") });
         continue;
       }
       const s = summarize(t.segments, subject);
@@ -106,7 +106,7 @@ export default {
       const m = audio.find((x) => x.url === a.url);
       if (a.error || !a.segments?.length) {
         if (a.error) ctx.status("partial", `Whisper: ${a.error.slice(0, 120)}`);
-        ctx.miss("voice.transcripts", `Whisper on "${m?.title || a.url}": ${a.error ? `not run (${a.error.slice(0, 160)}), unknown` : "no speech"}`);
+        ctx.miss("voice.transcripts", `Whisper on "${m?.title || a.url}": ${a.error ? `not run (${a.error.slice(0, 160)}), unknown` : "no speech"}`, { blocked: !!a.error });
         continue;
       }
       const s = summarize(a.segments, subject);

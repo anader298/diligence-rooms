@@ -108,7 +108,7 @@ export function depMiss(ctx, vars, what, missing, fix, pyDeps = []) {
   const noPy = missing.includes("python3");
   const how = fix || (noPy ? `install Python 3 (or set OSINT_PYTHON to its path)${pyDeps.length ? `, then ${pipLine(pyDeps)}` : ""}` : pipLine(missing));
   const line = `${what}: not run, ${noPy ? "Python 3 not found" : `missing ${missing.join(", ")}`} · fix: ${how}`;
-  for (const v of [].concat(vars)) ctx.miss(v, line);
+  for (const v of [].concat(vars)) ctx.miss(v, line, { blocked: true });
   ctx.status("error", line);
   return line;
 }

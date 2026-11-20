@@ -383,8 +383,9 @@ export function isBlocked(res) {
 export function blockedMiss(ctx, varId, source, res, fix = "", { partial = false } = {}) {
   const code = res?.status ? `HTTP ${res.status}` : res?.error || "no answer";
   const text = `${source}: blocked (${code}), unknown${fix ? ` · fix: ${fix}` : ""}`;
-  // partial: one of many sources refused (a site in the sweep); the module itself still ran.
-  ctx.miss(varId, text, partial ? undefined : { blocked: true, status: res?.status || 0, fix });
+  // partial: one of many sources refused (a site in the sweep); the module itself still ran. The
+  // miss is still marked blocked: that source was not checked.
+  ctx.miss(varId, text, { blocked: true, status: res?.status || 0, fix });
   if (!partial) {
     if (typeof ctx.status === "function") ctx.status("blocked", `${source} ${code}`);
     else if (typeof ctx.block === "function") ctx.block(`${source} ${code}`);

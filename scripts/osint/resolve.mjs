@@ -85,6 +85,8 @@ export function companyBase(ctx) {
       http.json(`${WD}?action=wbsearchentities&search=${encodeURIComponent(subject.company)}&language=en&type=item&limit=7&format=json`, { timeout: 6000 }),
     ]);
     out.gleifStatus = g.status || g.error;
+    // the lookups that failed (a refused or broken call): "no identifier" is then not an answer
+    out.failed = [...(sec?.error && !sec?.cik ? ["sec"] : []), ...(g.ok ? [] : ["gleif"]), ...(w.ok ? [] : ["wikidata"])];
     let rec = pickLei(g.data?.data, names, out.country || (out.cik ? "US" : null));
     if (!rec && g.ok && out.secName && out.secName !== subject.company) {
       const g2 = await http.json(`${GLEIF}/lei-records?filter[entity.legalName]=${encodeURIComponent(subject.company)}&page[size]=10`, { timeout: 8000, headers: { accept: "application/vnd.api+json" } });

@@ -84,7 +84,7 @@ export default {
     }
     if (refused.length === res.length) return blockedMiss(ctx, "social.accounts", "Mastodon search", refused[0].r, "retry later");
     if (refused.length) for (const x of refused) blockedMiss(ctx, "social.accounts", `Mastodon search on ${x.inst}`, x.r, "retry later", { partial: true });
-    if (!found) ctx.miss("social.accounts", `Mastodon account search on ${INSTANCES.join(", ")}: no account whose display name matches ${subject.name}`);
+    if (!found) ctx.miss("social.accounts", `Mastodon account search on ${INSTANCES.join(", ")}: no account whose display name matches ${subject.name}${res.some((x) => x?.r?.ok) ? "" : "; no instance answered, not checked"}`, { blocked: !res.some((x) => x?.r?.ok) });
     ctx.log(`${found} Mastodon candidate(s) by name`);
   },
 };

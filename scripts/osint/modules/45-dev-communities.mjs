@@ -62,6 +62,7 @@ export default {
       for (const a of m) pushAccount(shared, makeAccount({ ...a, source: "name-search", extra: { ...a.extra, terms: "Stack Exchange content is CC BY-SA" } }, subject, shared));
       if (!m.length) ctx.miss("social.accounts", `Stack Overflow user search "${subject.name}": no display name matches (${(se.data?.items || []).length} users returned)`);
     } else if (isBlocked(se) || se.status === 400) blockedMiss(ctx, "social.accounts", "Stack Exchange API", se, env.STACKEXCHANGE_KEY ? "daily quota used; retry tomorrow" : "set STACKEXCHANGE_KEY (free, 10,000 a day)", { partial: true });
+    else ctx.miss("social.accounts", `Stack Exchange API: HTTP ${se.status || se.error}, not checked`, { blocked: true });
     for (const { x, u, c } of hnRes) {
       if (!u.ok && u.status !== 404) blockedMiss(ctx, "social.dev_activity", `Hacker News (Algolia) @${x.handle}`, u, "retry later", { partial: true });
       if (!u.ok || !u.data?.username) continue;

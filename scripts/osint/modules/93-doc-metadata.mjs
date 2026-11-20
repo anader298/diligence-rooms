@@ -75,7 +75,7 @@ export default {
   async run(ctx) {
     const { subject, opts = {} } = ctx;
     const dir = docsDir(opts, ctx.outDir);
-    if (!dir || !existsSync(dir)) return ctx.miss("doc.metadata", `document metadata not run: no corpus folder (pass --docs <dir>, or run with --room so rooms/<slug>/work/corpus is read)${opts.docs ? `; ${opts.docs} does not exist` : ""}`);
+    if (!dir || !existsSync(dir)) return ctx.miss("doc.metadata", `document metadata not run: no corpus folder (pass --docs <dir>, or run with --room so rooms/<slug>/work/corpus is read)${opts.docs ? `; ${opts.docs} does not exist` : ""}`, { blocked: true });
     const files = listDocs(dir);
     if (!files.length) return ctx.miss("doc.metadata", `document metadata: no PDFs, Office files or photos under ${dir}`);
     const bin = ctx.env.OSINT_EXIFTOOL || "exiftool";
@@ -90,7 +90,7 @@ export default {
     }
     if (!list) {
       ctx.status("error", `exiftool: ${(r.stderr || `exit ${r.code}`).slice(0, 160)}`);
-      return ctx.miss("doc.metadata", `document metadata not run: exiftool failed (${(r.stderr || `exit ${r.code}`).trim().slice(0, 160)})`);
+      return ctx.miss("doc.metadata", `document metadata not run: exiftool failed (${(r.stderr || `exit ${r.code}`).trim().slice(0, 160)})`, { blocked: true });
     }
     const recs = readExif(list, dir);
     const people = new Map();

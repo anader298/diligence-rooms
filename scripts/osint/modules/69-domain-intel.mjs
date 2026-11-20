@@ -51,7 +51,7 @@ export default {
     const dom = subject.domain.replace(/^www\./, "").toLowerCase();
     const r = await http.json(`https://rdap.org/domain/${dom}`, { timeout: 8000, headers: { accept: "application/rdap+json" } });
     const d = parseRdap(r.data);
-    if (!d) return ctx.miss("co.domains", `RDAP for ${dom}: ${r.status === 404 ? "no record (the TLD may not offer RDAP)" : `HTTP ${r.status || r.error}, not checked`}`);
+    if (!d) return ctx.miss("co.domains", `RDAP for ${dom}: ${r.status === 404 ? "no record (the TLD may not offer RDAP)" : `HTTP ${r.status || r.error}, not checked`}`, { blocked: r.status !== 404 });
     // the registrar's own RDAP sometimes names the registrant organisation; one extra call, optional
     if (d.related && !d.registrant) {
       const rr = await http.json(d.related, { timeout: 4000, headers: { accept: "application/rdap+json" } });

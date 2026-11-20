@@ -67,10 +67,10 @@ export default {
       const r = await http.json(url, { timeout: 15000 });
       if (!r.ok) {
         const fix = key === "DEMO_KEY" ? "set FEC_API_KEY (free at api.data.gov); the shared DEMO_KEY allows about 40 calls an hour" : "rate limited; retry later";
-        if (checked) ctx.miss("politics.donations", `FEC query "${n}": blocked (HTTP ${r.status || r.error}), unknown · fix: ${fix}`);
+        if (checked) ctx.miss("politics.donations", `FEC query "${n}": blocked (HTTP ${r.status || r.error}), unknown · fix: ${fix}`, { blocked: true });
         else {
           blockedMiss(ctx, "politics.donations", "FEC API", r, fix);
-          ctx.miss("cause.political", `FEC donations: blocked (HTTP ${r.status || r.error}), unknown rather than none · fix: ${fix}`);
+          ctx.miss("cause.political", `FEC donations: blocked (HTTP ${r.status || r.error}), unknown rather than none · fix: ${fix}`, { blocked: true });
           return;
         }
         break;

@@ -41,7 +41,7 @@ async function usaspending(ctx) {
   const res = await usaspendingAll(http, filters);
   if (!res.results) {
     if ([403, 429].includes(res.error)) ctx.status?.("blocked", `USAspending ${res.error}`);
-    return miss("co.gov", `USAspending ${res.error}: not checked`);
+    return miss("co.gov", `USAspending ${res.error}: not checked`, { blocked: true });
   }
   const rows = res.results.filter((x) => same(subject.company, x["Recipient Name"]));
   const related = [...new Set(res.results.filter((x) => !same(subject.company, x["Recipient Name"])).map((x) => x["Recipient Name"]))];
@@ -72,7 +72,7 @@ async function lobbying(ctx) {
   const r = await http.json(u, { timeout: 20000 });
   if (!r.data) {
     if ([403, 429].includes(r.status)) ctx.status?.("blocked", `lda.gov ${r.status}`);
-    return miss("politics.company_pac", `lda.gov lobbying API ${r.status || r.error}: not checked`);
+    return miss("politics.company_pac", `lda.gov lobbying API ${r.status || r.error}: not checked`, { blocked: true });
   }
   const rows = (r.data.results || []).filter((f) => same(subject.company, f.client?.name || ""));
   const web = `https://lda.gov/filings/public/filing/search/?client=${encodeURIComponent(subject.company)}`;
@@ -102,7 +102,7 @@ async function pac(ctx) {
   const web = `https://www.fec.gov/data/committees/?q=${encodeURIComponent(q)}`;
   if (!r.data) {
     if (r.status === 429 || r.status === 403) ctx.status?.("blocked", `FEC ${r.status}${key === "DEMO_KEY" ? " on DEMO_KEY" : ""}`);
-    return miss("politics.company_pac", `FEC committees API ${r.status || r.error}${r.status === 429 ? ` (rate limit${key === "DEMO_KEY" ? " on the shared DEMO_KEY; set FEC_API_KEY" : ""})` : ""}: company PAC unknown, not checked`);
+    return miss("politics.company_pac", `FEC committees API ${r.status || r.error}${r.status === 429 ? ` (rate limit${key === "DEMO_KEY" ? " on the shared DEMO_KEY; set FEC_API_KEY" : ""})` : ""}: company PAC unknown, not checked`, { blocked: true });
   }
   // the company's own PAC: a non-candidate committee whose connected organisation is the company
   const rows = (r.data.results || []).filter((c) => isCompanyPac(c, subject.company));

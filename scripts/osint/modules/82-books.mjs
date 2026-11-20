@@ -44,8 +44,10 @@ export default {
       for (const w of list.slice(0, 8)) ctx.add({ var: "voice.books", value: `"${w.title}"${w.first ? ` (${w.first})` : ""}`, url: `${OL}${w.key}`, grade, tier: "A", date: w.first, anchors: ["name", ...(anchored ? ["company"] : [])], detail: w });
       n++;
     }
+    let gbOk = false;
     if (gb) {
       const g = await gb;
+      gbOk = g.ok;
       if (g.ok) {
         const vols = googleVolumes(g.data, subject);
         for (const v of vols.slice(0, 8)) {
@@ -54,6 +56,6 @@ export default {
         }
       } else if (isBlocked(g)) blockedMiss(ctx, "voice.books", "Google Books", g, "check GOOGLE_BOOKS_API_KEY or retry later", { partial: true });
     }
-    if (!n) ctx.miss("voice.books", `no author named ${subject.name} on Open Library${gb ? " or Google Books" : " (Google Books not checked: set GOOGLE_BOOKS_API_KEY)"}`);
+    if (!n) ctx.miss("voice.books", `no author named ${subject.name} on Open Library${gb ? " or Google Books" : " (Google Books not checked: set GOOGLE_BOOKS_API_KEY)"}${s.ok ? "" : "; Open Library did not answer"}`, { blocked: !s.ok && !gbOk });
   },
 };

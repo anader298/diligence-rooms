@@ -15,6 +15,8 @@ const abs = (base, href) => {
 };
 
 const BLOCK = new Set([401, 403, 429, 503, 999]);
+// a refused or failed request (no answer, a server error): the page was not read
+const FAILED = (x) => BLOCK.has(x) || x === 0 || x >= 500;
 
 async function sitemapHints(http, root, statuses) {
   const out = new Set();
@@ -61,10 +63,10 @@ export default {
     const uniq = [...byUrl.values()];
     const best = uniq.filter((p) => p.people.length >= 2).sort((a, b) => b.people.length - a.people.length)[0];
     // a site that answers 403 to every path is "not checked", never "no page"
-    const blocked = statuses.filter((x) => BLOCK.has(x)).length;
+    const blocked = statuses.filter(FAILED).length;
     const okCount = statuses.filter((x) => x >= 200 && x < 300).length;
     const blockedAll = !okCount && blocked > 0;
-    const codes = [...new Set(statuses.filter((x) => BLOCK.has(x)))].join("/");
+    const codes = [...new Set(statuses.filter(FAILED))].join("/");
     const blockNote = `HTTP ${codes} on ${blocked} of ${statuses.length} paths`;
 
     if (best) {
@@ -74,8 +76,8 @@ export default {
       for (const p of team.slice(0, 15)) add({ var: "co.leadership", value: `${p.name}, ${p.title}`, url: best.url, grade: p.titleFrom === "prose" ? "p" : "v", tier: "C", detail: { bio: p.bio?.slice(0, 500) || null, img: p.img, titleFrom: p.titleFrom } });
     } else if (blockedAll) {
       ctx.status?.("blocked", `${subject.domain} refused scripted requests (${blockNote})`);
-      miss("co.leadership", `blocked (${blockNote}) on ${subject.domain}: leadership pages not checked`);
-    } else miss("co.leadership", `no leadership/team page with names and titles on ${subject.domain} (tried ${urls.length} paths incl. sitemap hints${blocked ? `; ${blockNote}` : ""})`);
+      miss("co.leadership", `blocked (${blockNote}) on ${subject.domain}: leadership pages not checked`, { blocked: true });
+    } else miss("co.leadership", `no leadership/team page with names and titles on ${subject.domain} (tried ${urls.length} paths incl. sitemap hints${blocked ? `; ${blockNote}` : ""})`, { blocked: false });
 
     // ---- the subject: on a team page, or on their own bio page
     let me = null;
@@ -111,7 +113,7 @@ export default {
       }
     }
     if (!me) {
-      for (const v of ["career.timeline", "pic.headshot"]) miss(v, blockedAll ? `${subject.domain} blocked (${blockNote}): the subject's bio page was not checked` : `"${subject.name}" not on ${subject.domain} leadership/team pages${own ? "" : " and no bio page link"}`);
+      for (const v of ["career.timeline", "pic.headshot"]) miss(v, blockedAll ? `${subject.domain} blocked (${blockNote}): the subject's bio page was not checked` : `"${subject.name}" not on ${subject.domain} leadership/team pages${own ? "" : " and no bio page link"}`, { blocked: blockedAll });
     } else {
       const fromEl = me.title && looksLikeTitle(me.title) && me.titleFrom !== "prose";
       const title = me.title && looksLikeTitle(me.title) ? me.title : me.bio ? titleFromBio(me.bio) : null;
@@ -166,7 +168,8 @@ export default {
       const latest = [...links].slice(0, 5);
       for (const [u, t] of latest) add({ var: "news.company", value: t, url: u, grade: "p", tier: "C" });
     }
-    const newsBlocked = newsStatus.filter((x) => BLOCK.has(x)).length;
-    if (!news.length) miss("news.company", newsBlocked && !newsStatus.some((x) => x >= 200 && x < 300) ? `${subject.domain} blocked /news and /press (HTTP ${[...new Set(newsStatus.filter((x) => BLOCK.has(x)))].join("/")} on ${newsBlocked} of ${newsStatus.length} paths): not checked` : `no /news or /press page on ${subject.domain}`);
+    const newsBlocked = newsStatus.filter(FAILED).length;
+    const newsNotRead = newsBlocked > 0 && !newsStatus.some((x) => x >= 200 && x < 300);
+    if (!news.length) miss("news.company", newsNotRead ? `${subject.domain} blocked /news and /press (HTTP ${[...new Set(newsStatus.filter(FAILED))].join("/")} on ${newsBlocked} of ${newsStatus.length} paths): not checked` : `no /news or /press page on ${subject.domain}`, { blocked: newsNotRead });
   },
 };

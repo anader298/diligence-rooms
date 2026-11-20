@@ -65,13 +65,13 @@ export default {
     }
     if (!bing.ok) {
       if (isBlocked(bing)) blockedMiss(ctx, "pic.image_results", "Bing images", bing, "retry in a few minutes");
-      else ctx.miss("pic.image_results", `Bing images: HTTP ${bing.status || bing.error}`);
+      else ctx.miss("pic.image_results", `Bing images: HTTP ${bing.status || bing.error}, not checked`, { blocked: true });
     } else if (!n) {
       // Bing sometimes answers a script with unrelated images (memes, stock art). If no tile even
       // carries the surname, the search was not really run: unknown, not none.
       const last = String(subject.name).trim().split(/\s+/).at(-1).toLowerCase();
       const onTopic = tiles.filter((t) => `${t.title} ${t.desc} ${t.page}`.toLowerCase().includes(last)).length;
-      if (tiles.length && !onTopic) ctx.miss("pic.image_results", `Bing images: not checked: ${tiles.length} tiles, none even mentioning "${last}" (Bing served unrelated images to the script), unknown · fix: retry later or search images by hand`);
+      if (tiles.length && !onTopic) ctx.miss("pic.image_results", `Bing images: not checked: ${tiles.length} tiles, none even mentioning "${last}" (Bing served unrelated images to the script), unknown · fix: retry later or search images by hand`, { blocked: true });
       else ctx.miss("pic.image_results", `Bing images: ${tiles.length} tiles for ${q}, none captioned with the name and ${subject.company || "the title"}`);
     }
 
@@ -91,7 +91,7 @@ export default {
     const parsed = parseYandexReverse(rev?.text);
     if (!rev?.ok || !parsed.ok) {
       if (!rev?.ok || parsed.captcha) blockedMiss(ctx, "pic.reverse", "Yandex reverse image", parsed.captcha ? { status: rev?.status || 200, error: "captcha" } : rev, "retry later, or run the photo through an image search by hand");
-      else ctx.miss("pic.reverse", "Yandex reverse image: no result block in page");
+      else ctx.miss("pic.reverse", "Yandex reverse image: no result block in page (layout changed?), unknown", { blocked: true });
       return;
     }
     // Only pages that reuse the headshot AND name the subject are kept: they anchor identity.

@@ -57,16 +57,16 @@ export default {
     const { subject, shared } = ctx;
     // the ledger rows so far are reachable through ctx.rows when the runner provides them
     const ref = referenceOf(subject, shared, ctx.rows || []);
-    if (!ref) return ctx.miss("pic.avatar_matches", "headshot match not run: no headshot (pass --photo, or a company bio or verified profile must publish one)");
+    if (!ref) return ctx.miss("pic.avatar_matches", "headshot match not run: no headshot (pass --photo, or a company bio or verified profile must publish one)", { blocked: true });
     const cands = avatarsOf(shared, ref);
     if (!cands.length) return ctx.miss("pic.avatar_matches", `headshot match: no candidate avatars to compare with the headshot from ${ref.from}`);
     const r = await runSidecar("imagehash_match", { reference: ref.url, candidates: cands.map(({ id, url }) => ({ id, url })), user_agent: UA, timeout: 8 }, { timeoutMs: 40000, env: ctx.env });
     if (r.missing) return depMiss(ctx, "pic.avatar_matches", "headshot match", r.missing, null, ["imagehash", "PIL"]);
     if (!r.ok) {
       ctx.status("error", `sidecar: ${r.error}`);
-      return ctx.miss("pic.avatar_matches", `headshot match not run: sidecar failed (${r.error})`);
+      return ctx.miss("pic.avatar_matches", `headshot match not run: sidecar failed (${r.error})`, { blocked: true });
     }
-    if (!r.data.reference?.ok) return ctx.miss("pic.avatar_matches", `headshot match not run: the headshot from ${ref.from} could not be read (${r.data.reference?.error || "unknown"})`);
+    if (!r.data.reference?.ok) return ctx.miss("pic.avatar_matches", `headshot match not run: the headshot from ${ref.from} could not be read (${r.data.reference?.error || "unknown"})`, { blocked: true });
     const byId = new Map(cands.map((c) => [c.id, c]));
     let matched = 0;
     let failed = 0;
@@ -97,8 +97,8 @@ export default {
         detail,
       });
     }
-    if (!matched && !(r.data.results || []).some((x) => verdictOf(x) === "possible")) ctx.miss("pic.avatar_matches", `headshot match: ${cands.length - failed} avatar(s) compared with the headshot from ${ref.from}, none the same photo (pHash > ${POSSIBLE})${failed ? `; ${failed} avatar(s) could not be downloaded` : ""}`);
-    else if (failed) ctx.miss("pic.avatar_matches", `headshot match: ${failed} avatar(s) could not be downloaded (unknown, not compared)`);
+    if (!matched && !(r.data.results || []).some((x) => verdictOf(x) === "possible")) ctx.miss("pic.avatar_matches", `headshot match: ${cands.length - failed} avatar(s) compared with the headshot from ${ref.from}, none the same photo (pHash > ${POSSIBLE})${failed ? `; ${failed} avatar(s) could not be downloaded` : ""}`, { blocked: failed >= cands.length });
+    else if (failed) ctx.miss("pic.avatar_matches", `headshot match: ${failed} avatar(s) could not be downloaded (unknown, not compared)`, { blocked: true });
     ctx.log(`${cands.length} avatars, ${matched} match(es), ${failed} unreadable, ${r.ms} ms`);
   },
 };

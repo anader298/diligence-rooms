@@ -207,15 +207,16 @@ export default {
     const { subject } = ctx;
     const c = await companyBase(ctx);
     const country = (subject.country || c.country || "").toUpperCase().replace(/^UK$/, "GB");
-    if (!country) return ctx.miss("co.registry", "national register not checked: country unknown (no GLEIF record; pass --country)");
+    if (!country) return ctx.miss("co.registry", "national register not checked: country unknown (no GLEIF record; pass --country)", { blocked: true });
     if (country === "US") return ctx.miss("co.registry", "US company: no national register (state registries have no free API; SEC and GLEIF cover it)");
     if (!WIRED[country]) return ctx.miss("co.registry", `no free company-register API wired for country ${country} (wired: ${Object.keys(WIRED).join(", ")})`);
     // GLEIF's legal name is the registered one; it often matches the register better than the brand
     const names = [...new Set([c.leiRecord?.legalName, subject.company, c.secName].filter(Boolean))];
     const out = await lookup(ctx, country, names);
-    if (out.needKey) return ctx.miss("co.registry", `${WIRED[country]} register not checked: needs a free ${out.needKey}`);
+    if (out.needKey) return ctx.miss("co.registry", `${WIRED[country]} register not checked: needs a free ${out.needKey}`, { blocked: true });
     if (!out.rec) {
       if (isBlocked(out.r)) return blockedMiss(ctx, "co.registry", `${WIRED[country]} register`, out.r, "retry later");
+      if (out.r && !out.r.ok && out.r.status !== 404) return ctx.miss("co.registry", `${WIRED[country]} register: HTTP ${out.r.status || out.r.error}, not checked`, { blocked: true });
       return ctx.miss("co.registry", `${WIRED[country]} register: no entity named like ${names.map((n) => `"${n}"`).join(" or ")}`);
     }
     const rec = out.rec;

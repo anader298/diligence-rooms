@@ -66,7 +66,7 @@ export default {
     const vids = r.ok ? parseYouTubeResults(r.text) : null;
     if (!vids) {
       if (!r.ok || isBlocked(r)) blockedMiss(ctx, "voice.talks", "YouTube search", r, "retry in a few minutes");
-      else ctx.miss("voice.talks", "YouTube search: page had no result data (layout changed?), unknown");
+      else ctx.miss("voice.talks", "YouTube search: page had no result data (layout changed?), unknown", { blocked: true });
       return;
     }
     const talks = (shared.talks ||= []);

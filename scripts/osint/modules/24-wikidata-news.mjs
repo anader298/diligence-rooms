@@ -24,9 +24,11 @@ const wikidata = {
     const H = { "user-agent": "diligence-rooms/1.0 (public-source research script)" };
     const s = await http.json(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(subject.name)}&language=en&type=item&limit=7&format=json`, { headers: H, timeout: 8000 });
     const ids = (s.data?.search || []).filter((x) => nameMatch(x.label, subject)).map((x) => x.id);
+    if (!s.ok) return ctx.miss("career.timeline", `Wikidata search: HTTP ${s.status || s.error}, not checked`, { blocked: true });
     if (!ids.length) return ctx.miss("career.timeline", `Wikidata: no entity labelled ${subject.name} (not notable there)`);
     const g = await http.json(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join("|")}&props=claims|descriptions|labels&languages=en&format=json`, { headers: H, timeout: 8000 });
     const humans = Object.values(g.data?.entities || {}).filter((e) => claimIds(e, "P31").includes("Q5"));
+    if (!g.ok) return ctx.miss("career.timeline", `Wikidata entities: HTTP ${g.status || g.error}, not checked`, { blocked: true });
     if (!humans.length) return ctx.miss("career.timeline", "Wikidata: entities with the name are not people");
     const refs = [...new Set(humans.flatMap((e) => ["P69", "P108", "P19", "P26", "P27", "P39", "P106"].flatMap((p) => claimIds(e, p))))].slice(0, 50);
     const lab = refs.length ? await http.json(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${refs.join("|")}&props=labels&languages=en&format=json`, { headers: H, timeout: 8000 }) : { data: {} };
@@ -146,7 +148,7 @@ const hn = {
   async run(ctx) {
     const { subject, http } = ctx;
     const r = await http.json(`https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(`"${subject.name}"`)}&hitsPerPage=20`, { timeout: 8000 });
-    if (!r.ok) return ctx.miss("news.articles", `Hacker News search: HTTP ${r.status || r.error}`);
+    if (!r.ok) return ctx.miss("news.articles", `Hacker News search: HTTP ${r.status || r.error}, not checked`, { blocked: true });
     // The name must stand as a name (adjacent words) in the story or comment, and a story by a user
     // whose handle merely contains the surname is not about him.
     const hits = (r.data?.hits || []).filter((h) => nameMatch(`${h.title || ""} ${String(h.story_text || "").replace(/<[^>]+>/g, " ")} ${String(h.comment_text || "").replace(/<[^>]+>/g, " ")}`, subject));
@@ -188,10 +190,13 @@ const wayback = {
       if (h && h.replace(/[^a-z]/g, "").includes(last) && !skip.test(h) && nameMatch(`${r.title} ${r.snippet}`, subject)) doms.add(h);
     }
     let n = 0;
-    for (const d of [...doms].filter(Boolean).slice(0, 4)) {
+    let failed = 0;
+    const tried = [...doms].filter(Boolean).slice(0, 4);
+    for (const d of tried) {
       const r = await http.json(`https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(d)}&output=json&fl=timestamp,original,statuscode&collapse=timestamp:4&limit=200`, { timeout: 12000 });
       if (!r.ok) {
-        ctx.miss("place.web_archive", `Wayback CDX for ${d}: HTTP ${r.status || r.error}`);
+        ctx.miss("place.web_archive", `Wayback CDX for ${d}: HTTP ${r.status || r.error}, not checked`, { blocked: true });
+        failed++;
         continue;
       }
       const rows = (r.data || []).slice(1);
@@ -200,7 +205,7 @@ const wayback = {
       ctx.add({ var: "place.web_archive", value: `${d}: archived in ${years.length} year(s), ${years[0]}–${years.at(-1)}`, url: `https://web.archive.org/web/*/${d}*`, grade: "w", tier: "A", detail: { first: rows[0][0], last: rows.at(-1)[0], years } });
       n++;
     }
-    if (!n) ctx.miss("place.web_archive", `no archived personal site (checked ${[...doms].join(", ")})`);
+    if (!n && failed < tried.length) ctx.miss("place.web_archive", `no archived personal site (checked ${[...doms].join(", ")})`);
   },
 };
 

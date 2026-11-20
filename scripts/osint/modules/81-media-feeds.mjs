@@ -50,14 +50,14 @@ export default {
     else if (isBlocked(it)) blockedMiss(ctx, "voice.talks", "iTunes Search", it, "retry in a minute", { partial: true });
     if (px?.ok) eps.push(...podcastIndexEpisodes(px.data, subject).map((e) => ({ ...e, src: "Podcast Index" })));
     else if (px) blockedMiss(ctx, "voice.talks", "Podcast Index", px, "check PODCASTINDEX_API_KEY and PODCASTINDEX_API_SECRET", { partial: true });
-    else ctx.miss("voice.talks", "Podcast Index: not checked (set PODCASTINDEX_API_KEY and PODCASTINDEX_API_SECRET, free at api.podcastindex.org)");
+    else ctx.miss("voice.talks", "Podcast Index: not checked (set PODCASTINDEX_API_KEY and PODCASTINDEX_API_SECRET, free at api.podcastindex.org)", { blocked: true });
     // one row per episode (title + show), company-anchored first, newest first
     const seen = new Set();
     const uniq = eps.filter((e) => {
       const k = `${String(e.show).toLowerCase()}|${String(e.title).toLowerCase()}`;
       return !seen.has(k) && seen.add(k);
     }).sort((a, b) => Number(b.company) - Number(a.company) || String(b.date || "").localeCompare(String(a.date || "")));
-    if (!uniq.length) return ctx.miss("voice.talks", `podcasts: no episode titled or described with "${subject.name}" (iTunes${pi ? ", Podcast Index" : ""})`);
+    if (!uniq.length) return ctx.miss("voice.talks", `podcasts: no episode titled or described with "${subject.name}" (iTunes${pi ? ", Podcast Index" : ""})${it.ok ? "" : `; iTunes HTTP ${it.status || it.error}, not checked`}`, { blocked: !it.ok && !px?.ok });
     for (const e of uniq.slice(0, 12)) ctx.add({ var: "voice.talks", value: `Podcast: ${e.show} — "${e.title}"${e.date ? ` (${e.date})` : ""}${e.minutes ? `, ${e.minutes} min` : ""}${e.role ? `, ${e.role}` : ""}`, url: e.url, grade: e.company ? "p" : "w", tier: "B", date: e.date, anchors: ["name", ...(e.company ? ["company"] : [])], detail: e });
     if (uniq.length > 12) ctx.add({ var: "voice.talks", value: `${uniq.length} podcast episodes name ${subject.name} (${uniq.filter((e) => e.company).length} also name ${subject.company || "the company"}); 12 listed`, url: `https://podcasts.apple.com/us/search?term=${term}`, grade: uniq.some((e) => e.company) ? "p" : "w", tier: "B", detail: { total: uniq.length, shows: [...new Set(uniq.map((e) => e.show))].slice(0, 20) } });
   },

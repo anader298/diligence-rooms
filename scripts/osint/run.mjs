@@ -197,7 +197,7 @@ export async function runOsint(subject, { outDir, only = null, log = console.log
       rows: ledger.rows, // read-only view of the ledger so far (heavy and late modules build on it)
       log: (s) => log(`[${m.id}] ${s}`),
       add: (f) => ledger.add(m.id, { ms: f.ms ?? Date.now() - t0, ...f }),
-      miss: (v, searched) => ledger.miss(m.id, v, searched),
+      miss: (v, searched, o) => ledger.miss(m.id, v, searched, o),
       /** "blocked" when the module's key calls were refused (403/429/999); "partial" when some were. */
       status: (s, why) => {
         if (!set || s === "blocked") set = { status: s, why: why || null };

@@ -105,7 +105,7 @@ export default {
     }
     if (!n2) {
       const nameOnly = [(orc.data?.["expanded-result"] || []).filter((r) => nameMatch(`${r["given-names"] || ""} ${r["family-names"] || ""}`, subject)).length, oas.length, s2s.length, works.length];
-      ctx.miss("career.publications", `ORCID, OpenAlex, Semantic Scholar, Crossref: no author record whose affiliation names ${subject.company || "the company"} (name-only matches, possible namesakes: ORCID ${nameOnly[0]}, OpenAlex ${nameOnly[1]}, Semantic Scholar ${nameOnly[2]}, Crossref works ${nameOnly[3]})${Object.values(status).some((s) => s !== 200) ? `; HTTP ${Object.entries(status).map(([k, v]) => `${k} ${v}`).join(", ")}` : ""}`);
+      ctx.miss("career.publications", `ORCID, OpenAlex, Semantic Scholar, Crossref: no author record whose affiliation names ${subject.company || "the company"} (name-only matches, possible namesakes: ORCID ${nameOnly[0]}, OpenAlex ${nameOnly[1]}, Semantic Scholar ${nameOnly[2]}, Crossref works ${nameOnly[3]})${Object.values(status).some((s) => s !== 200) ? `; HTTP ${Object.entries(status).map(([k, v]) => `${k} ${v}`).join(", ")}` : ""}`, { blocked: ![orc, oa, s2, cr].some((r) => r.ok) });
     }
   },
 };

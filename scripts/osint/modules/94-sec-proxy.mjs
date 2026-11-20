@@ -49,12 +49,12 @@ export default {
   async run(ctx) {
     const { subject } = ctx;
     const b = await secBase(ctx).catch(() => ({}));
-    if (!b?.cik) return ctx.miss("co.exec_pay", `proxy pay not read: "${subject.company}" is not an SEC registrant${b?.error ? ` (SEC lookup: ${b.error})` : ""}`);
+    if (!b?.cik) return ctx.miss("co.exec_pay", b?.error ? `proxy pay not read: SEC lookup failed (${b.error}), not checked` : `proxy pay not read: "${subject.company}" is not an SEC registrant`, { blocked: !!b?.error });
     const r = await runSidecar("edgar_proxy", { cik: b.cik, ticker: b.ticker || null, identity: SEC_UA() }, { timeoutMs: 85000, env: ctx.env });
     if (r.missing) return depMiss(ctx, ["co.exec_pay"], "proxy pay (edgartools)", r.missing, null, ["edgar"]);
     if (!r.ok || r.data?.error) {
       ctx.status("error", `sidecar: ${r.error || r.data?.error}`);
-      return ctx.miss("co.exec_pay", `proxy pay not read: ${r.error || r.data?.error}`);
+      return ctx.miss("co.exec_pay", `proxy pay not read: ${r.error || r.data?.error}`, { blocked: true });
     }
     const d = r.data;
     if (!d.filing) return ctx.miss("co.exec_pay", `no DEF 14A on EDGAR for CIK ${b.cik}`);

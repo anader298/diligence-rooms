@@ -111,7 +111,7 @@ export default {
       const q = `applicationMetaData.inventorBag.inventorNameText:"${first} ${last}"`;
       const od = await http.json(`${ODP}?q=${encodeURIComponent(q)}&limit=50&offset=0`, { headers: { "X-API-KEY": env.USPTO_API_KEY }, timeout: 12000 });
       if (!od.ok) {
-        if ([401, 403].includes(od.status)) ctx.miss("career.patents", `USPTO Open Data Portal: HTTP ${od.status} (check USPTO_API_KEY), not checked`);
+        if ([401, 403].includes(od.status)) ctx.miss("career.patents", `USPTO Open Data Portal: HTTP ${od.status} (check USPTO_API_KEY), not checked`, { blocked: true });
         else if (od.status !== 404) blockedMiss(ctx, "career.patents", "USPTO Open Data Portal", od, "retry later", { partial: true });
       }
       const apps = odpApplications(od.data, subject);
@@ -128,7 +128,7 @@ export default {
         }
       } else if (od.ok) ctx.miss("career.patents", `USPTO Open Data Portal: no US applications with inventor "${first} ${last}"`);
     } else {
-      ctx.miss("career.patents", "USPTO Open Data Portal not checked: set USPTO_API_KEY (free at data.uspto.gov) for US applications by inventor and the inventor's city");
+      ctx.miss("career.patents", "USPTO Open Data Portal not checked: set USPTO_API_KEY (free at data.uspto.gov) for US applications by inventor and the inventor's city", { blocked: true });
     }
   },
 };

@@ -54,11 +54,11 @@ export default {
     const { subject, http } = ctx;
     const [sec, c] = await Promise.all([secBase(ctx).catch(() => ({})), companyBase(ctx).catch(() => ({}))]);
     const why = bankReason(subject, sec, c.leiRecord);
-    if (!why) return ctx.miss("co.facts", `FDIC / NCUA not checked: "${subject.company}" does not look like a bank or credit union (name, SEC SIC, GLEIF)`);
+    if (!why) return ctx.miss("co.facts", `FDIC / NCUA not checked: "${subject.company}" does not look like a bank or credit union (name, SEC SIC, GLEIF)`, { blocked: true });
     const core = coreName(subject.company);
     if (isCreditUnion(subject.company) || isCreditUnion(c.leiRecord?.legalName)) {
       const s = await http.json("https://mapping.ncua.gov/api/Search/GetSearchLocations", { method: "POST", body: JSON.stringify({ searchText: subject.company, rdSearchType: "cuname", skip: 0, take: 10, sort_by: "", sort_order: "", is_mainOffice: true }), headers: { "content-type": "application/json" }, timeout: 8000 });
-      if (!s.ok) return isBlocked(s) ? blockedMiss(ctx, "co.facts", "NCUA credit union search", s, "retry later") : ctx.miss("co.facts", `NCUA search: HTTP ${s.status || s.error}`);
+      if (!s.ok) return isBlocked(s) ? blockedMiss(ctx, "co.facts", "NCUA credit union search", s, "retry later") : ctx.miss("co.facts", `NCUA search: HTTP ${s.status || s.error}, not checked`, { blocked: true });
       const hit = (s.data?.list || []).find((x) => (" " + normCompany(x.creditUnionName) + " ").includes(" " + core + " ") && x.isMainOffice) || (s.data?.list || [])[0];
       if (!hit) return ctx.miss("co.facts", `NCUA: no credit union named like "${subject.company}"`);
       const d = await http.json(`https://mapping.ncua.gov/api/CreditUnionDetails/GetCreditUnionDetails/${hit.creditUnionNumber}`, { timeout: 8000 });
@@ -75,7 +75,7 @@ export default {
     }
     const fields = "NAME,CERT,ASSET,DEP,NETINC,ROA,ROE,OFFDOM,CITY,STNAME,NAMEHCR,ESTYMD,REPDTE,WEBADDR,ACTIVE";
     const r = await http.json(`https://api.fdic.gov/banks/institutions?search=${encodeURIComponent(`NAME:${core}`)}&filters=ACTIVE:1&fields=${fields}&sort_by=ASSET&sort_order=DESC&limit=25`, { timeout: 8000 });
-    if (!r.ok) return isBlocked(r) ? blockedMiss(ctx, "co.facts", "FDIC BankFind", r, "retry later") : ctx.miss("co.facts", `FDIC BankFind: HTTP ${r.status || r.error}`);
+    if (!r.ok) return isBlocked(r) ? blockedMiss(ctx, "co.facts", "FDIC BankFind", r, "retry later") : ctx.miss("co.facts", `FDIC BankFind: HTTP ${r.status || r.error}, not checked`, { blocked: true });
     const banks = pickFdic(r.data, subject.company, sec?.title || null);
     if (!banks.length) return ctx.miss("co.facts", `FDIC BankFind: no active FDIC-insured institution named like "${subject.company}" (checked because of ${why})`);
     const top = banks[0];

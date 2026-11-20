@@ -53,11 +53,11 @@ export default {
     if (!q.ok || !R?.QueryID) {
       if (Number(R?.QueryRows) === 0 || /no facilities/i.test(R?.Message || q.text || "")) return ctx.add({ var: "co.enforcement", value: `No EPA-regulated facilities named "${subject.company}" in ECHO`, url: `https://echo.epa.gov/facilities/facility-search/results?p_fn=${encodeURIComponent(subject.company)}`, grade: "v", tier: "A" });
       if ([403, 429, 503].includes(q.status) || q.status === 0) ctx.status("blocked", `EPA ECHO ${q.status || q.error}`);
-      return ctx.miss("co.enforcement", `EPA ECHO facility search: ${q.status ? `HTTP ${q.status}` : q.error || R?.Message || "no answer"}, not checked`);
+      return ctx.miss("co.enforcement", `EPA ECHO facility search: ${q.status ? `HTTP ${q.status}` : q.error || R?.Message || "no answer"}, not checked`, { blocked: true });
     }
     const page = await http.json(`${ECHO}.get_qid?output=JSON&qid=${R.QueryID}&pageno=1`, { timeout: 15000 });
     const all = page.data?.Results?.Facilities || [];
-    if (!page.ok || !all.length) return ctx.miss("co.enforcement", `EPA ECHO facility list (query ${R.QueryID}): HTTP ${page.status || page.error}, not read`);
+    if (!page.ok || !all.length) return ctx.miss("co.enforcement", `EPA ECHO facility list (query ${R.QueryID}): HTTP ${page.status || page.error}, not read`, { blocked: true });
     const mine = companyFacilities(all, names);
     const web = `https://echo.epa.gov/facilities/facility-search/results?p_fn=${encodeURIComponent(subject.company)}`;
     if (!mine.length) return ctx.add({ var: "co.enforcement", value: `EPA ECHO: ${R.QueryRows} facilities contain "${subject.company}" in their name, none named as the company itself (streets and other businesses)`, url: web, grade: "p", tier: "A", detail: { queryRows: Number(R.QueryRows) } });

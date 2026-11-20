@@ -198,7 +198,7 @@ export default {
     const conf = accounts.filter((a) => a.confirmed);
     if (!conf.length) ctx.miss("social.accounts", `username sweep: ${handles.length} handles (${handles.map((h) => h.handle).join(", ")}) × ${SITES.length} sites, no account whose display name matches ${subject.name}`);
     for (const [site, st] of Object.entries(blocked)) if (!found.some((f) => f.site === site)) blockedMiss(ctx, "social.accounts", `${site} (username sweep)`, { status: typeof st === "number" ? st : 0, error: typeof st === "string" ? st : null }, site === "github" ? "set GITHUB_TOKEN (free) or retry later" : "the site refuses scripts; check by hand", { partial: true });
-    for (const n of NO_SIGNAL) if (!probes.some((p) => p.site === n.site)) ctx.miss("social.accounts", `${n.site}: not checkable by handle (not checked) — ${n.why}${n.probed ? ` (probe: ${n.probed})` : ""}`);
+    for (const n of NO_SIGNAL) if (!probes.some((p) => p.site === n.site)) ctx.miss("social.accounts", `${n.site}: not checkable by handle (not checked) — ${n.why}${n.probed ? ` (probe: ${n.probed})` : ""}`, { blocked: true });
     shared.sweep = { handles, checked: jobs.length };
     // Headshot for the reverse-image module (slow lane): an avatar from an account tied to the company.
     if (!shared.headshot) {

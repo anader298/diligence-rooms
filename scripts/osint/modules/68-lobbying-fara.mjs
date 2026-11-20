@@ -47,7 +47,7 @@ export default {
     const ldaWeb = `https://lda.gov/filings/public/lobbyist/search/?lobbyist_name=${encodeURIComponent(subject.name)}`;
     if (!lda.ok) {
       if (isBlocked(lda)) blockedMiss(ctx, "politics.person_lobbying", "lda.gov lobbyist search", lda, env.LDA_API_KEY ? "retry in a minute" : "set a free LDA_API_KEY (120 calls a minute) or retry in a minute", { partial: !!fara?.ok });
-      else ctx.miss("politics.person_lobbying", `lda.gov lobbyist search: HTTP ${lda.status || lda.error}, not checked`);
+      else ctx.miss("politics.person_lobbying", `lda.gov lobbyist search: HTTP ${lda.status || lda.error}, not checked`, { blocked: true });
     } else {
       const m = matchLobbyists(lda.data, subject);
       if (!m.length) ctx.add({ var: "politics.person_lobbying", value: `Not a registered federal lobbyist: no lda.gov lobbyist record for ${subject.name}`, url: ldaWeb, grade: "v", tier: "A", detail: { checked: "lda.gov /lobbyists", count: lda.data?.count ?? 0 } });
@@ -59,7 +59,7 @@ export default {
     if (!subject.company) return;
     if (!fara?.ok) {
       if (isBlocked(fara)) blockedMiss(ctx, "politics.company_pac", "FARA registrant list", fara, "retry later", { partial: true });
-      else ctx.miss("politics.company_pac", `FARA registrant list: HTTP ${fara?.status || fara?.error}, not checked`);
+      else ctx.miss("politics.company_pac", `FARA registrant list: HTTP ${fara?.status || fara?.error}, not checked`, { blocked: true });
       return;
     }
     const hits = matchFara(fara.data, [subject.company, ctx.shared.secName]);

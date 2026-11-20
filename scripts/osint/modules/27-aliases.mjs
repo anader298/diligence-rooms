@@ -69,7 +69,7 @@ export default {
     // A middle word seen once is noise; a parenthesised or née form is a statement.
     const keep = [...found.values()].filter((a) => a.kind !== "middle or maiden" || a.urls.length >= 2);
     if (!keep.length) {
-      ctx.miss("names.aliases", `no maiden or former name in ${texts.length} search and news snippets (patterns: "First (X) Last", "née X", "formerly First X")`);
+      ctx.miss("names.aliases", `no maiden or former name in ${texts.length} search and news snippets (patterns: "First (X) Last", "née X", "formerly First X")${texts.length ? "" : "; no snippets to read (the searches found or returned nothing), not checked"}`, { blocked: !texts.length });
       return;
     }
     subject.foundAliases = [...new Set([...(subject.foundAliases || []), ...keep.map((a) => a.alias)])];

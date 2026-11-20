@@ -69,7 +69,10 @@ export default {
       tasks.push(http.json(`https://${host}/api/v1/accounts/lookup?acct=${encodeURIComponent(user)}`, { timeout: 5000 }).then((r) => ({ kind: "md", a, r })));
     }
     const refused = new Set();
-    for (const t of await Promise.all(tasks)) {
+    const results = await Promise.all(tasks);
+    // a 404 is an answer (no such account); no answer at all is "couldn't check"
+    const answered = results.some(({ r }) => r.ok || r.status === 404);
+    for (const t of results) {
       const { kind, r } = t;
       if (!r.ok) {
         if (isBlocked(r) && r.status !== 404 && !refused.has(kind) && refused.add(kind)) blockedMiss(ctx, "social.proofs", kind.startsWith("kb") ? "Keybase" : kind === "gh" ? "GitHub social_accounts" : "Mastodon lookup", r, "retry later", { partial: true });
@@ -95,7 +98,7 @@ export default {
         if (links.length) roots.push({ root: t.a, via: `Mastodon @${t.a.handle} verified fields`, url: t.a.url, links, crypto: true });
       }
     }
-    if (!roots.length) return ctx.miss("social.proofs", `verified links: no proofs on Keybase (${[...kbNames, ...gh.map((a) => "github:" + a.handle)].join(", ") || "none asked"}), GitHub social accounts (${gh.map((a) => a.handle).join(", ") || "none"}) or Mastodon verified fields (${md.map((a) => a.handle).join(", ") || "none"})`);
+    if (!roots.length) return ctx.miss("social.proofs", `verified links: no proofs on Keybase (${[...kbNames, ...gh.map((a) => "github:" + a.handle)].join(", ") || "none asked"}), GitHub social accounts (${gh.map((a) => a.handle).join(", ") || "none"}) or Mastodon verified fields (${md.map((a) => a.handle).join(", ") || "none"})${answered ? "" : "; no source answered, not checked"}`, { blocked: !answered });
     for (const x of roots) {
       const tied = anchoredRoot(x.root, shared);
       const others = x.links.filter((l) => norm(l.url) !== norm(x.root.url));

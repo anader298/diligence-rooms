@@ -69,8 +69,9 @@ export default { id: "regattas", label: "Regatta results", vars: ["hobby.sailing
 
 That is all. The buckets that list those vars now show:
 
-- "searched, nothing found" when the module ran with no hits,
-- "couldn't check" when it was blocked or skipped,
+- "searched, nothing found" when the module ran with no hits (`ctx.miss(var, what)`),
+- "couldn't check" when it was blocked or skipped, or when its call failed: record that with
+  `ctx.miss(var, what, { blocked: true })` (or `ctx.status("blocked", why)`), never as a plain miss,
 - the rows when it found something.
 
 A row whose var no bucket lists shows under **Other findings** on the form page until a bucket is added.

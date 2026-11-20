@@ -25,7 +25,7 @@ export default {
   async run(ctx) {
     const { http } = ctx;
     const c = await companyBase(ctx);
-    if (!c.lei) return ctx.miss("co.structure", `no LEI found for "${ctx.subject.company}" in GLEIF, so no parent or subsidiary records${c.gleifStatus && c.gleifStatus !== 200 ? ` (GLEIF answered ${c.gleifStatus}: unknown)` : ""}`);
+    if (!c.lei) return ctx.miss("co.structure", `no LEI found for "${ctx.subject.company}" in GLEIF, so no parent or subsidiary records${c.gleifStatus && c.gleifStatus !== 200 ? ` (GLEIF answered ${c.gleifStatus}: unknown)` : ""}`, { blocked: !!c.failed?.includes("gleif") });
     const base = `${GLEIF}/lei-records/${c.lei}`;
     const [dp, up, kids] = await Promise.all([
       http.json(`${base}/direct-parent`, { headers: H, timeout: 8000 }),
@@ -36,7 +36,7 @@ export default {
     const refused = [dp, up, kids].filter((r) => [403, 429, 503].includes(r.status) || r.status === 0);
     if (refused.length === 3) {
       ctx.status("blocked", `GLEIF ${refused[0].status || refused[0].error}`);
-      return ctx.miss("co.structure", `GLEIF relationships: blocked (HTTP ${refused[0].status || refused[0].error}), unknown`);
+      return ctx.miss("co.structure", `GLEIF relationships: blocked (HTTP ${refused[0].status || refused[0].error}), unknown`, { blocked: true });
     }
     const dParent = leiBrief(dp.data?.data);
     const uParent = leiBrief(up.data?.data);
@@ -58,5 +58,6 @@ export default {
         detail: { relation: "direct-children", of: c.lei, total, byCountry, children },
       });
     } else if (kids.ok) ctx.miss("co.structure", `GLEIF: no subsidiaries report LEI ${c.lei} as their direct parent`);
+    else if (kids.status !== 404) ctx.miss("co.structure", `GLEIF direct children: HTTP ${kids.status || kids.error}, not checked`, { blocked: true });
   },
 };

@@ -60,10 +60,10 @@ export default {
   async run(ctx) {
     const { http } = ctx;
     const b = await secBase(ctx);
-    if (!b?.cik) return ctx.miss("co.peers", b?.none ? `"${ctx.subject.company}" is not an SEC registrant: no XBRL peer frames` : `SEC lookup failed (${b?.error || "unknown"}): peers not checked`);
+    if (!b?.cik) return ctx.miss("co.peers", b?.none ? `"${ctx.subject.company}" is not an SEC registrant: no XBRL peer frames` : `SEC lookup failed (${b?.error || "unknown"}): peers not checked`, { blocked: !b?.none });
     const sic = b.sub?.sic;
     const sicName = b.sub?.sicDescription || `SIC ${sic}`;
-    if (!sic) return ctx.miss("co.peers", "the SEC record carries no SIC code: peers not checked");
+    if (!sic) return ctx.miss("co.peers", "the SEC record carries no SIC code: peers not checked", { blocked: true });
     // the newest full calendar year with the company in the revenue frame
     const y0 = new Date().getUTCFullYear() - 1;
     const frame = (tag, period) => http.json(`${FRAMES}/${tag}/USD/${period}.json`, { headers: H(), timeout: 12000 });

@@ -57,20 +57,20 @@ export default {
   async run(ctx) {
     const { subject, http, opts = {} } = ctx;
     const want = articleUrls(opts, ctx.rows || [], subject);
-    if (!want.length) return ctx.miss("news.article_text", "article extract not run: no article URLs (pass --articles, or the news and quote modules must find articles that name the subject)");
+    if (!want.length) return ctx.miss("news.article_text", "article extract not run: no article URLs (pass --articles, or the news and quote modules must find articles that name the subject)", { blocked: true });
     const pages = await pool(want, 4, async (w) => ({ ...w, res: await http.get(w.url, { timeout: 12000 }) }));
     const docs = pages.filter((p) => p?.res && !refused(p.res));
-    for (const p of pages.filter((p) => p && !docs.includes(p))) ctx.miss("news.article_text", `${hostOf(p.url)}: blocked or unreadable (HTTP ${p.res?.status || p.res?.error}), unknown: ${p.url}`);
+    for (const p of pages.filter((p) => p && !docs.includes(p))) ctx.miss("news.article_text", `${hostOf(p.url)}: blocked or unreadable (HTTP ${p.res?.status || p.res?.error}), unknown: ${p.url}`, { blocked: true });
     if (!docs.length) return ctx.status("partial", "every article page refused the fetch");
     const r = await runSidecar("extract_text", { docs: docs.map((d) => ({ url: d.url, html: d.res.text })) }, { timeoutMs: 45000, env: ctx.env });
     if (r.missing) return depMiss(ctx, "news.article_text", "article extract", r.missing, null, ["trafilatura"]);
     if (!r.ok) {
       ctx.status("error", `sidecar: ${r.error}`);
-      return ctx.miss("news.article_text", `article extract not run: sidecar failed (${r.error})`);
+      return ctx.miss("news.article_text", `article extract not run: sidecar failed (${r.error})`, { blocked: true });
     }
     for (const res of r.data.results || []) {
       if (res.error || !res.text) {
-        ctx.miss("news.article_text", `${hostOf(res.url)}: no main text extracted (${res.error || "empty"})`);
+        ctx.miss("news.article_text", `${hostOf(res.url)}: no main text extracted (${res.error || "empty"})`, { blocked: !!res.error });
         continue;
       }
       const a = readArticle(res, subject);

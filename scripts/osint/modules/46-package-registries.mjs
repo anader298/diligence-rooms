@@ -58,9 +58,13 @@ export default {
       n++;
       ctx.add({ var: "career.code", value, url, grade: named && isStrong(h) ? "p" : "w", tier: "A", anchors: [named ? "name" : null, isStrong(h) ? "handle" : null].filter(Boolean), detail: { site, handle: h, ...extra } });
     };
+    // which registries answered (a 404 is an answer: no such user); none answering is "couldn't check"
+    let answered = 0;
+    const tally = (r) => (r.ok || r.status === 404 ? answered++ : 0);
     // crates.io allows about one request a second: handles in sequence
     for (const h of handles) {
       const u = await http.json(`https://crates.io/api/v1/users/${encodeURIComponent(h)}`, { headers: UA(), timeout: 5000 });
+      tally(u);
       if (!u.ok) {
         if (isBlocked(u) && u.status !== 404) blockedMiss(ctx, "career.code", "crates.io", u, "retry later", { partial: true });
         continue;
@@ -74,12 +78,14 @@ export default {
         http.json(`https://rubygems.org/api/v1/owners/${encodeURIComponent(h)}/gems.json`, { timeout: 5000 }),
         http.get(`https://pypi.org/user/${encodeURIComponent(h)}/`, { timeout: 5000 }),
       ]);
+      tally(g);
       const gems = g.ok ? gemsSummary(g.data) : [];
       if (gems.length) add("rubygems", h, null, `RubyGems owner ${h}: ${gems.length} gem(s), e.g. ${gems.slice(0, 5).map((x) => x.name).join(", ")}`, `https://rubygems.org/profiles/${h}`, { gems: gems.slice(0, 15) });
       const py = p.status === 404 ? null : pypiUser(p.text);
-      if (py?.challenge) ctx.miss("career.code", `PyPI user ${h}: not checked (PyPI serves a JavaScript challenge to scripts) · check https://pypi.org/user/${h}/ by hand`);
+      if (!py?.challenge) tally(p);
+      if (py?.challenge) ctx.miss("career.code", `PyPI user ${h}: not checked (PyPI serves a JavaScript challenge to scripts) · check https://pypi.org/user/${h}/ by hand`, { blocked: true });
       else if (py?.projects.length) add("pypi", h, py.name, `PyPI user ${h}${py.name ? ` (${py.name})` : ""}: ${py.projects.length} project(s)${py.projects.length ? `, e.g. ${py.projects.slice(0, 5).join(", ")}` : ""}`, `https://pypi.org/user/${h}/`, { projects: py.projects });
     }));
-    if (!n) ctx.miss("career.code", `crates.io (${handles.join(", ")}), RubyGems and PyPI (${strong.slice(0, 3).join(", ") || "no given or confirmed handle"}): no packages under a name that matches ${subject.name}`);
+    if (!n) ctx.miss("career.code", `crates.io (${handles.join(", ")}), RubyGems and PyPI (${strong.slice(0, 3).join(", ") || "no given or confirmed handle"}): no packages under a name that matches ${subject.name}${answered ? "" : "; no registry answered, not checked"}`, { blocked: !answered });
   },
 };

@@ -73,16 +73,21 @@ async function primary(http, f) {
   return r.ok ? r.text : null;
 }
 
-async function exhibit991(http, cik, f) {
+// fails: collects the calls that failed, so "exhibit not found" is not reported when it was not read
+async function exhibit991(http, cik, f, fails = []) {
   const base = `${ARCH}/${Number(cik)}/${f.acc.replace(/-/g, "")}/`;
   const idx = await http.json(base + "index.json", { headers: H(), timeout: 10000 });
+  if (!idx.ok) fails.push(`${f.form} ${f.date} index ${idx.status || idx.error}`);
   const items = idx.data?.directory?.item || [];
   const cands = items.filter((i) => /\.htm/i.test(i.name) && i.name !== f.doc && !/index/i.test(i.name));
   cands.sort((a, b) => (/99[-_.]?0?1|ex991|earnings/i.test(b.name) ? 1 : 0) - (/99[-_.]?0?1|ex991|earnings/i.test(a.name) ? 1 : 0));
   let best = null;
   for (const ex of cands.slice(0, 3)) {
     const r = await http.get(base + ex.name, { headers: H(), timeout: 15000 });
-    if (!r.ok) continue;
+    if (!r.ok) {
+      fails.push(`${ex.name} ${r.status || r.error}`);
+      continue;
+    }
     const text = htmlText(r.text);
     const score = (text.match(/\b(quarter|revenue|fiscal)\b/gi) || []).length;
     if (!best || score > best.score) best = { url: base + ex.name, text, date: f.date, score };
@@ -102,7 +107,7 @@ export default {
     const { http, add, miss, shared, subject } = ctx;
     const b = await secBase(ctx);
     if (!b.cik) {
-      for (const v of ["co.segments", "co.kpis", "co.growth_line", "co.legal"]) miss(v, `${subject.company} has no SEC filings to read (private or not matched)`);
+      for (const v of ["co.segments", "co.kpis", "co.growth_line", "co.legal"]) miss(v, b.error ? `SEC lookup failed (${b.error}): filings not read, not checked` : `${subject.company} has no SEC filings to read (private or not matched)`, { blocked: !!b.error });
       return;
     }
     const cik = b.cik;
@@ -111,10 +116,11 @@ export default {
     const tenK = fl.find((f) => f.form === "10-K");
     const rel = fl.filter((f) => f.form === "8-K" && f.items.includes("2.02")).slice(0, 2);
 
+    const relFails = [];
     const [pDoc, kDoc, rels] = await Promise.all([
       periodic ? primary(http, periodic) : null,
       tenK && tenK !== periodic ? primary(http, tenK) : null,
-      Promise.all(rel.map((f) => exhibit991(http, cik, f))),
+      Promise.all(rel.map((f) => exhibit991(http, cik, f, relFails))),
     ]);
     const k = tenK === periodic ? pDoc : kDoc;
 
@@ -139,7 +145,8 @@ export default {
         add({ var: "co.segments", value: val, url: periodic.url, grade: split?.scaleGuessed ? "p" : "v", tier: "A", date: periodic.date, detail: { form: periodic.form, note: near.slice(0, 700), splits } });
         for (const s of splits.slice(1, 3)) add({ var: "co.segments", value: line(s), url: periodic.url, grade: s.scaleGuessed ? "p" : "v", tier: "A", date: periodic.date, detail: s });
       } else miss("co.segments", `no segment note or revenue split table found in ${periodic.form} ${periodic.date}`);
-    } else miss("co.segments", periodic ? `${periodic.form} fetch failed` : "no 10-Q/10-K filed");
+    } else if (periodic) miss("co.segments", `${periodic.form} ${periodic.date} fetch failed, not checked`, { blocked: true });
+    else miss("co.segments", "no 10-Q/10-K filed");
 
     // ---- 10-K: headcount, legal proceedings, litigation risk
     if (k) {
@@ -174,7 +181,8 @@ export default {
         lit.sort((a, b) => (b.match(/litigation|lawsuit|class action|investigation/gi) || []).length - (a.match(/litigation|lawsuit|class action|investigation/gi) || []).length);
         add({ var: "co.legal", value: `Risk factors: ${lit.length} sentences on litigation or investigations${lit[0] ? `, e.g. "${lit[0].slice(0, 180)}"` : ""}`, url: tenK.url, grade: "p", tier: "A", date: tenK.date, detail: { sample: lit.slice(0, 6) } });
       }
-    } else miss("co.legal", "no 10-K to read");
+    } else if (tenK) miss("co.legal", `10-K ${tenK.date} fetch failed, not checked`, { blocked: true });
+    else miss("co.legal", "no 10-K to read");
 
     // ---- earnings releases: KPIs, themes now vs the release before
     const [now, prev] = rels;
@@ -191,6 +199,7 @@ export default {
       add({ var: "voice.priorities", value: `Most-used themes in the ${now.date} earnings release: ${top.slice(0, 5).map(([t, n]) => `${t} (${n})`).join(", ")}`, url: now.url, grade: "i", tier: "C", date: now.date, detail: { counts: a } });
       const guide = sentences(now.text).filter((s) => /(expect|outlook|guidance|priorit|focus|strategy|invest)/i.test(s) && /(AI|growth|platform|acqui|integrat|efficien|margin)/.test(s) && !/forward-looking|safe harbor|risks and uncertainties/i.test(s) && s.length < 400).slice(0, 2);
       for (const s of guide) add({ var: "co.growth_line", value: s, url: now.url, grade: "p", tier: "A", date: now.date });
-    } else miss("co.kpis", rel.length ? "earnings release exhibit not found" : "no 8-K item 2.02 (earnings) in recent filings");
+    } else if (rel.length && relFails.length) miss("co.kpis", `earnings release not read: ${relFails.slice(0, 3).join("; ")}, not checked`, { blocked: true });
+    else miss("co.kpis", rel.length ? "earnings release exhibit not found" : "no 8-K item 2.02 (earnings) in recent filings");
   },
 };

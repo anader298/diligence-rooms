@@ -102,6 +102,8 @@ export default {
       }
       ctx.add({ var: "social.linkpage", value: `Personal site ${hostOf(u)}${m.title ? ` ("${m.title.slice(0, 60)}")` : ""} links with rel=me to ${me.map((s) => hostOf(s)).join(", ")}${root ? ` (named on ${root.site} @${root.handle})` : ""}`, url: u, grade: tied || nameMatch(m.title || "", subject) ? "p" : "w", tier: "B", anchors: root?.anchors || [], detail: { site: u, relMe: me, from: root ? `${root.site} @${root.handle}` : null } });
     }
-    if (!n) ctx.miss("social.linkpage", `no Linktree page naming ${subject.name} under ${handles.join(", ") || "no handle"}${sites.length ? `; no rel=me links on ${sites.join(", ")}` : ""}`);
+    // a 404 is an answer (no such page); no answer at all is "couldn't check"
+    const answered = [...lt, ...ps].some(({ r }) => r.ok || r.status === 404);
+    if (!n) ctx.miss("social.linkpage", `no Linktree page naming ${subject.name} under ${handles.join(", ") || "no handle"}${sites.length ? `; no rel=me links on ${sites.join(", ")}` : ""}${answered ? "" : "; no page answered, not checked"}`, { blocked: !answered });
   },
 };

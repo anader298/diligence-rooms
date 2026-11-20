@@ -55,10 +55,12 @@ export default {
     const first = await q(`"${subject.name}"${subject.company ? ` ${subject.company}` : ""}`);
     titles = wikiTitles(first.data, subject);
     if (!titles.length && subject.company) titles = wikiTitles((await q(`"${subject.name}"`)).data, subject);
-    if (!titles.length) return ctx.miss("bio.wikipedia", `English Wikipedia: no article titled ${subject.name}${first.ok ? "" : ` (search HTTP ${first.status || first.error})`}`);
+    if (!titles.length) return ctx.miss("bio.wikipedia", `English Wikipedia: no article titled ${subject.name}${first.ok ? "" : ` (search HTTP ${first.status || first.error}), not checked`}`, { blocked: !first.ok });
     let pick = null;
+    let unread = 0;
     for (const t of titles.slice(0, 3)) {
       const s = await http.json(`${W}/api/rest_v1/page/summary/${encodeURIComponent(t.replace(/ /g, "_"))}`, { timeout: 5000, headers: H() });
+      if (!s.ok) unread++;
       if (!s.ok || s.data?.type === "disambiguation") continue;
       const anchors = wikiAnchors(s.data, subject);
       if (anchors.length) {
@@ -66,7 +68,7 @@ export default {
         break;
       }
     }
-    if (!pick) return ctx.miss("bio.wikipedia", `English Wikipedia: ${titles.slice(0, 3).map((t) => `"${t}"`).join(", ")} found, but none names ${subject.company || "the company"}${subject.title ? ` or "${subject.title}"` : ""} (a namesake, not used)`);
+    if (!pick) return ctx.miss("bio.wikipedia", `English Wikipedia: ${titles.slice(0, 3).map((t) => `"${t}"`).join(", ")} found, but none names ${subject.company || "the company"}${subject.title ? ` or "${subject.title}"` : ""} (a namesake, not used)${unread ? `; ${unread} article summar${unread === 1 ? "y" : "ies"} not read` : ""}`, { blocked: unread > 0 && unread === Math.min(titles.length, 3) });
     const { s } = pick;
     const url = s.content_urls?.desktop?.page || `${W}/wiki/${encodeURIComponent(pick.t.replace(/ /g, "_"))}`;
     ctx.add({ var: "bio.wikipedia", value: `${s.title}${s.description ? ` — ${s.description}` : ""}: ${String(s.extract || "").slice(0, 400)}`, url, grade: "p", tier: "A", anchors: ["name", ...pick.anchors], image: s.thumbnail?.source || null, date: s.timestamp ? String(s.timestamp).slice(0, 10) : null, detail: { title: s.title, wikibase: s.wikibase_item || null, description: s.description || null, revised: s.timestamp || null, thumbnail: s.originalimage?.source || s.thumbnail?.source || null, terms: TERMS } });
@@ -74,7 +76,7 @@ export default {
     end.setUTCDate(0); // last day of the previous month
     const start = new Date(Date.UTC(end.getUTCFullYear() - 2, end.getUTCMonth() + 1, 1));
     const pv = await http.json(`https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/${encodeURIComponent(s.titles?.canonical || pick.t.replace(/ /g, "_"))}/monthly/${ymd(start)}00/${ymd(end)}00`, { timeout: 5000, headers: H() });
-    if (!pv.ok) return ctx.miss("news.attention", `Wikipedia pageviews: HTTP ${pv.status || pv.error}`);
+    if (!pv.ok) return ctx.miss("news.attention", `Wikipedia pageviews: HTTP ${pv.status || pv.error}, not checked`, { blocked: true });
     const { months, median, spikes } = viewSpikes(pv.data?.items);
     const total = months.reduce((a, x) => a + x.views, 0);
     const pvUrl = `https://pageviews.wmcloud.org/?project=en.wikipedia.org&pages=${encodeURIComponent(pick.t.replace(/ /g, "_"))}&range=latest-730`;

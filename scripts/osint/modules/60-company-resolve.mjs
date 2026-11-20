@@ -20,7 +20,7 @@ export default {
     if (c.qid) parts.push(`Wikidata ${c.qid}`);
     if (!parts.length) {
       if (c.gleifStatus && c.gleifStatus !== 200) ctx.status("partial", `GLEIF ${c.gleifStatus}`);
-      return ctx.miss("co.identifiers", `no SEC registrant, GLEIF LEI or Wikidata company item named "${ctx.subject.company}"${c.gleifStatus && c.gleifStatus !== 200 ? ` (GLEIF answered ${c.gleifStatus}: unknown)` : ""}`);
+      return ctx.miss("co.identifiers", `no SEC registrant, GLEIF LEI or Wikidata company item named "${ctx.subject.company}"${c.gleifStatus && c.gleifStatus !== 200 ? ` (GLEIF answered ${c.gleifStatus}: unknown)` : ""}${c.failed?.length ? `; not checked: ${c.failed.join(", ")} failed` : ""}`, { blocked: !!c.failed?.length });
     }
     const r = c.leiRecord;
     ctx.add({

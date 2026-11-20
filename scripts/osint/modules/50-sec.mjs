@@ -65,7 +65,7 @@ const company = {
     const b = await secBase(ctx);
     if (b.error && !b.cik) {
       if (b.blocked) ctx.status?.("blocked", `SEC ${b.error}`);
-      return miss("co.filings", `SEC lookup ${b.blocked ? "blocked" : "failed"} (${b.error}): not checked`);
+      return miss("co.filings", `SEC lookup ${b.blocked ? "blocked" : "failed"} (${b.error}): not checked`, { blocked: true });
     }
     if (b.none) {
       shared.private = true;
@@ -119,7 +119,7 @@ const company = {
     // XBRL company facts
     const fx = await http.json(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik10(cik)}.json`, { headers: H(), timeout: 20000 });
     const furl = `https://data.sec.gov/api/xbrl/companyfacts/CIK${cik10(cik)}.json`;
-    if (!fx.data) return miss("co.facts", `XBRL companyfacts ${fx.status || fx.error}`);
+    if (!fx.data) return miss("co.facts", `XBRL companyfacts: HTTP ${fx.status || fx.error}, not checked`, { blocked: fx.status !== 404 });
     const rev = pickRevenue(fx.data);
     if (rev?.annual) {
       shared.revenue = rev.annual.val;
@@ -180,7 +180,7 @@ const person = {
     const b = await secBase(ctx);
     if (!b.cik) {
       if (b.blocked) ctx.status?.("blocked", `SEC ${b.error}`);
-      for (const v of ["money.trades", "money.holdings", "money.comp"]) miss(v, b.none ? `${subject.company} is not an SEC registrant: no Forms 3/4 or proxy` : `SEC lookup ${b.blocked ? "blocked" : "failed"} (${b.error}): not checked`);
+      for (const v of ["money.trades", "money.holdings", "money.comp"]) miss(v, b.none ? `${subject.company} is not an SEC registrant: no Forms 3/4 or proxy` : `SEC lookup ${b.blocked ? "blocked" : "failed"} (${b.error}): not checked`, { blocked: !b.none });
       return;
     }
     const cik = b.cik;
@@ -215,7 +215,7 @@ const person = {
     const tasks = [];
     const searched = forms.map((n) => `"${n}"`).join(" / ");
     if (ownerCik) tasks.push(insider(ctx, cik, ownerCik));
-    else for (const v of ["money.trades", "money.holdings"]) miss(v, `no Form 3/4 filer named ${searched} at CIK ${cik} in EDGAR full-text search${raw ? "" : ` (search failed: ${fts.status || fts.error}, so unknown)`} (not a Section 16 officer, or files under another name: try --aliases)`);
+    else for (const v of ["money.trades", "money.holdings"]) miss(v, `no Form 3/4 filer named ${searched} at CIK ${cik} in EDGAR full-text search${raw ? "" : ` (search failed: ${fts.status || fts.error}, so unknown)`} (not a Section 16 officer, or files under another name: try --aliases)`, { blocked: !raw });
     tasks.push(proxy(ctx, b.filings));
     tasks.push(mentions(ctx, cik, atCo.filter((h) => h.root_forms?.includes("8-K") || h.form === "8-K")));
     await Promise.all(tasks);
@@ -231,7 +231,7 @@ function titleSeen(shared, title, source, row) {
 async function insider(ctx, cik, ownerCik) {
   const { http, add, miss, subject, shared } = ctx;
   const own = await http.json(`https://data.sec.gov/submissions/CIK${cik10(ownerCik)}.json`, { headers: H(), timeout: 15000 });
-  if (!own.data) return miss("money.trades", `owner submissions CIK ${ownerCik}: ${own.status}`);
+  if (!own.data) return miss("money.trades", `owner submissions CIK ${ownerCik}: HTTP ${own.status || own.error}, not checked`, { blocked: true });
   const r = own.data.filings.recent;
   const list = r.form.map((form, i) => ({ form, date: r.filingDate[i], acc: r.accessionNumber[i], doc: r.primaryDocument[i] })).filter((f) => ["3", "4", "5", "3/A", "4/A"].includes(f.form));
   const recent = list.filter((f) => f.form.startsWith("4")).slice(0, 10);
@@ -247,7 +247,10 @@ async function insider(ctx, cik, ownerCik) {
     }),
   );
   const ok = docs.filter((d) => d && (!d.p.issuerCik || Number(d.p.issuerCik) === cik));
-  if (!ok.length) return miss("money.trades", `Form 4 XML fetch failed for owner CIK ${ownerCik}`);
+  if (!ok.length) {
+    const failed = docs.filter((d) => !d).length;
+    return miss("money.trades", failed ? `Form 3/4 XML fetch failed for owner CIK ${ownerCik} (${failed} of ${docs.length}), not checked` : `no Form 3/4 by owner CIK ${ownerCik} for issuer CIK ${cik}`, { blocked: failed > 0 });
+  }
   // newest filing with a usable title; "See Remarks" is resolved from the remarks text by parseForm4
   const latest = ok.find((d) => d.p.title) || ok[0];
   if (latest.p.title) {
@@ -298,7 +301,7 @@ async function proxy(ctx, filings) {
   const def = filings.find((f) => f.form === "DEF 14A");
   if (!def) return miss("money.comp", "no DEF 14A in recent EDGAR filings");
   const r = await http.get(def.url, { headers: H(), timeout: 25000 });
-  if (!r.ok) return miss("money.comp", `DEF 14A fetch ${r.status || r.error}`);
+  if (!r.ok) return miss("money.comp", `DEF 14A fetch: HTTP ${r.status || r.error}, not checked`, { blocked: true });
   const sct = parseSCT(r.text, subject);
   if (sct.isNeo && sct.years.length) {
     const y = sct.years[0];

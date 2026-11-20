@@ -39,9 +39,11 @@ export default {
     if (!cands.length) return ctx.miss("social.proofs", "GitHub commit search by email: no email (pass --email, or --domain for the common patterns)");
     const headers = { accept: "application/vnd.github+json", ...(env.GITHUB_TOKEN ? { authorization: `Bearer ${env.GITHUB_TOKEN}` } : {}) };
     let hits = 0;
+    let failed = 0;
     for (const c of cands) {
       const r = await http.json(`https://api.github.com/search/commits?q=${encodeURIComponent(`author-email:${c.email}`)}&per_page=30&sort=author-date&order=desc`, { headers, timeout: 8000 });
       if (!r.ok) {
+        failed++;
         if (isBlocked(r)) blockedMiss(ctx, "social.proofs", `GitHub commit search (${c.email})`, r, env.GITHUB_TOKEN ? "retry in a minute" : "set GITHUB_TOKEN (free) or retry in a minute", { partial: true });
         continue;
       }
@@ -74,6 +76,6 @@ export default {
         });
       }
     }
-    if (!hits) ctx.miss("social.proofs", `GitHub commit search: no commits authored by ${cands.map((c) => c.email).join(", ")}`);
+    if (!hits) ctx.miss("social.proofs", `GitHub commit search: no commits authored by ${cands.map((c) => c.email).join(", ")}${failed ? `; ${failed} of ${cands.length} searches failed` : ""}`, { blocked: failed === cands.length });
   },
 };

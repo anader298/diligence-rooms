@@ -85,6 +85,8 @@ export default {
       const dates = f.items.map((i) => i.date).filter(Boolean).sort();
       ctx.add({ var: v, value: `${f.title || who}: ${f.items.length} item(s) in the feed${dates.length ? `, ${dates[0]} to ${dates.at(-1)}` : ""}`, url: j.url, grade, tier: "A", date: dates.at(-1) || null, anchors: j.a?.anchors || [], detail: { feed: j.url, account: who, count: f.items.length } });
     }
-    if (!n) ctx.miss("voice.writing", `feeds: none readable at ${jobs.map((j) => j.url).join(", ")}`);
+    // a 404 is an answer (no feed there); no answer at all is "couldn't check"
+    const answered = got.some((x) => x?.r && (x.r.ok || x.r.status === 404));
+    if (!n) ctx.miss("voice.writing", `feeds: none readable at ${jobs.map((j) => j.url).join(", ")}${answered ? "" : "; no feed answered, not checked"}`, { blocked: !answered });
   },
 };

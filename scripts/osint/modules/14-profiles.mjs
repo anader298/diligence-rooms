@@ -56,6 +56,7 @@ export default {
       return;
     }
     const gh = env.GITHUB_TOKEN ? { authorization: `Bearer ${env.GITHUB_TOKEN}` } : {};
+    const postFeeds = []; // true per post feed that answered, false per one that failed
     const texts = [];
     const activity = [];
     const places = new Set();
@@ -86,11 +87,13 @@ export default {
         activity.push({ a, n: repos.length, what: "repos", last: repos[0]?.pushed_at });
       } else if (a.site === "bluesky") {
         const r = await http.json(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(a.extra?.did || a.extra?.handle || a.handle + ".bsky.social")}&limit=50&filter=posts_no_replies`, { timeout: 9000 });
+        postFeeds.push(r.ok);
         const posts = (r.data?.feed || []).map((f) => f.post).filter((p) => p?.record?.text);
         for (const p of posts) texts.push({ a, text: p.record.text, kind: "post", date: p.record.createdAt, likes: p.likeCount || 0, url: `https://bsky.app/profile/${p.author.handle}/post/${p.uri.split("/").pop()}` });
         activity.push({ a, n: a.extra?.posts ?? posts.length, what: "posts", last: posts[0]?.record?.createdAt });
       } else if (a.site === "mastodon" && a.extra?.id) {
         const r = await http.json(`https://mastodon.social/api/v1/accounts/${a.extra.id}/statuses?limit=40&exclude_replies=true`, { timeout: 9000 });
+        postFeeds.push(r.ok);
         for (const p of r.data || []) texts.push({ a, text: stripTags(p.content), kind: "post", date: p.created_at, likes: p.favourites_count || 0, url: p.url });
         activity.push({ a, n: a.extra?.posts ?? 0, what: "posts", last: a.extra?.last });
       } else if (a.site === "medium" && a.extra?.posts?.length) {
@@ -138,7 +141,11 @@ export default {
       const top = [...posts].sort((p, q) => q.likes - p.likes).slice(0, 3);
       for (const p of top) if (p.likes > 0) ctx.add({ var: "social.top_posts", value: `${p.likes} likes: "${p.text.slice(0, 160)}"`, url: p.url, date: day(p.date), grade: "w", tier: "C", anchors: p.a.anchors || [] });
       for (const p of posts.filter((p) => companyIn(p.text, subject)).slice(0, 3)) ctx.add({ var: "social.work_posts", value: p.text.slice(0, 200), url: p.url, date: day(p.date), grade: "p", tier: "C", anchors: ["company", ...(p.a.anchors || [])] });
-    } else ctx.miss("social.themes", `no public posts in the last 12 months on ${[...new Set(accts.map((a) => a.site))].join(", ")}`);
+    } else {
+      // every post feed it tried failed: the posts were not read, which is not "no posts"
+      const unread = postFeeds.length > 0 && !postFeeds.some(Boolean);
+      ctx.miss("social.themes", `no public posts in the last 12 months on ${[...new Set(accts.map((a) => a.site))].join(", ")}${unread ? "; the post feeds did not answer, not checked" : ""}`, { blocked: unread });
+    }
 
     if (activity.some((x) => x.n > 0)) {
       const best = [...activity].sort((p, q) => (q.n || 0) - (p.n || 0))[0];

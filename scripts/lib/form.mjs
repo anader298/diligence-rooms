@@ -207,7 +207,11 @@ export function resolveRef(ledgers, ref, home) {
 // ---------------------------------------------------------------- states
 
 const BLOCKED_STATUS = new Set(["blocked", "skipped", "error", "timeout"]);
-const isBlockedMiss = (m) => m?.blocked === true || /\bblocked\b|not checked|not checkable|\bnot run\b|rate.?limit|captcha|HTTP (?:202|403|429|451|503|999)\b|needs (?:a free )?[A-Z_]{4,}|: timeout/i.test(String(m?.searched || ""));
+// A miss says whether its source could be checked: core.mjs records `blocked` (true or false) on
+// every miss, and the form reads that flag. Only ledgers written before the flag existed fall
+// back to reading the text.
+const LEGACY_BLOCKED_TEXT = /\bblocked\b|not checked|not checkable|\bnot run\b|rate.?limit|captcha|HTTP (?:0|202|403|429|451|5\d\d|999)\b|\b(?:403|429|5\d\d)\b(?! (?:rows?|hits?|results?|items?)\b)|needs (?:a free )?[A-Z_]{4,}|: timeout|fetch failed|\bfailed\b/i;
+export const isBlockedMiss = (m) => (typeof m?.blocked === "boolean" ? m.blocked : LEGACY_BLOCKED_TEXT.test(String(m?.searched || "")));
 const textOf = (r) => `${r.url || ""} ${typeof r.value === "string" ? r.value : JSON.stringify(r.value ?? "")}`;
 
 /** The rows of the ledgers this bucket reads: its own person's, or (company) all of them, deduplicated. */
@@ -280,19 +284,22 @@ export function computeStates(insts, ledgers, { moduleVars = {}, intake = {} } =
     const realMiss = misses.find((m) => !isBlockedMiss(m));
     // a per-platform bucket (match) is not answered by a miss on the whole var: go by the modules
     if (realMiss && !inst.match) return done("empty", { why: `${realMiss.module}: ${realMiss.searched}` });
+    const blockedMisses = misses.filter(isBlockedMiss);
 
     const feed = feeders(inst.vars);
     if (inst.intake && !feed.length) return done("empty", { why: "not given in the intake" });
     if (!feed.length) return done("no-tool", { why: inst.hint ? `no module feeds it; where to look: ${inst.hint}` : "no module feeds it; an agent can hand in an entry" });
     const reports = Ls.flatMap((L) => L.modules.filter((m) => feed.includes(m.id)));
-    const ranOk = reports.filter((m) => !BLOCKED_STATUS.has(m.status));
+    // A module that ran but could not check this bucket's vars (its miss on them is blocked: a
+    // failed call, no key) did not search them, whatever its overall status.
+    const couldNot = new Set(blockedMisses.filter((m) => !misses.some((x) => x.module === m.module && !isBlockedMiss(x))).map((m) => m.module));
+    const ranOk = reports.filter((m) => !BLOCKED_STATUS.has(m.status) && !couldNot.has(m.id));
     if (ranOk.length) return done("empty", { why: `searched by ${[...new Set(ranOk.map((m) => m.id))].join(", ")}: nothing found` });
+    if (blockedMisses.length) return done("blocked", { why: [...new Set(blockedMisses.map((m) => `${m.module}: ${m.searched}`))].join("; ") });
     if (reports.length) {
       const why = [...new Set(reports.map((m) => `${m.id} ${m.status}${m.why ? ` (${m.why})` : ""}`))].join("; ");
       return done("blocked", { why });
     }
-    const blockedMiss = misses.find(isBlockedMiss);
-    if (blockedMiss) return done("blocked", { why: `${blockedMiss.module}: ${blockedMiss.searched}` });
     return done("blocked", { why: Ls.some((L) => L.ran) ? `${feed.join(", ")} did not run` : "the scripted pass has not run" });
   });
 }

@@ -7,7 +7,8 @@
 // `vars` lists the ledger variables it can fill; the form uses it to tell "searched, nothing
 // found" from "no tool yet" for each bucket.
 // It reports what it finds with ctx.add({ var, value, url, grade, ... }) and what it searched
-// but did not find with ctx.miss(var, what). Every add becomes one ledger row; nothing a module
+// but did not find with ctx.miss(var, what), or ctx.miss(var, what, { blocked: true }) when the
+// source could not be checked (a failed call, no key). Every add becomes one ledger row; nothing a module
 // says reaches the dossier without a row.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
@@ -299,8 +300,15 @@ export function makeLedger(dir, variables = []) {
     appendFileSync(file, JSON.stringify(row) + "\n");
     return row;
   }
-  function miss(module, varId, searched) {
-    misses.push({ module, var: varId, label: byVar[varId]?.label || varId, tab: byVar[varId]?.tab || "personal", searched });
+  /**
+   * A var that was looked for and not found. opts.blocked: the source could not be checked (a
+   * failed or refused call, no key, nothing to search with): the form shows "couldn't check",
+   * never "searched, nothing found". Every miss records the flag, so the form reads it, not the text.
+   */
+  function miss(module, varId, searched, opts = {}) {
+    const m = { module, var: varId, label: byVar[varId]?.label || varId, tab: byVar[varId]?.tab || "personal", searched, blocked: opts?.blocked === true };
+    if (m.blocked && opts.status != null) m.status = opts.status;
+    misses.push(m);
   }
   return { add, miss, rows, misses, file };
 }

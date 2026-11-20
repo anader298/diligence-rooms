@@ -88,7 +88,7 @@ export default {
     ]);
     if (!bc.ok && !ia.ok) {
       if (isBlocked(bc)) return blockedMiss(ctx, "career.licenses", "FINRA BrokerCheck / IAPD", bc, "retry later");
-      return ctx.miss("career.licenses", `BrokerCheck / IAPD: HTTP ${bc.status || bc.error}`);
+      return ctx.miss("career.licenses", `BrokerCheck / IAPD: HTTP ${bc.status || bc.error}, not checked`, { blocked: true });
     }
     const search = `https://brokercheck.finra.org/search/genericsearch/grid?query=${q}`;
     const matches = matchHits(bc.data, ia.data, subject, shared);

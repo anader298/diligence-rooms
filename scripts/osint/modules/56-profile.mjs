@@ -38,8 +38,10 @@ const wikidata = {
     const API = "https://www.wikidata.org/w/api.php";
     const s = await http.json(`${API}?action=wbsearchentities&search=${encodeURIComponent(subject.company)}&language=en&type=item&limit=7&format=json`, { timeout: 10000 });
     const ids = (s.data?.search || []).map((x) => x.id);
+    if (!s.ok) return miss("co.facts", `Wikidata search: HTTP ${s.status || s.error}, not checked`, { blocked: true });
     if (!ids.length) return miss("co.facts", `no Wikidata item for "${subject.company}"`);
     const e = await http.json(`${API}?action=wbgetentities&ids=${ids.join("|")}&props=claims|labels|descriptions&languages=en&format=json`, { timeout: 10000 });
+    if (!e.ok) return miss("co.facts", `Wikidata entities: HTTP ${e.status || e.error}, not checked`, { blocked: true });
     const ents = Object.values(e.data?.entities || {});
     const dom = (subject.domain || "").replace(/^www\./, "");
     const site = (x) => (x.claims?.P856 || []).map((c) => c.mainsnak?.datavalue?.value).filter(Boolean);
@@ -143,7 +145,7 @@ const gdelt = {
       if (!title || !named(title.replace(/ - [^-]+$/, ""))) continue;
       push(title.replace(/ - [^-]+$/, ""), src, link, pd ? new Date(pd).toISOString().slice(0, 10) : null, "Google News RSS", businessy(title) ? "p" : "w");
     }
-    if (!n) miss("news.company", `no company-named articles in 90 days: GDELT ${r.data ? "0 hits" : r.status === 429 || /limit requests/i.test(r.text || "") ? "rate-limited (one call per 5 s)" : r.status || r.error}; Google News RSS ${g.ok ? "no title naming the company" : g.status || g.error}`);
+    if (!n) miss("news.company", `no company-named articles in 90 days: GDELT ${r.data ? "0 hits" : r.status === 429 || /limit requests/i.test(r.text || "") ? "rate-limited (one call per 5 s)" : r.status || r.error}; Google News RSS ${g.ok ? "no title naming the company" : g.status || g.error}`, { blocked: !r.data && !g.ok });
   },
 };
 
@@ -162,7 +164,7 @@ const form5500 = {
     const name = normCompany(subject.company).toUpperCase();
     const u = `https://www.efast.dol.gov/services/afs?q.parser=lucene&size=100&q=${encodeURIComponent(`plansponsor:"${name}"`)}`;
     const r = await http.json(u, { timeout: 15000 });
-    if (!r.data) return miss("co.benefit_plans", `DOL EFAST2 search ${r.status || r.error}`);
+    if (!r.data) return miss("co.benefit_plans", `DOL EFAST2 search: HTTP ${r.status || r.error}, not checked`, { blocked: true });
     const hits = (r.data.hits?.hit || []).map((h) => h.fields).filter((f) => same(subject.company, f.plansponsor));
     if (!hits.length) return miss("co.benefit_plans", `no Form 5500 filings with sponsor "${name}" in DOL EFAST2`);
     // newest filing per plan
@@ -219,6 +221,7 @@ const nonprofit = {
     const { http, add, miss, subject } = ctx;
     if (!/(foundation|association|institute|society|university|college|hospital|fund|trust|council|center|centre|alliance|museum|charit|ministr|church|school|nonprofit|non-profit)/i.test(subject.company)) return;
     const r = await http.json(`https://projects.propublica.org/nonprofits/api/v2/search.json?q=${encodeURIComponent(subject.company)}`, { timeout: 12000 });
+    if (!r.ok && r.status !== 404) return miss("co.facts", `ProPublica Nonprofit Explorer: HTTP ${r.status || r.error}, not checked`, { blocked: true });
     const org = (r.data?.organizations || []).find((o) => same(subject.company, o.name));
     if (!org) return miss("co.facts", `ProPublica Nonprofit Explorer: no organisation named "${subject.company}"`);
     const d = await http.json(`https://projects.propublica.org/nonprofits/api/v2/organizations/${org.ein}.json`, { timeout: 12000 });

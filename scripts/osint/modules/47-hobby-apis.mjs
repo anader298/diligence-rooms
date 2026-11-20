@@ -74,6 +74,8 @@ export default {
       const acc = accts.find((a) => a.site === "chess.com" && a.handle.toLowerCase() === h);
       ctx.add({ var: "hobby.games", value: `chess.com @${h}: ${rs.map((x) => `${x.kind} ${x.rating}${x.best ? ` (best ${x.best})` : ""}`).join(", ")}`, url: `https://www.chess.com/member/${h}`, grade: given.includes(h) || (acc?.anchors || []).length > 1 ? "p" : "w", tier: "B", date: rs.map((x) => x.last).filter(Boolean).sort().at(-1) || null, detail: { site: "chess.com", ratings: rs } });
     }
-    if (!n) ctx.miss("hobby.media", `Discogs, Letterboxd${chess.length ? ", chess.com" : ""}: nothing under ${handles.join(", ")} that names ${subject.name}`);
+    // no site answered at all (every call failed): "couldn't check", not "nothing found"
+    const answered = [...dc, ...lb, ...ch].some(({ r }) => r.ok || r.status === 404);
+    if (!n) ctx.miss("hobby.media", `Discogs, Letterboxd${chess.length ? ", chess.com" : ""}: nothing under ${handles.join(", ")} that names ${subject.name}${answered ? "" : "; no site answered, not checked"}`, { blocked: !answered });
   },
 };

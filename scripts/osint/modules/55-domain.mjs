@@ -79,9 +79,16 @@ const SPF = [
   [/mimecast/i, "Mimecast"],
 ];
 
+/**
+ * One DNS-over-HTTPS lookup. { ok, answers, why }: ok is false when the call failed or the
+ * resolver could not answer (SERVFAIL, REFUSED), so a failed lookup is never read as "no records".
+ * Status 0 (NOERROR) and 3 (NXDOMAIN) are answers.
+ */
 async function doh(http, name, type) {
   const r = await http.json(`https://dns.google/resolve?name=${encodeURIComponent(name)}&type=${type}`, { timeout: 8000 });
-  return (r.data?.Answer || []).map((a) => String(a.data).replace(/^"|"$/g, "").replace(/" "/g, ""));
+  if (!r.data) return { ok: false, answers: [], why: `${type} ${name}: ${r.status ? `HTTP ${r.status}` : r.error || "no answer"}` };
+  if (![0, 3].includes(r.data.Status)) return { ok: false, answers: [], why: `${type} ${name}: DNS status ${r.data.Status}` };
+  return { ok: true, answers: (r.data.Answer || []).map((a) => String(a.data).replace(/^"|"$/g, "").replace(/" "/g, "")), why: null };
 }
 
 const dns = {
@@ -95,9 +102,19 @@ const dns = {
   async run(ctx) {
     const { http, add, miss, subject, shared } = ctx;
     const d = subject.domain.replace(/^www\./, "");
-    const [mx, txt, dmarc] = await Promise.all([doh(http, d, "MX"), doh(http, d, "TXT"), doh(http, "_dmarc." + d, "TXT")]);
+    const [mxR, txtR, dmarcR] = await Promise.all([doh(http, d, "MX"), doh(http, d, "TXT"), doh(http, "_dmarc." + d, "TXT")]);
+    const [mx, txt, dmarc] = [mxR.answers, txtR.answers, dmarcR.answers];
     const url = `https://dns.google/resolve?name=${d}&type=TXT`;
-    if (!mx.length && !txt.length) return miss("co.domains", `no MX/TXT records returned for ${d} by dns.google`);
+    const failed = [mxR, txtR, dmarcR].filter((x) => !x.ok).map((x) => x.why);
+    if (!mx.length && !txt.length) {
+      // a lookup that failed is "couldn't check", not "no records"
+      if (!mxR.ok || !txtR.ok) {
+        ctx.status("blocked", `dns.google: ${failed.join("; ")}`);
+        return miss("co.domains", `dns.google lookup failed for ${d} (${failed.join("; ")}), not checked`, { blocked: true });
+      }
+      return miss("co.domains", `no MX/TXT records returned for ${d} by dns.google`);
+    }
+    if (failed.length) ctx.status("partial", `dns.google: ${failed.join("; ")}`);
     const mail = [...new Set(mx.flatMap((m) => MX.filter(([re]) => re.test(m)).map(([, n]) => n)))];
     const tools = new Set();
     for (const t of txt) for (const [re, n] of TXT) if (re.test(t)) tools.add(n);
@@ -128,7 +145,11 @@ const crtsh = {
       r = await http.json(`https://crt.sh/?q=${encodeURIComponent("%." + d)}&output=json`, { timeout: 8000 });
       scope = "all certificates, expired included";
     }
-    if (!r.data) return miss("co.domains", `crt.sh ${r.status || r.error} (often slow or overloaded)`);
+    if (!r.data) {
+      // a 503 or a timeout from crt.sh is "couldn't check", never "no subdomains"
+      ctx.status("blocked", `crt.sh ${r.status ? `HTTP ${r.status}` : r.error || "no answer"}`);
+      return miss("co.domains", `crt.sh ${r.status ? `HTTP ${r.status}` : r.error || "no answer"} (often slow or overloaded), not checked`, { blocked: true });
+    }
     const names = new Set();
     let first = null;
     for (const c of r.data) {
@@ -160,7 +181,8 @@ const wayback = {
     // first captures that returned a page (status 200), one a month, oldest first
     const r = await http.json(`https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(d)}&output=json&fl=timestamp,original&filter=statuscode:200&collapse=timestamp:6&limit=8`, { timeout: 15000 });
     const caps = (r.data || []).slice(1);
-    if (!caps.length) return miss("co.domains", `Wayback CDX ${r.status || r.error || "no captures that returned a page"}`);
+    if (!r.ok) return miss("co.domains", `Wayback CDX: HTTP ${r.status || r.error}, not checked`, { blocked: true });
+    if (!caps.length) return miss("co.domains", `Wayback CDX: no captures that returned a page`);
     // skip parked and for-sale pages: those are a previous owner (or nobody), not the company
     let first = null;
     let parked = 0;

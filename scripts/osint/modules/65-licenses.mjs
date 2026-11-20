@@ -92,7 +92,7 @@ export default {
       const r = res[i];
       if (!r.ok) {
         if (isBlocked(r)) blockedMiss(ctx, "career.licenses", s.label, r, "retry later", { partial: true });
-        else ctx.miss("career.licenses", `${s.label}: HTTP ${r.status || r.error}, not checked`);
+        else ctx.miss("career.licenses", `${s.label}: HTTP ${r.status || r.error}, not checked`, { blocked: true });
         return;
       }
       anyOk = true;

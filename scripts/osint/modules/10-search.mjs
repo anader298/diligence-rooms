@@ -223,14 +223,14 @@ export default {
     }
     const blockText = blocked.map((b) => `${b.engine} ${b.blocked || b.error}`).join(", ");
     if (!ran.length && blocked.length) blockedMiss(ctx, "news.articles", `web search (${[...new Set(blocked.map((b) => b.engine))].join(", ")})`, { status: Number(blocked[0].blocked || blocked[0].error) || 0, error: String(blocked[0].error || "") }, "set BRAVE_API_KEY (free tier) or retry in a few minutes");
-    else if (!rows) ctx.miss("news.articles", `${ran.length} searches (${[...new Set(ran.map((e) => e.engine))].join(", ") || "none"}) returned nothing naming ${subject.name} with ${subject.company || "a known place"}${dropped ? ` (${dropped} name-only results set aside as possible namesakes)` : ""}${blocked.length ? `; blocked (${blockText}), those queries unknown` : ""}`);
+    else if (!rows) ctx.miss("news.articles", `${ran.length} searches (${[...new Set(ran.map((e) => e.engine))].join(", ") || "none"}) returned nothing naming ${subject.name} with ${subject.company || "a known place"}${dropped ? ` (${dropped} name-only results set aside as possible namesakes)` : ""}${blocked.length ? `; blocked (${blockText}), those queries unknown` : ""}`, { blocked: !ran.length });
     const siteOf = { linkedin: "linkedin.com", instagram: "instagram.com", x: "x.com", facebook: "facebook.com", youtube: "youtube.com", github: "github.com", strava: "strava.com" };
     for (const [p, dom] of Object.entries(siteOf)) {
       if (profiles.some((x) => x.platform === p)) continue;
       const tried = ran.some((e) => e.q.includes("site:" + dom) && e.engine !== "bing");
-      ctx.miss("social.accounts", tried ? `site:${dom} search found no profile titled ${subject.name}` : `site:${dom} search not run: engine blocked (${blockText || "out of time"}), unknown`);
+      ctx.miss("social.accounts", tried ? `site:${dom} search found no profile titled ${subject.name}` : `site:${dom} search not run: engine blocked (${blockText || "out of time"}), unknown`, { blocked: !tried });
     }
-    if (!results.some((r) => /obituary|wedding/.test(r.q) && nameMatch(r.title + " " + r.snippet, subject))) ctx.miss("family.partner", `obituary and wedding searches: nothing naming ${subject.name}`);
+    if (!results.some((r) => /obituary|wedding/.test(r.q) && nameMatch(r.title + " " + r.snippet, subject))) ctx.miss("family.partner", `obituary and wedding searches: nothing naming ${subject.name}`, { blocked: !ran.some((e) => /obituary|wedding/.test(e.q)) });
     ctx.log(`${ran.length} queries, ${results.length} results, ${rows} rows; engines ${[...new Set(ran.map((e) => e.engine))].join("+")}${blocked.length ? "; blocked " + blocked.map((b) => b.engine).join(",") : ""}`);
   },
 };

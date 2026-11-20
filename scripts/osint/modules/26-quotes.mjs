@@ -123,6 +123,6 @@ export default {
       });
       n++;
     }
-    if (!n) ctx.miss("voice.quotes", `no quote attributed to ${subject.name}: ${pool0.length} search/news snippets, ${read} of ${pages.length} press or company pages read${refused ? ` (${refused} refused scripts: blocked, unknown)` : ""}${edgarBlocked ? `; EDGAR full-text blocked (HTTP ${edgarBlocked}), unknown` : ""}`);
+    if (!n) ctx.miss("voice.quotes", `no quote attributed to ${subject.name}: ${pool0.length} search/news snippets, ${read} of ${pages.length} press or company pages read${refused ? ` (${refused} refused scripts: blocked, unknown)` : ""}${edgarBlocked ? `; EDGAR full-text blocked (HTTP ${edgarBlocked}), unknown` : ""}`, { blocked: !read && !pool0.length && !!(refused || edgarBlocked) });
   },
 };

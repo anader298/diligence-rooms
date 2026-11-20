@@ -105,8 +105,8 @@ export default {
         checked.push("OpenSanctions (global sanctions, PEPs, debarments)");
         ctx.add({ var: "rec.sanctions_detail", value: `OpenSanctions: ${res.length ? res.slice(0, 3).map((x) => `${x.caption} (${(x.datasets || []).slice(0, 2).join(", ")}, score ${x.score.toFixed(2)})`).join("; ") : "no match ≥ 0.70"}`, url: "https://www.opensanctions.org/search/?q=" + encodeURIComponent(subject.name), grade: "v", tier: "A", detail: res.slice(0, 5) });
         hits.push(...res.map((x) => ({ name: x.caption, list: "OpenSanctions", detail: { id: x.id, score: x.score, topics: x.properties?.topics } })));
-      } else ctx.miss("rec.sanctions", `OpenSanctions: HTTP ${r.status || r.error}`);
-    } else ctx.miss("rec.sanctions", "OpenSanctions (PEPs, global lists) not checked: needs OPENSANCTIONS_API_KEY");
+      } else ctx.miss("rec.sanctions", `OpenSanctions: HTTP ${r.status || r.error}, not checked`, { blocked: true });
+    } else ctx.miss("rec.sanctions", "OpenSanctions (PEPs, global lists) not checked: needs OPENSANCTIONS_API_KEY", { blocked: true });
 
     if (checked.length) {
       ctx.add({ var: "rec.sanctions", value: hits.length ? `Possible match on ${[...new Set(hits.map((h) => h.list))].join(", ")}: ${hits.slice(0, 3).map((h) => h.name).join("; ")} — check identity before relying on it` : `Clear: no match for ${subject.name} on ${checked.join(", ")}`, url: LISTS.sdn.url, grade: hits.length ? "w" : "v", tier: "A", detail: { lists: perList, hits: hits.slice(0, 10) } });
@@ -122,7 +122,7 @@ export default {
       let n = 0;
       for (const [kind, r] of [["docket", dockets], ["opinion", opinions]]) {
         if (!r.ok) {
-          ctx.miss("rec.courts", `CourtListener ${kind} search: HTTP ${r.status || r.error}`);
+          ctx.miss("rec.courts", `CourtListener ${kind} search: HTTP ${r.status || r.error}, not checked`, { blocked: true });
           continue;
         }
         for (const x of (r.data?.results || []).slice(0, 10)) {
@@ -134,6 +134,6 @@ export default {
         }
       }
       if (!n && dockets.ok) ctx.add({ var: "rec.courts", value: `No federal dockets or opinions naming "${subject.name}" (CourtListener RECAP + opinions)`, url: `https://www.courtlistener.com/?q=${q}`, grade: "v", tier: "A" });
-    } else ctx.miss("rec.courts", "CourtListener not checked: needs a free COURTLISTENER_TOKEN (the API returns 401 without one); state courts are not covered by any free API");
+    } else ctx.miss("rec.courts", "CourtListener not checked: needs a free COURTLISTENER_TOKEN (the API returns 401 without one); state courts are not covered by any free API", { blocked: true });
   },
 };

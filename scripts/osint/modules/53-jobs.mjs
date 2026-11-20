@@ -165,7 +165,7 @@ export default {
       const got = await Promise.all(probes.map(async (b) => ({ ...(await fetchBoard(http, b)), board: b })));
       res = got.filter((r) => r.ok && r.jobs.length).sort((a, b) => b.jobs.length - a.jobs.length)[0] || null;
     }
-    if (!res) return miss("co.hiring", `no public job board found: ${tried.join("; ")}${boards.length ? `; detected ${boards.map((b) => b.kind).join(", ")} but could not read it` : ""}`);
+    if (!res) return miss("co.hiring", `no public job board found: ${tried.join("; ")}${boards.length ? `; detected ${boards.map((b) => b.kind).join(", ")} but could not read it` : ""}`, { blocked: boards.length > 0 });
 
     const { jobs, board } = res;
     const grade = board.how === "careers page" ? "v" : "p";

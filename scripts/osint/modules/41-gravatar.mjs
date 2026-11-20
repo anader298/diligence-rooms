@@ -76,6 +76,8 @@ export default {
         detail: { email: c.email, source: c.source, ...p },
       });
     }
-    if (!hits) ctx.miss("social.proofs", `Gravatar: no public profile for ${cands.map((c) => c.email).join(", ")}`);
+    // a 404 is an answer (no profile); a call that failed or was refused is not
+    const answered = res.filter(({ r }) => r.ok || r.status === 404).length;
+    if (!hits) ctx.miss("social.proofs", `Gravatar: no public profile for ${cands.map((c) => c.email).join(", ")}${answered < res.length ? `; ${res.length - answered} lookup(s) failed` : ""}`, { blocked: !answered });
   },
 };
