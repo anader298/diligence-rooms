@@ -296,6 +296,9 @@ export function makeLedger(dir, variables = []) {
     // entries handed in by agents (scripts/lib/entries.mjs) carry their bucket, the grade they
     // claimed (code decides the grade), a note, and for AI judgement the ledger ids they cite
     for (const k of ["bucket", "claim", "note", "cites", "entry"]) if (f[k] != null) row[k] = f[k];
+    // rows handed in by agents (add.mjs, entries) are marked by code, whatever module name they
+    // carry: such a row is never a primary record (weights.mjs isPrimary)
+    if (f.origin === "agent") row.origin = "agent";
     rows.push(row);
     appendFileSync(file, JSON.stringify(row) + "\n");
     return row;

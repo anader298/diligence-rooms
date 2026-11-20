@@ -1,8 +1,8 @@
 // Entries: how agents hand in what they found. An entry names a bucket of the room's form, a
 // value, the source URL and a note; it goes into the same ledger as the script rows and through
 // the same two-source rule (scripts/osint/weights.mjs). An agent never sets a grade: it may ask
-// for Verified, and the row keeps it only when a second, independent source agrees (or the row
-// is a primary record). AI judgement slots (kind "ai") hold text that cites the ledger ids it
+// for Verified, and the row keeps it only when a second, independent source agrees. An agent's row
+// is never a primary record: code marks it origin "agent". AI judgement slots (kind "ai") hold text that cites the ledger ids it
 // rests on; every id must exist.
 //
 //   submitEntry(roomDir, { bucket, person, value, url, note, none, weak, cites, date })
@@ -12,21 +12,24 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { makeLedger } from "../osint/core.mjs";
 import { loadVariables } from "../osint/run.mjs";
-import { corroborate, loadWeights } from "../osint/weights.mjs";
+import { corroborate, loadWeights, isAgentRow } from "../osint/weights.mjs";
 import { loadPacks, selectPacks, selectionFor, instances, loadLedgers, resolveRef, COMPANY_LEDGER } from "./form.mjs";
 
 const HTTP = /^https?:\/\/[^\s]+$/i;
 
 /**
  * Grade a ledger the way the scripted pass does, after a new row: every row that was cut from
- * Verified for having one source, and every agent row, goes back to the grade it claimed, then
+ * Verified for having one source, and every agent row (origin "agent", whatever module name it
+ * carries; older agent rows are marked here), goes back to the grade it claimed, then
  * the two-source rule runs again over this ledger plus `context` rows (other ledgers, read only).
  * Writes the ledger file. Returns the ledger's rows.
  */
 export function regrade(ledger, { subject = {}, context = [] } = {}) {
   for (const r of ledger.rows) {
+    const agent = isAgentRow(r);
+    if (agent && r.origin !== "agent") r.origin = "agent";
     const cut = r.graded_from === "v" && /^one source/.test(r.grade_basis || "");
-    if (cut || (r.module === "agent" && r.claim)) {
+    if (cut || (agent && r.claim)) {
       r.grade = r.claim || r.graded_from;
       for (const k of ["graded_from", "grade_basis", "signals", "corroborated_by"]) delete r[k];
     }
@@ -70,7 +73,8 @@ export function submitEntry(roomDir, e, { formDir } = {}) {
   const value = String(e.value ?? "").trim();
   const note = e.note ? String(e.note).trim() : null;
   const warnings = [];
-  const row = { bucket: inst.id, var: inst.vars[0] || inst.id, entry: inst.kind === "ai" ? "ai" : "fact", tier: "C", date: e.date || null, note };
+  // origin "agent" is set here, by code: an entry is never a primary record
+  const row = { bucket: inst.id, var: inst.vars[0] || inst.id, entry: inst.kind === "ai" ? "ai" : "fact", origin: "agent", tier: "C", date: e.date || null, note };
 
   if (e.none) {
     // a searched-and-empty entry: what was searched is the evidence

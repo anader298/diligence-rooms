@@ -153,11 +153,20 @@ const SAME_FACT = [
 const kin = (a, b) => a === b || SAME_FACT.some((g) => g.includes(a) && g.includes(b));
 
 /**
+ * A row handed in by an agent (add.mjs or an entry), not found by a module: code marks it
+ * origin "agent". Older ledgers: module "agent", an entry field, or a claimed grade (only agent
+ * rows carry `claim`).
+ */
+export const isAgentRow = (row) => row?.origin === "agent" || row?.module === "agent" || row?.entry != null || row?.claim != null;
+
+/**
  * A primary record: the row comes from the authority that keeps the fact and is tied to the
  * subject by a key (CIK, the company's own domain or careers board, a full-list screen),
  * not by a name match. Configured in osint-weights.json `rows.primary`.
  */
 export function isPrimary(row, subject, w = loadWeights()) {
+  // a row an agent handed in is a claim, not the record, whatever module name it carries
+  if (isAgentRow(row)) return false;
   const fam = sourceFamily(row.url, subject);
   const rules = w.rows?.primary || DEFAULT_PRIMARY;
   return rules.some((r) => (!r.module || r.module === row.module) && (!r.family || r.family === fam) && (!r.anchor || (row.anchors || []).includes(r.anchor)) && (!r.var || r.var === row.var) && (!r.notVar || r.notVar !== row.var) && (!r.valueRe || new RegExp(r.valueRe, "i").test(String(row.value))));

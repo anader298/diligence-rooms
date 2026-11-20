@@ -3,8 +3,10 @@
 // in a room use npm run entry (by bucket) instead; both go through the same grading.
 //
 // The grade is a claim, not a verdict: --grade v is kept only when a second, independent source
-// in the ledger agrees or the row is a primary record (the two-source rule in weights.mjs);
-// otherwise the row is shown as Partly verified, as script rows are.
+// in the ledger agrees (the two-source rule in weights.mjs); otherwise the row is shown as Partly
+// verified, as script rows are. A row added here is marked origin "agent" by code, so it never
+// counts as a primary record: --module only labels the row ("sec" with a sec.gov URL is still an
+// agent's claim, not the SEC's record).
 //
 //   node scripts/osint/add.mjs <osint dir> --var hobby.sports --value "Coaches 10U baseball" \
 //        --url https://... --grade p [--tier C] [--date 2026-05-01] [--module agent]
@@ -42,7 +44,7 @@ if (!schema.variables.some((v) => v.id === values.var)) {
 }
 const ledger = makeLedger(dir, schema.variables);
 const claim = ["v", "p", "w", "i", "n", "np", "u"].includes(values.grade) ? values.grade : "w";
-const row = ledger.add(values.module, { var: values.var, value: values.value, url: values.url, grade: claim, claim, tier: values.tier, date: values.date });
+const row = ledger.add(values.module, { var: values.var, value: values.value, url: values.url, grade: claim, claim, tier: values.tier, date: values.date, origin: "agent" });
 const file = join(dir, "osint.json");
 let result = null;
 try {

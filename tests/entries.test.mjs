@@ -5,7 +5,9 @@ import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync } from "nod
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
-import { submitEntry } from "../scripts/lib/entries.mjs";
+import { submitEntry, regrade } from "../scripts/lib/entries.mjs";
+import { makeLedger } from "../scripts/osint/core.mjs";
+import { isPrimary } from "../scripts/osint/weights.mjs";
 import { roomForm, formGate } from "../scripts/lib/form.mjs";
 import { fixtureRoom } from "./fixtures/form-room.mjs";
 
@@ -111,6 +113,56 @@ test("add.mjs: --grade v from an agent is a claim; one source is shown as Partly
     assert.equal(rows[0].grade, "p");
     assert.equal(rows[0].claim, "v");
     assert.equal(JSON.parse(readFileSync(join(d, "osint.json"), "utf8")).rows[0].grade, "p");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("add.mjs: an agent row claiming module sec with a sec.gov URL is not a primary record; it is regraded to Partly", () => {
+  const base = mkdtempSync(join(tmpdir(), "add-sec-"));
+  try {
+    const url = "https://www.sec.gov/Archives/edgar/data/1234/000123456726000001/form10k.htm";
+    // the same row from the SEC module itself is a primary record (the exemption is real)
+    assert.equal(isPrimary({ module: "sec", var: "co.segments", value: "two segments", url }, {}), true);
+    assert.equal(isPrimary({ module: "sec", origin: "agent", var: "co.segments", value: "two segments", url }, {}), false);
+
+    const d = join(base, "_company");
+    mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, "osint.json"), JSON.stringify({ subject: { name: null, company: "Acme Freight" }, rows: [], misses: [], modules: [], tabs: [], variables: [] }));
+    const out = execFileSync(process.execPath, [join(REPO, "scripts", "osint", "add.mjs"), d, "--var", "co.segments", "--value", "Two reportable segments", "--url", url, "--grade", "v", "--module", "sec"], { encoding: "utf8" });
+    assert.match(out, /^L-0001\s+grade p/);
+    const [row] = readFileSync(join(d, "ledger.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    assert.equal(row.module, "sec", "the label is kept");
+    assert.equal(row.origin, "agent", "code marks where the row came from");
+    assert.equal(row.grade, "p");
+    assert.match(row.grade_basis, /one source/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("regrade: every agent-origin row goes back to its claim and through the two-source rule, not only module agent", () => {
+  const base = mkdtempSync(join(tmpdir(), "regrade-"));
+  try {
+    const d = join(base, "_company");
+    mkdirSync(d, { recursive: true });
+    const url = "https://www.sec.gov/Archives/edgar/data/1234/x/10k.htm";
+    // written before the fix: an agent row labelled sec that kept Verified as a "primary record",
+    // and one already marked origin agent under another module name
+    const old = [
+      { id: "L-0001", module: "sec", var: "co.segments", value: "Two reportable segments", url, grade: "v", claim: "v", grade_basis: "primary record", key: "a" },
+      { id: "L-0002", module: "dns", origin: "agent", var: "co.domains", value: "Email on Google Workspace", url: "https://dns.google/resolve?name=acme.example&type=TXT", grade: "v", claim: "v", grade_basis: "primary record", key: "b" },
+      { id: "L-0003", module: "sec", var: "co.filings", value: "10-K filed 2026-02-01", url, grade: "v", key: "c" },
+    ];
+    writeFileSync(join(d, "ledger.jsonl"), old.map((r) => JSON.stringify(r)).join("\n") + "\n");
+    const ledger = makeLedger(d, []);
+    regrade(ledger, { subject: { company: "Acme Freight", domain: "acme.example" } });
+    const byId = Object.fromEntries(readFileSync(join(d, "ledger.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l)).map((r) => [r.id, r]));
+    assert.equal(byId["L-0001"].grade, "p", "an agent row labelled sec is regraded to Partly");
+    assert.equal(byId["L-0001"].origin, "agent", "older agent rows are marked");
+    assert.equal(byId["L-0002"].grade, "p", "origin agent under any module name is regraded");
+    assert.equal(byId["L-0003"].grade, "v", "the SEC module's own row is still a primary record");
+    assert.equal(byId["L-0003"].origin, undefined);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }
