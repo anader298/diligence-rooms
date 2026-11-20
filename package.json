@@ -19,7 +19,8 @@
     "doctor": "node --env-file-if-exists=.env scripts/doctor.mjs",
     "run-room": "node --env-file-if-exists=.env scripts/run-room.mjs",
     "enrich": "node --env-file-if-exists=.env scripts/enrich.mjs",
-    "lint": "node scripts/lint.mjs"
+    "lint": "node scripts/lint.mjs",
+    "osint": "node --env-file-if-exists=.env scripts/osint.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

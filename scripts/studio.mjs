@@ -18,11 +18,12 @@
 // runs `enrich --yes` only after the user confirms it.
 
 import { createServer } from "node:http";
-import { spawn, execFile } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync, openSync, closeSync, readSync, writeFileSync } from "node:fs";
+import { spawn, execFile, execFileSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync, statSync, openSync, closeSync, readSync, writeFileSync, unlinkSync } from "node:fs";
 import { join, normalize, extname } from "node:path";
 import { REPO, composeRoom, writeRunScript, inferModes, inferOrgType, slugify, availableOptions, SLUG_RE, parsePeople, PERSON_PAGES, DEADLINE_KINDS } from "./lib/compose.mjs";
 import { lintRoom } from "./lib/lint.mjs";
+import { roomProgress } from "./lib/progress.mjs";
 import { ADAPTERS, BY_ID, describe, loadConfig, roomPaths, staticCtx } from "./connectors/index.mjs";
 import { enrich } from "./connectors/run.mjs";
 import { ENGINES, detect, loadEngineConfig, mergeEngineConfig, saveEngineConfig, setEnvVar, maskKey, testEngine, notReady, modelFor } from "./lib/engines.mjs";
@@ -78,9 +79,10 @@ function roomStatus(slug) {
     lastBuild: existsSync(built) ? statSync(built).mtime.toISOString() : null,
     hasRun: existsSync(join(dir, "RUN.sh")),
     hasLog: existsSync(join(dir, "run.log")),
-    running: running.has(slug),
+    running: isRunning(slug),
     questions: readSmall(join(dir, "work", "questions.md")),
     lastRun: readJson(join(dir, "work", "last-run.json")),
+    dossiers: existsSync(join(dir, "work", "osint")) ? readdirSync(join(dir, "work", "osint")).filter((p) => SLUG_RE.test(p) && existsSync(join(dir, "work", "osint", p, "dossier.html"))) : [],
   };
 }
 
@@ -111,10 +113,34 @@ function listRooms() {
     .sort((a, b) => (b.asOf || "").localeCompare(a.asOf || ""));
 }
 
+// A run outlives the studio (own process group), so its pid is kept in work/run.pid and checked
+// against the process table: a restarted studio still sees, tails and stops it.
+const pidFile = (slug) => join(roomsDir, slug, "work", "run.pid");
+function runPid(slug) {
+  const child = running.get(slug);
+  if (child) return child.pid;
+  let pid;
+  try {
+    pid = Number(readFileSync(pidFile(slug), "utf8").trim());
+  } catch {
+    return null;
+  }
+  if (!Number.isInteger(pid) || pid < 2) return null;
+  try {
+    const cmd = execFileSync("ps", ["-o", "command=", "-p", String(pid)], { encoding: "utf8" });
+    if (cmd.includes(`rooms/${slug}/RUN.sh`) || cmd.trim().endsWith(`run-room.mjs ${slug}`)) return pid;
+  } catch {}
+  try {
+    unlinkSync(pidFile(slug));
+  } catch {}
+  return null;
+}
+const isRunning = (slug) => runPid(slug) != null;
+
 function startRun(slug) {
   const blocked = runBlocked();
   if (blocked) throw new Error(`cannot run yet: ${blocked}`);
-  if (running.has(slug)) throw new Error(`a run for ${slug} is already going`);
+  if (isRunning(slug)) throw new Error(`a run for ${slug} is already going`);
   const intakeFile = join(roomsDir, slug, "intake.json");
   if (!existsSync(intakeFile)) throw new Error(`rooms/${slug}/intake.json does not exist`);
   // Rewrite RUN.sh and P0.md so rooms made by an older version run the current way.
@@ -125,22 +151,27 @@ function startRun(slug) {
   const child = spawn("bash", [runFile], { cwd: REPO, detached: true, stdio: ["ignore", fd, fd], env: process.env });
   closeSync(fd);
   running.set(slug, child);
+  try {
+    writeFileSync(pidFile(slug), String(child.pid) + "\n");
+  } catch {}
   child.on("exit", () => running.delete(slug));
   child.on("error", () => running.delete(slug));
   child.unref();
 }
 
 function stopRun(slug) {
-  const child = running.get(slug);
-  if (!child) throw new Error(`no run for ${slug} is going`);
+  const pid = runPid(slug);
+  if (!pid) throw new Error(`no run for ${slug} is going`);
   try {
-    process.kill(-child.pid, "SIGTERM");
+    process.kill(-pid, "SIGTERM");
   } catch {
-    child.kill("SIGTERM");
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {}
   }
   setTimeout(() => {
     try {
-      process.kill(-child.pid, "SIGKILL");
+      process.kill(-pid, "SIGKILL");
     } catch {}
   }, 15000).unref();
 }
@@ -182,7 +213,7 @@ function saveOurs(body) {
 
 function tailLog(slug, from) {
   const f = join(roomsDir, slug, "run.log");
-  if (!existsSync(f)) return { size: 0, text: "", running: running.has(slug) };
+  if (!existsSync(f)) return { size: 0, text: "", running: isRunning(slug) };
   const size = statSync(f).size;
   let start = Number.isFinite(from) && from >= 0 && from <= size ? from : Math.max(0, size - 64 * 1024);
   if (size - start > 256 * 1024) start = size - 256 * 1024;
@@ -190,7 +221,7 @@ function tailLog(slug, from) {
   const fd = openSync(f, "r");
   readSync(fd, buf, 0, buf.length, start);
   closeSync(fd);
-  return { size, text: buf.toString("utf8"), running: running.has(slug) };
+  return { size, text: buf.toString("utf8"), running: isRunning(slug) };
 }
 
 // ---------------------------------------------------------------- connectors
@@ -398,10 +429,26 @@ const server = createServer(async (req, res) => {
       if (slug && !SLUG_RE.test(slug)) return send(res, 400, { error: "bad slug" });
       return send(res, 200, connectorState(slug));
     }
+    if (path === "/api/progress") {
+      const slug = url.searchParams.get("slug") || "";
+      if (!SLUG_RE.test(slug) || !existsSync(join(roomsDir, slug, "room.json"))) return send(res, 400, { error: "bad slug" });
+      const dir = join(roomsDir, slug);
+      let lint = null;
+      try {
+        lint = lintRoom(dir, { skeletonDir, pageTemplate: readFileSync(join(REPO, "templates", "page.html"), "utf8") });
+      } catch {}
+      return send(res, 200, roomProgress(dir, lint, null, { running: isRunning(slug) }));
+    }
     if (path === "/api/log") {
       const slug = url.searchParams.get("slug") || "";
       if (!SLUG_RE.test(slug)) return send(res, 400, { error: "bad slug" });
       return send(res, 200, tailLog(slug, Number(url.searchParams.get("from"))));
+    }
+    const od = path.match(/^\/osint\/([a-z0-9][a-z0-9-]{0,40})\/([a-z0-9][a-z0-9-]{0,60})\/?$/);
+    if (od) {
+      const f = join(REPO, "rooms", od[1], "work", "osint", od[2], "dossier.html");
+      if (!existsSync(f)) return send(res, 404, "No dossier yet: it is written by the OSINT pass at the start of a run.", "text/plain");
+      return send(res, 200, readFileSync(f, "utf8"), "text/html; charset=utf-8");
     }
     const pv = path.match(/^\/preview\/([a-z0-9][a-z0-9-]{0,40})(\/.*)?$/);
     if (pv) {

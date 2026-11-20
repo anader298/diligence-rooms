@@ -173,3 +173,29 @@ test("studio never sends a key to the page and refuses other hosts", async () =>
     child.kill();
   }
 });
+
+test("progress: pages drive the bar, Codex waves name the stage, a clean finish is 100", async () => {
+  const { roomProgress } = await import("../scripts/lib/progress.mjs");
+  const { mkdirSync } = await import("node:fs");
+  const d = tmp();
+  try {
+    mkdirSync(join(d, "work"));
+    writeFileSync(join(d, "room.json"), JSON.stringify({ slug: "x", summary: "" }));
+    writeFileSync(join(d, "run.log"), "[run 10:00:00] == wave: research (P3a, P3b)\n");
+    const lint = { pages: 40, skeleton: new Array(20).fill("p") };
+    let g = roomProgress(d, lint, null, { running: true });
+    assert.equal(g.pagesDone, 20);
+    assert.equal(g.label, "Stage 3 of 11: Company research");
+    assert.equal(g.pct, 43);
+    writeFileSync(join(d, "work", "ACCURACY REVIEW.md"), "x");
+    g = roomProgress(d, { pages: 40, skeleton: [] }, "", { running: true });
+    assert.equal(g.pct, 88);
+    assert.equal(g.label, "Checking the facts");
+    writeFileSync(join(d, "work", "last-run.json"), JSON.stringify({ code: 0, endedAt: new Date(Date.now() + 1000).toISOString() }));
+    g = roomProgress(d, lint, "", { running: false });
+    assert.equal(g.pct, 100);
+    assert.equal(g.done, true);
+  } finally {
+    rmSync(d, { recursive: true, force: true });
+  }
+});

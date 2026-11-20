@@ -126,6 +126,34 @@ Contact details are kept, not dropped. In small and owner-run firms the founder'
 
 "Unverified endpoint" means the provider's reference is behind a customer login; the adapter follows the documented minimum and should be checked against the provider's docs before it is enabled. Enable providers in `config/connectors.json` (copy `config/connectors.example.json`); Apollo is the one in use.
 
+## Public-source research in a minute: `npm run osint`
+
+Before any AI agent starts, a scripted pass collects what public registries, APIs and pages say about each person and their company. It runs in about 30 to 45 seconds with no paid keys and no dependencies (Node's built-in fetch), and writes three files per person in `rooms/<slug>/work/osint/<person>/`:
+
+- `ledger.jsonl`: one row per finding (L-0001 upward) with the value, source link, module, grade (verified, partly, weak, inference) and tier (A registry or API, B scored match, C read from a page, D estimate). This is the tie-back: a line on a room page cites its ledger id.
+- `osint.json`: the ledger plus what was searched and not found, and how each module ran.
+- `dossier.html`: everything in tabs (Personal, Professional, Company, Agenda and priorities, Politics and causes, Money, Records, News, Pictures, Estimates, Accounts and identity, Timeline, Sources, Gaps, Run), with a filter and grade toggles. The studio links it from the room's row.
+
+```
+npm run osint -- --name "Jane Doe" --company "Acme Corp" --domain acme.com --open
+```
+
+The research agents (P4a) start from this ledger, confirm each row at its source, and go where scripts cannot: their own web search, including image results and the preview snippets of pages they cannot open. They add what they find with `node scripts/osint/add.mjs`.
+
+![OSINT dossier (synthetic subject)](docs/osint-dossier.png)
+
+26 modules in four lanes (fast, sweep, slow, late), each with a time budget; a module that fails or is blocked is recorded, never fatal:
+
+| Area | Modules and sources |
+|---|---|
+| Company | SEC EDGAR filings and XBRL financials; the 10-Q/10-K read for segments, KPIs, themes and litigation; the company's leadership page and press; job boards (Greenhouse, Lever, Ashby, Gem, SmartRecruiters, Workable, Recruitee, Jobvite, Paylocity, Workday, BambooHR); DOL Form 5500 benefit plans; Wikidata; news (GDELT, Google News RSS); DNS (mail provider and SaaS stack from TXT records); certificate transparency; the web archive |
+| The person, professional | SEC Forms 3 and 4 (title, trades, holdings), the proxy (pay table, bio), 8-Ks; patents as inventor; Hacker News |
+| The person, personal | web search (DuckDuckGo, SearXNG, Bing; Brave Search API with a key); a username sweep across about 35 sites that counts a hit only when the profile's name matches; public profiles (GitHub, Bluesky, Mastodon and others); image search and reverse image search on the headshot (Bing, Yandex, Wikimedia) |
+| Politics and records | FEC donations and the company PAC; lobbying (lda.gov); federal awards (USAspending); OFAC and HHS-OIG exclusion lists; OpenSanctions and CourtListener with a free key |
+| Late | an identity score for every candidate account (log-odds over name, employer, city, shared handles and headshot reuse; verified needs two kinds of evidence); estimates for team size, budget, pay, growth, deal size and timing, each a range with its inputs and formula |
+
+**Tested on three real people (19 to 20 November 2026), scripted pass only:** a public-company EVP: 141 findings across 41 variables in 32 s (proxy pay to the dollar, Form 4 title and trades, revenue and ARR, segments, litigation, leadership and education, 27 open roles). A VP at a private manufacturer: 62 findings in 46 s (leadership bio and patents, 13 open roles, benefit-plan headcount, SaaS stack). A recruiter at a private software company: 70 findings in 30 s. The personal side is the weak half: unless the person posts publicly, hobbies, family and causes come back empty, and the dossier says so rather than guess. See [docs/osint.md](docs/osint.md) for the measured sources, what blocks and the free keys that help.
+
 ## The gate
 
 One Netlify Edge Function (`netlify/edge-functions/room-gate.ts`) sits in front of every room. Each room has its own password, set as `ROOM_PASSWORD_<SLUG>` (slug upper-cased, dashes become underscores); a room with no password returns 404, so the site does not reveal which rooms exist. A correct password sets a signed, HttpOnly session cookie (HMAC-SHA256 with `ROOM_COOKIE_SECRET`, through Web Crypto); changing the secret signs everyone out. `/<room>/__logout` ends the session. The companion's functions sit behind the same gate, and every room is served with `noindex` and `no-store` headers.

@@ -56,6 +56,28 @@ function finish(code, extra = {}) {
   process.exit(code);
 }
 
+// The scripted OSINT pass first (about a minute per person, no AI): its ledger is the research
+// agents' starting point (P4a step 0). A failure here never stops the run.
+{
+  const intakeEarly = JSON.parse(readFileSync(join(roomDir, "intake.json"), "utf8"));
+  for (const p of intakeEarly.people || []) {
+    if (stopped || !p?.name) continue;
+    const out = join(workDir, "osint", p.slug);
+    if (existsSync(join(out, "osint.json")) && !process.env.OSINT_REFRESH) {
+      say(`OSINT pass: ${p.name} already done (work/osint/${p.slug}); set OSINT_REFRESH=1 to redo`);
+      continue;
+    }
+    say(`OSINT pass: ${p.name}`);
+    const args = [join(REPO, "scripts", "osint.mjs"), "--name", p.name, "--out", out];
+    const company = intakeEarly.company;
+    if (company) args.push("--company", company);
+    if (intakeEarly.domain) args.push("--domain", intakeEarly.domain);
+    if (p.title) args.push("--title", p.title);
+    const r = spawnSync(process.execPath, args, { cwd: REPO, encoding: "utf8", timeout: 240000 });
+    console.log(((r.stdout || "") + (r.stderr || "")).trim().split("\n").map((l) => "[osint] " + l).join("\n"));
+  }
+}
+
 say(`engine ${ENGINES[cfg.engine].name} (${cfg.auth === "key" ? "API key" : "signed-in account"}), model ${modelFor(cfg) || "default"}, usage limit ${cfg.usageLimit}%`);
 
 if (cfg.engine === "claude") {

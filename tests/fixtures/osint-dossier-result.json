@@ -1,0 +1,2398 @@
+{
+ "subject": {
+  "name": "Maren Torvald",
+  "company": "Corvane",
+  "domain": "corvane.example",
+  "title": "SVP, Field Engineering & Deployments",
+  "city": "Oakland",
+  "state": "CA",
+  "handles": [
+   "mtorvald"
+  ],
+  "aliases": [
+   "Maren E. Torvald"
+  ],
+  "photo": null,
+  "ticker": "CRVN"
+ },
+ "ranAt": "2026-11-19T14:02:58.000Z",
+ "seconds": 47.3,
+ "tabs": [
+  [
+   "personal",
+   "Personal"
+  ],
+  [
+   "professional",
+   "Professional"
+  ],
+  [
+   "company",
+   "Company"
+  ],
+  [
+   "agenda",
+   "Agenda and priorities"
+  ],
+  [
+   "politics",
+   "Politics and causes"
+  ],
+  [
+   "money",
+   "Money"
+  ],
+  [
+   "records",
+   "Records"
+  ],
+  [
+   "news",
+   "News"
+  ],
+  [
+   "images",
+   "Pictures"
+  ],
+  [
+   "estimates",
+   "Estimates"
+  ]
+ ],
+ "variables": [
+  {
+   "id": "social.accounts",
+   "label": "Public accounts",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.handles",
+   "label": "Handle pattern",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.most_active",
+   "label": "Most active platform",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.linkpage",
+   "label": "Link-in-bio / personal site",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.themes",
+   "label": "Post themes (last 12 months)",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "social.tone",
+   "label": "Tone and manner",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "social.top_posts",
+   "label": "Most-liked posts",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "social.work_posts",
+   "label": "What he says about work",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.sports",
+   "label": "Sports he coaches or plays",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.cooking",
+   "label": "Cooking",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.endurance",
+   "label": "Races and fitness",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.media",
+   "label": "Books, film, music",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.teams",
+   "label": "Teams he follows",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "place.home_metro",
+   "label": "Home metro",
+   "group": "Places",
+   "tab": "personal"
+  },
+  {
+   "id": "place.second_home",
+   "label": "Second home (region)",
+   "group": "Places",
+   "tab": "personal"
+  },
+  {
+   "id": "place.travel",
+   "label": "Recurring trips",
+   "group": "Places",
+   "tab": "personal"
+  },
+  {
+   "id": "family.partner",
+   "label": "Spouse or partner",
+   "group": "Family and circle",
+   "tab": "personal"
+  },
+  {
+   "id": "family.kids",
+   "label": "Children",
+   "group": "Family and circle",
+   "tab": "personal"
+  },
+  {
+   "id": "family.close_circle",
+   "label": "Most-tagged friends",
+   "group": "Family and circle",
+   "tab": "personal"
+  },
+  {
+   "id": "cause.boards",
+   "label": "Nonprofit boards",
+   "group": "Causes and giving",
+   "tab": "personal"
+  },
+  {
+   "id": "cause.events",
+   "label": "Galas and fundraisers",
+   "group": "Causes and giving",
+   "tab": "personal"
+  },
+  {
+   "id": "cause.political",
+   "label": "Political giving",
+   "group": "Causes and giving",
+   "tab": "politics"
+  },
+  {
+   "id": "pic.headshot",
+   "label": "Official headshot",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "pic.avatar_matches",
+   "label": "Avatar matches",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "pic.event_photos",
+   "label": "Event photos",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "role.title",
+   "label": "Title",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.start",
+   "label": "In the seat since",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.reports_to",
+   "label": "Reports to",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.directs",
+   "label": "Direct reports",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.team_size",
+   "label": "Team size",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.revenue",
+   "label": "Revenue he owns",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.budget",
+   "label": "Budget he controls",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.mandate",
+   "label": "His stated mandate",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "career.timeline",
+   "label": "Career timeline",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.wins",
+   "label": "Signature wins",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.education",
+   "label": "Education",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.licenses",
+   "label": "Licences and registrations",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.writing",
+   "label": "Bylines and posts",
+   "group": "Voice",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.talks",
+   "label": "Talks and podcasts",
+   "group": "Voice",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.terms",
+   "label": "His words (top terms)",
+   "group": "Voice",
+   "tab": "agenda"
+  },
+  {
+   "id": "voice.priorities",
+   "label": "What he is judged on",
+   "group": "Voice",
+   "tab": "agenda"
+  },
+  {
+   "id": "money.holdings",
+   "label": "Harborline shares",
+   "group": "Money",
+   "tab": "money"
+  },
+  {
+   "id": "money.trades",
+   "label": "Insider trades",
+   "group": "Money",
+   "tab": "money"
+  },
+  {
+   "id": "money.comp",
+   "label": "Pay (estimate)",
+   "group": "Money",
+   "tab": "money"
+  },
+  {
+   "id": "net.overlaps",
+   "label": "Overlaps with our side",
+   "group": "Network",
+   "tab": "professional"
+  },
+  {
+   "id": "net.warm_paths",
+   "label": "Warm paths in",
+   "group": "Network",
+   "tab": "professional"
+  },
+  {
+   "id": "rec.courts",
+   "label": "Court cases",
+   "group": "Record",
+   "tab": "records"
+  },
+  {
+   "id": "rec.sanctions",
+   "label": "Sanctions and exclusions",
+   "group": "Record",
+   "tab": "records"
+  },
+  {
+   "id": "co.arr",
+   "label": "ARR",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.quarter",
+   "label": "Last quarter",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.kpis",
+   "label": "KPIs",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.segments",
+   "label": "Segments",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.peers",
+   "label": "Against peers",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.growth_line",
+   "label": "Named growth priority",
+   "group": "Where they are going",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.hiring",
+   "label": "Open roles",
+   "group": "Where they are going",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.ma",
+   "label": "M&A and partnerships",
+   "group": "Where they are going",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.budget_cycle",
+   "label": "Budget cycle",
+   "group": "Where they are going",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.cash",
+   "label": "Cash and debt",
+   "group": "Money",
+   "tab": "company"
+  },
+  {
+   "id": "co.owners",
+   "label": "Top holders",
+   "group": "Money",
+   "tab": "company"
+  },
+  {
+   "id": "co.concentration",
+   "label": "Customer concentration",
+   "group": "Money",
+   "tab": "company"
+  },
+  {
+   "id": "co.benefit_plans",
+   "label": "Headcount check",
+   "group": "Money",
+   "tab": "company"
+  },
+  {
+   "id": "co.leadership",
+   "label": "Leadership team",
+   "group": "People",
+   "tab": "company"
+  },
+  {
+   "id": "co.exec_changes",
+   "label": "Exec changes, 24 months",
+   "group": "People",
+   "tab": "company"
+  },
+  {
+   "id": "co.reviews",
+   "label": "Employee view",
+   "group": "People",
+   "tab": "company"
+  },
+  {
+   "id": "co.competitors",
+   "label": "Competitors",
+   "group": "Market and risk",
+   "tab": "company"
+  },
+  {
+   "id": "co.legal",
+   "label": "Litigation",
+   "group": "Market and risk",
+   "tab": "records"
+  },
+  {
+   "id": "co.gov",
+   "label": "Government contracts and lobbying",
+   "group": "Market and risk",
+   "tab": "politics"
+  },
+  {
+   "id": "co.domains",
+   "label": "Digital footprint",
+   "group": "Market and risk",
+   "tab": "company"
+  },
+  {
+   "id": "co.private_rev",
+   "label": "Payments unit margin",
+   "group": "Market and risk",
+   "tab": "company"
+  },
+  {
+   "id": "fit.problem",
+   "label": "Their problem we solve",
+   "group": "Fit with us",
+   "tab": "agenda"
+  },
+  {
+   "id": "fit.who_buys",
+   "label": "Who signs",
+   "group": "Fit with us",
+   "tab": "agenda"
+  },
+  {
+   "id": "fit.timing",
+   "label": "Timing",
+   "group": "Fit with us",
+   "tab": "agenda"
+  },
+  {
+   "id": "fit.deal_size",
+   "label": "Deal size (estimate)",
+   "group": "Fit with us",
+   "tab": "agenda"
+  },
+  {
+   "id": "news.articles",
+   "label": "Articles that mention them",
+   "group": "In the news",
+   "tab": "news"
+  },
+  {
+   "id": "news.company",
+   "label": "Company news, last 90 days",
+   "group": "In the news",
+   "tab": "news"
+  },
+  {
+   "id": "pic.image_results",
+   "label": "Image search results",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "pic.reverse",
+   "label": "Reverse image search on the headshot",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "social.candidates",
+   "label": "Candidate accounts (scored)",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "career.patents",
+   "label": "Patents (as inventor)",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.code",
+   "label": "Public code (GitHub)",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.quotes",
+   "label": "Quotes in press releases and calls",
+   "group": "Own words",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.filings",
+   "label": "Recent filings",
+   "group": "Filings",
+   "tab": "company"
+  },
+  {
+   "id": "co.facts",
+   "label": "Reported financials (XBRL)",
+   "group": "Scale and money",
+   "tab": "company"
+  },
+  {
+   "id": "co.insiders",
+   "label": "Insider filers at the company",
+   "group": "Ownership",
+   "tab": "money"
+  },
+  {
+   "id": "politics.donations",
+   "label": "Political donations (FEC)",
+   "group": "Politics",
+   "tab": "politics"
+  },
+  {
+   "id": "politics.company_pac",
+   "label": "Company PAC and lobbying",
+   "group": "Politics",
+   "tab": "politics"
+  },
+  {
+   "id": "rec.sanctions_detail",
+   "label": "Sanctions and exclusion list checks",
+   "group": "Records",
+   "tab": "records"
+  },
+  {
+   "id": "place.web_archive",
+   "label": "Archived personal pages",
+   "group": "Places",
+   "tab": "personal"
+  }
+ ],
+ "rows": [
+  {
+   "id": "L-0001",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "official-links",
+   "var": "role.title",
+   "tab": "professional",
+   "label": "Title",
+   "group": "The seat",
+   "value": "SVP, Field Engineering & Deployments",
+   "url": "https://www.corvane.example/leadership",
+   "grade": "v",
+   "tier": "A",
+   "ms": 1237,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-10-02",
+   "image": null
+  },
+  {
+   "id": "L-0002",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-search",
+   "var": "role.title",
+   "tab": "professional",
+   "label": "Title",
+   "group": "The seat",
+   "value": "Senior Vice President, Field Engineering",
+   "url": "https://www.sec.gov/Archives/edgar/data/1874411/000187441126000041/ex99-1.htm",
+   "grade": "v",
+   "tier": "A",
+   "ms": 2174,
+   "anchors": [],
+   "detail": null,
+   "date": "2024-04-15",
+   "image": null
+  },
+  {
+   "id": "L-0003",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "profile-apis",
+   "var": "role.title",
+   "tab": "professional",
+   "label": "Title",
+   "group": "The seat",
+   "value": "SVP Field Engineering at Corvane",
+   "url": "https://github.com/mtorvald",
+   "grade": "p",
+   "tier": "B",
+   "ms": 3111,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0004",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-search",
+   "var": "role.start",
+   "tab": "professional",
+   "label": "In the seat since",
+   "group": "The seat",
+   "value": "Apr 2024 · 2 years 7 months",
+   "url": "https://www.sec.gov/Archives/edgar/data/1874411/000187441124000019/form8-k.htm",
+   "grade": "v",
+   "tier": "A",
+   "ms": 4048,
+   "anchors": [],
+   "detail": {
+    "form": "8-K",
+    "item": "5.02",
+    "filed": "2024-04-15"
+   },
+   "date": "2024-04-15",
+   "image": null
+  },
+  {
+   "id": "L-0005",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "wayback",
+   "var": "role.start",
+   "tab": "professional",
+   "label": "In the seat since",
+   "group": "The seat",
+   "value": "First capture of leadership bio: 22 Apr 2024",
+   "url": "https://web.archive.org/web/20240422000000*/corvane.example/leadership",
+   "grade": "p",
+   "tier": "A",
+   "ms": 785,
+   "anchors": [],
+   "detail": null,
+   "date": "2024-04-22",
+   "image": null
+  },
+  {
+   "id": "L-0006",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-filings",
+   "var": "role.reports_to",
+   "tab": "professional",
+   "label": "Reports to",
+   "group": "The seat",
+   "value": "Lena Achterberg, Chief Operating Officer",
+   "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=1874411",
+   "grade": "v",
+   "tier": "A",
+   "ms": 1722,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0007",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "search-backbone",
+   "var": "role.directs",
+   "tab": "professional",
+   "label": "Direct reports",
+   "group": "The seat",
+   "value": "4 named directors: Platform Deployments, Solutions Architecture, Customer Reliability, Field Enablement",
+   "url": "https://duckduckgo.com/?q=corvane+field+engineering+director",
+   "grade": "p",
+   "tier": "C",
+   "ms": 2659,
+   "anchors": [],
+   "detail": [
+    {
+     "name": "Ana Bermejo",
+     "title": "Director, Platform Deployments"
+    },
+    {
+     "name": "K. Iwasaki",
+     "title": "Director, Solutions Architecture"
+    },
+    {
+     "name": "Rhys Okonjo",
+     "title": "Director, Customer Reliability"
+    },
+    {
+     "name": "Talia Brenner",
+     "title": "Director, Field Enablement"
+    }
+   ],
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0008",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "wikidata",
+   "var": "career.timeline",
+   "tab": "professional",
+   "label": "Career timeline",
+   "group": "Career",
+   "value": "Palantir 2009–15 (Forward Deployed Engineer → Deployment Lead) · Flexport 2015–19 · Samsara 2019–24 (VP Solutions) · Corvane 2024–",
+   "url": "https://www.wikidata.org/wiki/Q000000",
+   "grade": "p",
+   "tier": "B",
+   "ms": 3596,
+   "anchors": [],
+   "detail": [
+    {
+     "org": "Palantir",
+     "from": 2009,
+     "to": 2015,
+     "role": "Forward Deployed Engineer, then Deployment Lead"
+    },
+    {
+     "org": "Flexport",
+     "from": 2015,
+     "to": 2019,
+     "role": "Head of Customer Engineering"
+    },
+    {
+     "org": "Samsara",
+     "from": 2019,
+     "to": 2024,
+     "role": "VP Solutions Engineering"
+    },
+    {
+     "org": "Corvane",
+     "from": 2024,
+     "to": null,
+     "role": "SVP Field Engineering"
+    }
+   ],
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0009",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "scholarly",
+   "var": "career.education",
+   "tab": "professional",
+   "label": "Education",
+   "group": "Career",
+   "value": "BS Computer Science, Georgia Tech 2008 · MS Operations Research, Stanford 2009",
+   "url": "https://scholar.example.org/citations?user=mtorvald",
+   "grade": "p",
+   "tier": "C",
+   "ms": 333,
+   "anchors": [],
+   "detail": null,
+   "date": "2009-06-14",
+   "image": null
+  },
+  {
+   "id": "L-0010",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "news",
+   "var": "career.wins",
+   "tab": "professional",
+   "label": "Signature wins",
+   "group": "Career",
+   "value": "Led Samsara's enterprise fleet rollout for a top-5 US grocer (case study, 2022)",
+   "url": "https://www.samsara.com/customers/example",
+   "grade": "v",
+   "tier": "A",
+   "ms": 1270,
+   "anchors": [],
+   "detail": null,
+   "date": "2022-05-10",
+   "image": null
+  },
+  {
+   "id": "L-0011",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "package-registries",
+   "var": "career.code",
+   "tab": "professional",
+   "label": "Public code (GitHub)",
+   "group": "Career",
+   "value": "GitHub mtorvald: 41 public repos, top: 'deploy-kit' (1.2k stars), last push Oct 2026",
+   "url": "https://github.com/mtorvald",
+   "grade": "v",
+   "tier": "B",
+   "ms": 2207,
+   "anchors": [],
+   "detail": {
+    "repos": 41,
+    "followers": 880,
+    "top_repo": "deploy-kit",
+    "stars": 1214,
+    "last_push": "2026-10-28"
+   },
+   "date": "2026-10-28",
+   "image": "https://picsum.photos/seed/gh-avatar/480/360"
+  },
+  {
+   "id": "L-0012",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "uspto",
+   "var": "career.patents",
+   "tab": "professional",
+   "label": "Patents (as inventor)",
+   "group": "Career",
+   "value": "US 11,482,903 B2: 'System for staged rollout of edge telemetry agents' (inventor, 2022)",
+   "url": "https://patents.google.com/patent/US11482903B2",
+   "grade": "v",
+   "tier": "A",
+   "ms": 3144,
+   "anchors": [],
+   "detail": null,
+   "date": "2022-10-25",
+   "image": null
+  },
+  {
+   "id": "L-0013",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "media-feeds",
+   "var": "voice.talks",
+   "tab": "professional",
+   "label": "Talks and podcasts",
+   "group": "Voice",
+   "value": "'What forward-deployed engineering gets wrong' — Field Notes podcast ep. 88, 51 min",
+   "url": "https://podcasts.example.com/field-notes/88",
+   "grade": "v",
+   "tier": "A",
+   "ms": 4081,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-06-03",
+   "image": "https://picsum.photos/seed/podcast88/480/360"
+  },
+  {
+   "id": "L-0014",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "media-feeds",
+   "var": "voice.talks",
+   "tab": "professional",
+   "label": "Talks and podcasts",
+   "group": "Voice",
+   "value": "Keynote, DeployCon 2025: 'Ship to the customer, not to staging'",
+   "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+   "grade": "v",
+   "tier": "A",
+   "ms": 818,
+   "anchors": [],
+   "detail": null,
+   "date": "2025-09-18",
+   "image": "https://picsum.photos/seed/deploycon/480/360"
+  },
+  {
+   "id": "L-0015",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "feeds",
+   "var": "voice.writing",
+   "tab": "professional",
+   "label": "Bylines and posts",
+   "group": "Voice",
+   "value": "Corvane blog: 'Our 30-day deployment promise' (byline)",
+   "url": "https://www.corvane.example/blog/30-day-deployments",
+   "grade": "v",
+   "tier": "A",
+   "ms": 1755,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-03-11",
+   "image": null
+  },
+  {
+   "id": "L-0016",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "transcripts",
+   "var": "voice.terms",
+   "tab": "agenda",
+   "label": "His words (top terms)",
+   "group": "Voice",
+   "value": "Top terms across 6 transcripts: time-to-value · 'deploy, then generalise' · customer-embedded · runbooks · eval harness",
+   "url": "https://podcasts.example.com/field-notes/88#transcript",
+   "grade": "p",
+   "tier": "C",
+   "ms": 2692,
+   "anchors": [],
+   "detail": [
+    {
+     "term": "time-to-value",
+     "count": 31
+    },
+    {
+     "term": "deploy, then generalise",
+     "count": 17
+    },
+    {
+     "term": "customer-embedded",
+     "count": 14
+    },
+    {
+     "term": "runbooks",
+     "count": 12
+    },
+    {
+     "term": "eval harness",
+     "count": 9
+    }
+   ],
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0017",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "profile-apis",
+   "var": "net.overlaps",
+   "tab": "professional",
+   "label": "Overlaps with our side",
+   "group": "Network",
+   "value": "Palantir alumni 2009–15; GT College of Computing alumni network",
+   "url": "https://www.linkedin.com/in/mtorvald",
+   "grade": "w",
+   "tier": "B",
+   "ms": 3629,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0018",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "earnings-docs",
+   "var": "co.growth_line",
+   "tab": "agenda",
+   "label": "Named growth priority",
+   "group": "Where they are going",
+   "value": "Deployed AI agents for mid-market logistics: 11 mentions on the Q3 call (Q1: 3); 'our largest hiring area in FY27'",
+   "url": "https://investors.corvane.example/q3-2026-call",
+   "grade": "v",
+   "tier": "A",
+   "ms": 366,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-11-05",
+   "image": null
+  },
+  {
+   "id": "L-0019",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "earnings-docs",
+   "var": "voice.priorities",
+   "tab": "agenda",
+   "label": "What he is judged on",
+   "group": "Voice",
+   "value": "Time-to-first-value under 30 days; field team utilisation 78% → 85% target",
+   "url": "https://investors.corvane.example/q3-2026-call",
+   "grade": "p",
+   "tier": "C",
+   "ms": 1303,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-11-05",
+   "image": null
+  },
+  {
+   "id": "L-0020",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-search",
+   "var": "voice.quotes",
+   "tab": "agenda",
+   "label": "Quotes in press releases and calls",
+   "group": "Own words",
+   "value": "\"Every engineer we hire spends their first month on a customer site.\" — press release, Apr 2024",
+   "url": "https://www.sec.gov/Archives/edgar/data/1874411/000187441124000019/ex99-1.htm",
+   "grade": "v",
+   "tier": "A",
+   "ms": 2240,
+   "anchors": [],
+   "detail": null,
+   "date": "2024-04-15",
+   "image": null
+  },
+  {
+   "id": "L-0021",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "search-backbone",
+   "var": "co.hiring",
+   "tab": "agenda",
+   "label": "Open roles",
+   "group": "Where they are going",
+   "value": "37 open roles · 14 Forward Deployed Engineer (NYC, Chicago, remote) · 5 posted this week",
+   "url": "https://jobs.ashbyhq.com/corvane",
+   "grade": "v",
+   "tier": "A",
+   "ms": 3177,
+   "anchors": [],
+   "detail": [
+    {
+     "title": "Forward Deployed Engineer",
+     "location": "New York",
+     "posted": "2026-11-15"
+    },
+    {
+     "title": "Forward Deployed Engineer, AI",
+     "location": "Remote (US)",
+     "posted": "2026-11-14"
+    },
+    {
+     "title": "Deployment Strategist",
+     "location": "Chicago",
+     "posted": "2026-11-12"
+    },
+    {
+     "title": "Solutions Architect",
+     "location": "Remote (US)",
+     "posted": "2026-11-10"
+    }
+   ],
+   "date": "2026-11-17",
+   "image": null
+  },
+  {
+   "id": "L-0022",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "agent-read",
+   "var": "role.mandate",
+   "tab": "professional",
+   "label": "His stated mandate",
+   "group": "The seat",
+   "value": "Cut median deployment from 74 to 30 days by end of FY27",
+   "url": "https://www.corvane.example/blog/30-day-deployments",
+   "grade": "p",
+   "tier": "C",
+   "ms": 4114,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0023",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "agent-read",
+   "var": "fit.problem",
+   "tab": "agenda",
+   "label": "Their problem we solve",
+   "group": "Fit with us",
+   "value": "Field capacity is the bottleneck: 14 FDE openings vs 22-person field team",
+   "url": "https://jobs.ashbyhq.com/corvane",
+   "grade": "i",
+   "tier": "C",
+   "ms": 851,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0024",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "agent-read",
+   "var": "fit.timing",
+   "tab": "agenda",
+   "label": "Timing",
+   "group": "Fit with us",
+   "value": "FY27 hiring plan approved in Q3; Q4 is the hiring push",
+   "url": "https://investors.corvane.example/q3-2026-call",
+   "grade": "i",
+   "tier": "C",
+   "ms": 1788,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0025",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-frames",
+   "var": "co.facts",
+   "tab": "company",
+   "label": "Reported financials (XBRL)",
+   "group": "Scale and money",
+   "value": "Revenue $212.4M FY25 (+38%) · gross margin 71% · op. loss $18.9M",
+   "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001874411.json",
+   "grade": "v",
+   "tier": "A",
+   "ms": 2725,
+   "anchors": [],
+   "detail": [
+    {
+     "metric": "Revenues",
+     "fy": 2025,
+     "value": 212400000
+    },
+    {
+     "metric": "Revenues",
+     "fy": 2024,
+     "value": 153900000
+    },
+    {
+     "metric": "GrossProfit",
+     "fy": 2025,
+     "value": 150800000
+    },
+    {
+     "metric": "OperatingIncomeLoss",
+     "fy": 2025,
+     "value": -18900000
+    }
+   ],
+   "date": "2026-03-02",
+   "image": null
+  },
+  {
+   "id": "L-0026",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "earnings-docs",
+   "var": "co.arr",
+   "tab": "company",
+   "label": "ARR",
+   "group": "Scale and growth",
+   "value": "$248M ARR (Q3 FY26), +34% YoY",
+   "url": "https://investors.corvane.example/q3-2026",
+   "grade": "v",
+   "tier": "A",
+   "ms": 3662,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-11-05",
+   "image": null
+  },
+  {
+   "id": "L-0027",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "earnings-docs",
+   "var": "co.quarter",
+   "tab": "company",
+   "label": "Last quarter",
+   "group": "Scale and growth",
+   "value": "Revenue $61.2M, beat consensus by 3% · FY guide raised to $236–239M",
+   "url": "https://investors.corvane.example/q3-2026",
+   "grade": "v",
+   "tier": "A",
+   "ms": 399,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-11-05",
+   "image": null
+  },
+  {
+   "id": "L-0028",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-filings",
+   "var": "co.kpis",
+   "tab": "company",
+   "label": "KPIs",
+   "group": "Scale and growth",
+   "value": "2,140 customers · NRR 121% · 112 customers over $250K ARR",
+   "url": "https://www.sec.gov/ix?doc=/Archives/edgar/data/1874411/q3.htm",
+   "grade": "v",
+   "tier": "A",
+   "ms": 1336,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0029",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-filings",
+   "var": "co.leadership",
+   "tab": "company",
+   "label": "Leadership team",
+   "group": "People",
+   "value": "CEO Marcus Ileana (founder) · COO Lena Achterberg · CFO Ravi Sondheim · CTO Ilse Varga",
+   "url": "https://www.corvane.example/leadership",
+   "grade": "v",
+   "tier": "A",
+   "ms": 2273,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0030",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-search",
+   "var": "co.exec_changes",
+   "tab": "company",
+   "label": "Exec changes, 24 months",
+   "group": "People",
+   "value": "New CFO (Feb 2026) · CRO departed (Aug 2025) · Torvald hired (Apr 2024)",
+   "url": "https://efts.sec.gov/LATEST/search-index?q=corvane&forms=8-K",
+   "grade": "v",
+   "tier": "A",
+   "ms": 3210,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-02-09",
+   "image": null
+  },
+  {
+   "id": "L-0031",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-filings",
+   "var": "co.filings",
+   "tab": "company",
+   "label": "Recent filings",
+   "group": "Filings",
+   "value": "10-Q (Q3 FY26), 8-K (earnings), 4 × Form 4 in the last 30 days",
+   "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=1874411&type=&dateb=&owner=include",
+   "grade": "v",
+   "tier": "A",
+   "ms": 4147,
+   "anchors": [],
+   "detail": [
+    {
+     "form": "10-Q",
+     "filed": "2026-11-06"
+    },
+    {
+     "form": "8-K",
+     "filed": "2026-11-05"
+    },
+    {
+     "form": "4",
+     "filed": "2026-11-03"
+    },
+    {
+     "form": "4",
+     "filed": "2026-10-29"
+    }
+   ],
+   "date": "2026-11-06",
+   "image": null
+  },
+  {
+   "id": "L-0032",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "agent-read",
+   "var": "co.reviews",
+   "tab": "company",
+   "label": "Employee view",
+   "group": "People",
+   "value": "Glassdoor 4.2 · field team reviews: 'real customer impact, heavy travel'",
+   "url": "https://www.glassdoor.com/Reviews/corvane",
+   "grade": "p",
+   "tier": "C",
+   "ms": 884,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0033",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "domain-intel",
+   "var": "co.domains",
+   "tab": "company",
+   "label": "Digital footprint",
+   "group": "Market and risk",
+   "value": "deploy.corvane.example first certificate Mar 2026 · 4 new subdomains this year",
+   "url": "https://crt.sh/?q=corvane.example",
+   "grade": "v",
+   "tier": "A",
+   "ms": 1821,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-03-20",
+   "image": null
+  },
+  {
+   "id": "L-0034",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-filings",
+   "var": "co.competitors",
+   "tab": "company",
+   "label": "Competitors",
+   "group": "Market and risk",
+   "value": "Named in 10-K: Samsara, Motive, project44, and in-house builds",
+   "url": "https://www.sec.gov/ix?doc=/Archives/edgar/data/1874411/10k.htm",
+   "grade": "v",
+   "tier": "A",
+   "ms": 2758,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0035",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-filings",
+   "var": "money.holdings",
+   "tab": "money",
+   "label": "Harborline shares",
+   "group": "Money",
+   "value": "88,400 shares + 142,000 unvested RSUs (Form 4, 3 Nov 2026)",
+   "url": "https://www.sec.gov/Archives/edgar/data/1874411/form4-20261103.xml",
+   "grade": "v",
+   "tier": "A",
+   "ms": 3695,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-11-03",
+   "image": null
+  },
+  {
+   "id": "L-0036",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-filings",
+   "var": "money.trades",
+   "tab": "money",
+   "label": "Insider trades",
+   "group": "Money",
+   "value": "Sold 6,000 shares at $41.20 under a 10b5-1 plan (Aug 2026) · no open-market buys",
+   "url": "https://www.sec.gov/Archives/edgar/data/1874411/form4-20260812.xml",
+   "grade": "v",
+   "tier": "A",
+   "ms": 432,
+   "anchors": [],
+   "detail": [
+    {
+     "date": "2026-08-12",
+     "code": "S",
+     "shares": 6000,
+     "price": 41.2,
+     "plan": "10b5-1"
+    }
+   ],
+   "date": "2026-08-12",
+   "image": null
+  },
+  {
+   "id": "L-0037",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "estimate",
+   "var": "money.comp",
+   "tab": "money",
+   "label": "Pay (estimate)",
+   "group": "Money",
+   "value": "Total about $1.4M ($1.1–1.7M) · base ~$425K",
+   "url": null,
+   "grade": "i",
+   "tier": "D",
+   "ms": 1369,
+   "anchors": [],
+   "detail": {
+    "method": "proxy peers + RSU run-rate",
+    "rsu_per_year": 1462600,
+    "base_est": 425000
+   },
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0038",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sec-filings",
+   "var": "co.insiders",
+   "tab": "money",
+   "label": "Insider filers at the company",
+   "group": "Ownership",
+   "value": "11 insider filers · net sellers over 12 months",
+   "url": "https://www.sec.gov/cgi-bin/own-disp?action=getissuer&CIK=1874411",
+   "grade": "v",
+   "tier": "A",
+   "ms": 2306,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0039",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "fec",
+   "var": "politics.donations",
+   "tab": "politics",
+   "label": "Political donations (FEC)",
+   "group": "Politics",
+   "value": "$1,000 to a US Senate candidate (Oct 2024)",
+   "url": "https://www.fec.gov/data/receipts/individual-contributions/?contributor_name=torvald",
+   "grade": "v",
+   "tier": "A",
+   "ms": 3243,
+   "anchors": [],
+   "detail": {
+    "amount": 1000,
+    "recipient": "Committee to Elect (Senate)",
+    "employer": "CORVANE",
+    "city": "OAKLAND, CA"
+   },
+   "date": "2024-10-11",
+   "image": null
+  },
+  {
+   "id": "L-0040",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "fec",
+   "var": "politics.donations",
+   "tab": "politics",
+   "label": "Political donations (FEC)",
+   "group": "Politics",
+   "value": "$500 to a House candidate (Mar 2022)",
+   "url": "https://www.fec.gov/data/receipts/individual-contributions/?contributor_name=torvald",
+   "grade": "v",
+   "tier": "A",
+   "ms": 4180,
+   "anchors": [],
+   "detail": {
+    "amount": 500,
+    "recipient": "House campaign committee",
+    "employer": "SAMSARA",
+    "city": "OAKLAND, CA"
+   },
+   "date": "2022-03-04",
+   "image": null
+  },
+  {
+   "id": "L-0041",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "fec",
+   "var": "politics.donations",
+   "tab": "politics",
+   "label": "Political donations (FEC)",
+   "group": "Politics",
+   "value": "$250 to ActBlue conduit (Jun 2020)",
+   "url": "https://www.fec.gov/data/receipts/individual-contributions/?contributor_name=torvald",
+   "grade": "p",
+   "tier": "A",
+   "ms": 917,
+   "anchors": [],
+   "detail": {
+    "amount": 250,
+    "recipient": "ActBlue",
+    "employer": "FLEXPORT",
+    "city": "SAN FRANCISCO, CA"
+   },
+   "date": "2020-06-30",
+   "image": null
+  },
+  {
+   "id": "L-0042",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "lobbying-fara",
+   "var": "politics.company_pac",
+   "tab": "politics",
+   "label": "Company PAC and lobbying",
+   "group": "Politics",
+   "value": "No company PAC · LDA: 2 filings by an outside firm on freight data rules (2025)",
+   "url": "https://lda.senate.gov/filings/public/filing/search/?registrant=corvane",
+   "grade": "v",
+   "tier": "A",
+   "ms": 1854,
+   "anchors": [],
+   "detail": null,
+   "date": "2025-07-20",
+   "image": null
+  },
+  {
+   "id": "L-0043",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "nonprofit-990",
+   "var": "cause.boards",
+   "tab": "personal",
+   "label": "Nonprofit boards",
+   "group": "Causes and giving",
+   "value": "Board member, Code Bridge Oakland (STEM nonprofit), since 2021 — Form 990 Part VII",
+   "url": "https://projects.propublica.org/nonprofits/organizations/000000000",
+   "grade": "v",
+   "tier": "A",
+   "ms": 2791,
+   "anchors": [],
+   "detail": null,
+   "date": "2021-09-01",
+   "image": null
+  },
+  {
+   "id": "L-0044",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "search-backbone",
+   "var": "cause.events",
+   "tab": "personal",
+   "label": "Galas and fundraisers",
+   "group": "Causes and giving",
+   "value": "Mentor, Code Bridge summer hackathon 2025",
+   "url": "https://codebridge.example.org/hackathon-2025",
+   "grade": "p",
+   "tier": "C",
+   "ms": 3728,
+   "anchors": [],
+   "detail": null,
+   "date": "2025-07-26",
+   "image": "https://picsum.photos/seed/hackathon/480/360"
+  },
+  {
+   "id": "L-0045",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "courtlistener",
+   "var": "rec.courts",
+   "tab": "records",
+   "label": "Court cases",
+   "group": "Record",
+   "value": "None as a party (federal dockets, CA Superior Court index)",
+   "url": "https://www.courtlistener.com/?q=%22Maren+Torvald%22",
+   "grade": "n",
+   "tier": "A",
+   "ms": 465,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0046",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "sanctions-csl",
+   "var": "rec.sanctions_detail",
+   "tab": "records",
+   "label": "Sanctions and exclusion list checks",
+   "group": "Records",
+   "value": "No match on Consolidated Screening List, OFAC SDN, SAM.gov exclusions",
+   "url": "https://api.trade.gov/consolidated_screening_list/search?name=Maren+Torvald",
+   "grade": "n",
+   "tier": "A",
+   "ms": 1402,
+   "anchors": [],
+   "detail": [
+    {
+     "list": "CSL",
+     "hits": 0
+    },
+    {
+     "list": "OFAC SDN",
+     "hits": 0
+    },
+    {
+     "list": "SAM exclusions",
+     "hits": 0
+    }
+   ],
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0047",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "courtlistener",
+   "var": "co.legal",
+   "tab": "records",
+   "label": "Litigation",
+   "group": "Market and risk",
+   "value": "1 open contract dispute (N.D. Cal., 2025) · no regulator actions",
+   "url": "https://www.courtlistener.com/docket/00000000/corvane/",
+   "grade": "v",
+   "tier": "A",
+   "ms": 2339,
+   "anchors": [],
+   "detail": null,
+   "date": "2025-04-02",
+   "image": null
+  },
+  {
+   "id": "L-0048",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "news",
+   "var": "news.articles",
+   "tab": "news",
+   "label": "Articles that mention them",
+   "group": "In the news",
+   "value": "Corvane names Samsara's Maren Torvald SVP of Field Engineering",
+   "url": "https://www.businesswire.com/news/home/2024041500000/en/",
+   "grade": "v",
+   "tier": "A",
+   "ms": 3276,
+   "anchors": [],
+   "detail": null,
+   "date": "2024-04-15",
+   "image": "https://picsum.photos/seed/bw-news/480/360"
+  },
+  {
+   "id": "L-0049",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "news",
+   "var": "news.articles",
+   "tab": "news",
+   "label": "Articles that mention them",
+   "group": "In the news",
+   "value": "The forward-deployed engineer is back, and logistics wants one (profile quote)",
+   "url": "https://techcrunch.com/2026/02/14/forward-deployed-engineers-logistics/",
+   "grade": "p",
+   "tier": "A",
+   "ms": 4213,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-02-14",
+   "image": "https://picsum.photos/seed/tc-fde/480/360"
+  },
+  {
+   "id": "L-0050",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "news",
+   "var": "news.company",
+   "tab": "news",
+   "label": "Company news, last 90 days",
+   "group": "In the news",
+   "value": "Corvane beats Q3, raises guide on AI agent demand",
+   "url": "https://www.reuters.com/technology/corvane-q3-2026/",
+   "grade": "v",
+   "tier": "A",
+   "ms": 950,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-11-05",
+   "image": "https://picsum.photos/seed/reuters-q3/480/360"
+  },
+  {
+   "id": "L-0051",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "news",
+   "var": "news.company",
+   "tab": "news",
+   "label": "Company news, last 90 days",
+   "group": "In the news",
+   "value": "Corvane acquires routing startup Waylight for $24M",
+   "url": "https://www.freightwaves.com/news/corvane-waylight",
+   "grade": "v",
+   "tier": "A",
+   "ms": 1887,
+   "anchors": [],
+   "detail": null,
+   "date": "2026-02-27",
+   "image": null
+  },
+  {
+   "id": "L-0052",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "official-links",
+   "var": "social.accounts",
+   "tab": "personal",
+   "label": "Public accounts",
+   "group": "Accounts and handles",
+   "value": "LinkedIn /in/mtorvald",
+   "url": "https://www.linkedin.com/in/mtorvald",
+   "grade": "v",
+   "tier": "B",
+   "ms": 2824,
+   "anchors": [
+    "linked from company bio",
+    "photo match",
+    "employer + title"
+   ],
+   "detail": {
+    "platform": "LinkedIn",
+    "score": 17,
+    "verdict": "verified"
+   },
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0053",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "profile-apis",
+   "var": "social.accounts",
+   "tab": "personal",
+   "label": "Public accounts",
+   "group": "Accounts and handles",
+   "value": "GitHub mtorvald",
+   "url": "https://github.com/mtorvald",
+   "grade": "v",
+   "tier": "B",
+   "ms": 3761,
+   "anchors": [
+    {
+     "label": "commit email domain",
+     "value": "corvane.example",
+     "w": 8
+    },
+    {
+     "label": "company field",
+     "value": "Corvane",
+     "w": 4
+    }
+   ],
+   "detail": {
+    "platform": "GitHub",
+    "score": 12,
+    "verdict": "verified"
+   },
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0054",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "username-sweep",
+   "var": "social.accounts",
+   "tab": "personal",
+   "label": "Public accounts",
+   "group": "Accounts and handles",
+   "value": "Strava · Maren T.",
+   "url": "https://www.strava.com/athletes/000000",
+   "grade": "p",
+   "tier": "B",
+   "ms": 498,
+   "anchors": [
+    {
+     "label": "club",
+     "value": "Oakland Running Collective",
+     "w": 2.5
+    },
+    {
+     "label": "race result name",
+     "w": 3
+    }
+   ],
+   "detail": {
+    "platform": "Strava",
+    "score": 3.5,
+    "verdict": "partly"
+   },
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0055",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "username-sweep",
+   "var": "social.candidates",
+   "tab": "personal",
+   "label": "Candidate accounts (scored)",
+   "group": "Accounts and handles",
+   "value": "X @marentorvald",
+   "url": "https://x.com/marentorvald",
+   "grade": "n",
+   "tier": "B",
+   "ms": 1435,
+   "anchors": [
+    {
+     "label": "city",
+     "value": "Oslo",
+     "w": -3
+    },
+    {
+     "label": "employer",
+     "value": "none",
+     "w": 0
+    }
+   ],
+   "detail": {
+    "platform": "X",
+    "score": -9,
+    "verdict": "namesake",
+    "followers": 212
+   },
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0056",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "username-sweep",
+   "var": "social.candidates",
+   "tab": "personal",
+   "label": "Candidate accounts (scored)",
+   "group": "Accounts and handles",
+   "value": "Instagram @maren.t.cooks",
+   "url": "https://www.instagram.com/maren.t.cooks/",
+   "grade": "w",
+   "tier": "B",
+   "ms": 2372,
+   "anchors": [
+    {
+     "label": "first name + initial",
+     "w": 1
+    },
+    "no employer or city"
+   ],
+   "detail": {
+    "platform": "Instagram",
+    "score": -1,
+    "verdict": "unconfirmed"
+   },
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0057",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "search-backbone",
+   "var": "hobby.endurance",
+   "tab": "personal",
+   "label": "Races and fitness",
+   "group": "Hobbies and interests",
+   "value": "Oakland Marathon 2025 (3:41:07) · Berkeley Half 2024 (1:38:52)",
+   "url": "https://results.example.com/oakland-2025?name=torvald",
+   "grade": "v",
+   "tier": "B",
+   "ms": 3309,
+   "anchors": [],
+   "detail": null,
+   "date": "2025-03-23",
+   "image": null
+  },
+  {
+   "id": "L-0058",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "username-sweep",
+   "var": "hobby.media",
+   "tab": "personal",
+   "label": "Books, film, music",
+   "group": "Hobbies and interests",
+   "value": "Letterboxd: 310 films logged, favourites lean to documentaries",
+   "url": "https://letterboxd.com/mtorvald/",
+   "grade": "p",
+   "tier": "B",
+   "ms": 4246,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0059",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "fec",
+   "var": "place.home_metro",
+   "tab": "personal",
+   "label": "Home metro",
+   "group": "Places",
+   "value": "Oakland, CA",
+   "url": "https://www.fec.gov/data/receipts/individual-contributions/?contributor_name=torvald",
+   "grade": "v",
+   "tier": "A",
+   "ms": 983,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0060",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "agent-read",
+   "var": "social.themes",
+   "tab": "personal",
+   "label": "Post themes (last 12 months)",
+   "group": "What he posts",
+   "value": "Running 35% · deployments and team wins 30% · cooking 15% · Bay Area outdoors 20%",
+   "url": "https://www.linkedin.com/in/mtorvald/recent-activity/",
+   "grade": "p",
+   "tier": "C",
+   "ms": 1920,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0061",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "wayback",
+   "var": "place.web_archive",
+   "tab": "personal",
+   "label": "Archived personal pages",
+   "group": "Places",
+   "value": "Personal site mtorvald.dev (2016–2021), archived 14 captures",
+   "url": "https://web.archive.org/web/2019*/mtorvald.dev",
+   "grade": "p",
+   "tier": "A",
+   "ms": 2857,
+   "anchors": [],
+   "detail": null,
+   "date": "2016-05-01",
+   "image": null
+  },
+  {
+   "id": "L-0062",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "official-links",
+   "var": "pic.headshot",
+   "tab": "images",
+   "label": "Official headshot",
+   "group": "Pictures",
+   "value": "Corvane leadership page headshot",
+   "url": "https://www.corvane.example/leadership",
+   "grade": "v",
+   "tier": "A",
+   "ms": 3794,
+   "anchors": [],
+   "detail": {
+    "title": "Maren Torvald, SVP Field Engineering"
+   },
+   "date": null,
+   "image": "https://picsum.photos/seed/headshot-mt/480/360"
+  },
+  {
+   "id": "L-0063",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "commons-photos",
+   "var": "pic.event_photos",
+   "tab": "images",
+   "label": "Event photos",
+   "group": "Pictures",
+   "value": "DeployCon 2025 keynote stage photo (CC BY)",
+   "url": "https://www.flickr.com/photos/deploycon/000000",
+   "grade": "v",
+   "tier": "B",
+   "ms": 531,
+   "anchors": [],
+   "detail": null,
+   "date": "2025-09-18",
+   "image": "https://picsum.photos/seed/deploycon-stage/480/360"
+  },
+  {
+   "id": "L-0064",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "commons-photos",
+   "var": "pic.image_results",
+   "tab": "images",
+   "label": "Image search results",
+   "group": "Pictures",
+   "value": "Panel at FreightTech Summit 2024",
+   "url": "https://commons.wikimedia.org/wiki/File:FreightTech_2024_panel.jpg",
+   "grade": "p",
+   "tier": "B",
+   "ms": 1468,
+   "anchors": [],
+   "detail": null,
+   "date": "2024-11-06",
+   "image": "https://picsum.photos/seed/freighttech/480/360"
+  },
+  {
+   "id": "L-0065",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "reverse-image",
+   "var": "pic.reverse",
+   "tab": "images",
+   "label": "Reverse image search on the headshot",
+   "group": "Pictures",
+   "value": "Same headshot on the DeployCon speaker page",
+   "url": "https://deploycon.example/speakers/maren-torvald",
+   "grade": "v",
+   "tier": "B",
+   "ms": 2405,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": "https://picsum.photos/seed/speaker-page/480/360"
+  },
+  {
+   "id": "L-0066",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "estimate",
+   "var": "role.team_size",
+   "tab": "estimates",
+   "label": "Team size",
+   "group": "The seat",
+   "value": "About 22 engineers (18–28)",
+   "url": null,
+   "grade": "i",
+   "tier": "D",
+   "ms": 3342,
+   "anchors": [],
+   "detail": {
+    "inputs": [
+     "LinkedIn: 19 people list Field Engineering at Corvane",
+     "8-K: 'a team of about twenty'",
+     "14 open FDE roles"
+    ],
+    "formula": "blend(19 × 1.2, 20 stated)"
+   },
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0067",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "estimate",
+   "var": "role.budget",
+   "tab": "estimates",
+   "label": "Budget he controls",
+   "group": "The seat",
+   "value": "About $9M a year ($7–11M)",
+   "url": null,
+   "grade": "i",
+   "tier": "D",
+   "ms": 4279,
+   "anchors": [],
+   "detail": {
+    "formula": "22 × $310K loaded + travel 12%"
+   },
+   "date": null,
+   "image": null
+  },
+  {
+   "id": "L-0068",
+   "at": "2026-11-19T14:02:11.000Z",
+   "module": "estimate",
+   "var": "fit.deal_size",
+   "tab": "estimates",
+   "label": "Deal size (estimate)",
+   "group": "Fit with us",
+   "value": "First-year offer band $230–280K base",
+   "url": null,
+   "grade": "i",
+   "tier": "D",
+   "ms": 1016,
+   "anchors": [],
+   "detail": null,
+   "date": null,
+   "image": null
+  }
+ ],
+ "misses": [
+  {
+   "module": "username-sweep",
+   "var": "hobby.cooking",
+   "label": "Cooking",
+   "tab": "personal",
+   "searched": "recipe sites and Instagram for handles mtorvald, maren.torvald"
+  },
+  {
+   "module": "nonprofit-990",
+   "var": "family.partner",
+   "label": "Spouse or partner",
+   "tab": "personal",
+   "searched": "990 Schedule L and board co-listings"
+  },
+  {
+   "module": "fec",
+   "var": "family.partner",
+   "label": "Spouse or partner",
+   "tab": "personal",
+   "searched": "FEC contributions at the same Oakland address"
+  },
+  {
+   "module": "brokercheck-iapd",
+   "var": "career.licenses",
+   "label": "Licences and registrations",
+   "tab": "professional",
+   "searched": "FINRA BrokerCheck and SEC IAPD for 'Maren Torvald'"
+  },
+  {
+   "module": "gov-contracts",
+   "var": "co.gov",
+   "label": "Government contracts and lobbying",
+   "tab": "records",
+   "searched": "USAspending recipient search 'Corvane'"
+  }
+ ],
+ "modules": [
+  {
+   "id": "official-links",
+   "label": "Official links",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 820,
+   "found": 4,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "sec-search",
+   "label": "SEC full-text search",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 2140,
+   "found": 5,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "sec-filings",
+   "label": "SEC filings",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 1730,
+   "found": 9,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "sec-frames",
+   "label": "SEC XBRL frames",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 1310,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "earnings-docs",
+   "label": "Earnings documents",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 2650,
+   "found": 5,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "fec",
+   "label": "FEC contributions",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 1200,
+   "found": 4,
+   "error": null,
+   "env": [
+    "FEC_API_KEY"
+   ]
+  },
+  {
+   "id": "wikidata",
+   "label": "Wikidata",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 610,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "profile-apis",
+   "label": "Profile APIs",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 1980,
+   "found": 3,
+   "error": null,
+   "env": [
+    "GITHUB_TOKEN"
+   ]
+  },
+  {
+   "id": "package-registries",
+   "label": "Package registries",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 940,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "nonprofit-990",
+   "label": "Nonprofit 990s",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 1450,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "lobbying-fara",
+   "label": "Lobbying and FARA",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 1720,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "domain-intel",
+   "label": "Domain intel",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 880,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "sanctions-csl",
+   "label": "Sanctions (CSL)",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 420,
+   "found": 1,
+   "error": null,
+   "env": [
+    "OPENSANCTIONS_API_KEY"
+   ]
+  },
+  {
+   "id": "wayback",
+   "label": "Wayback Machine",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 3100,
+   "found": 2,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "scholarly",
+   "label": "Scholarly",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 1600,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "uspto",
+   "label": "USPTO patents",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 2200,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "brokercheck-iapd",
+   "label": "BrokerCheck / IAPD",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 900,
+   "found": 0,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "feeds",
+   "label": "RSS feeds",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 700,
+   "found": 1,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "media-feeds",
+   "label": "Podcasts and video",
+   "lane": "fast",
+   "status": "ok",
+   "ms": 2900,
+   "found": 2,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "username-sweep",
+   "label": "Username sweep",
+   "lane": "sweep",
+   "status": "ok",
+   "ms": 18400,
+   "found": 4,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "commons-photos",
+   "label": "Commons photos",
+   "lane": "sweep",
+   "status": "ok",
+   "ms": 2300,
+   "found": 2,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "reverse-image",
+   "label": "Reverse image",
+   "lane": "sweep",
+   "status": "skipped",
+   "ms": 0,
+   "found": 0,
+   "error": null,
+   "env": [],
+   "why": "needs photo"
+  },
+  {
+   "id": "news",
+   "label": "News",
+   "lane": "slow",
+   "status": "ok",
+   "ms": 9800,
+   "found": 5,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "courtlistener",
+   "label": "CourtListener",
+   "lane": "slow",
+   "status": "timeout",
+   "ms": 90000,
+   "found": 2,
+   "error": "time budget",
+   "env": [
+    "COURTLISTENER_TOKEN"
+   ]
+  },
+  {
+   "id": "gov-contracts",
+   "label": "USAspending",
+   "lane": "slow",
+   "status": "error",
+   "ms": 4100,
+   "found": 0,
+   "error": "HTTP 503 from api.usaspending.gov",
+   "env": []
+  },
+  {
+   "id": "search-backbone",
+   "label": "Search backbone",
+   "lane": "slow",
+   "status": "ok",
+   "ms": 14200,
+   "found": 4,
+   "error": null,
+   "env": [
+    "BRAVE_API_KEY"
+   ]
+  },
+  {
+   "id": "agent-read",
+   "label": "Agent read",
+   "lane": "late",
+   "status": "ok",
+   "ms": 21000,
+   "found": 7,
+   "error": null,
+   "env": []
+  },
+  {
+   "id": "estimate",
+   "label": "Estimates",
+   "lane": "late",
+   "status": "ok",
+   "ms": 40,
+   "found": 4,
+   "error": null,
+   "env": []
+  }
+ ],
+ "http": {
+  "calls": 412,
+  "blocked": 9
+ }
+}

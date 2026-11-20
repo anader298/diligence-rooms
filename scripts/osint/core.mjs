@@ -1,0 +1,213 @@
+// The OSINT core: one HTTP helper (timeouts, per-host spacing, disk cache), the tie-back
+// ledger, and the context every module receives. Node built-in fetch only, no dependencies.
+//
+// A module is a plain object:
+//   { id, label, lane: "fast" | "sweep" | "slow", needs: ["name" | "company" | "domain" | ...],
+//     env: ["OPTIONAL_KEY"], async run(ctx) }
+// It reports what it finds with ctx.add({ var, value, url, grade, ... }) and what it searched
+// but did not find with ctx.miss(var, what). Every add becomes one ledger row; nothing a module
+// says reaches the dossier without a row.
+
+import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+
+export const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";
+/** SEC asks for a contact in the User-Agent; set SEC_USER_AGENT="Your Name you@example.com". */
+export const SEC_UA = () => process.env.SEC_USER_AGENT || "diligence-rooms research contact@example.com";
+
+const GRADES = ["v", "p", "w", "i", "n", "np", "u"];
+const sha = (s) => createHash("sha1").update(String(s)).digest("hex");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Minimum gap between calls to one host (ms). Measured limits; see docs/osint.md. */
+const HOST_GAP = {
+  "html.duckduckgo.com": 3000,
+  "duckduckgo.com": 3000,
+  "efts.sec.gov": 150,
+  "data.sec.gov": 150,
+  "www.sec.gov": 150,
+  "api.open.fec.gov": 1000,
+  "www.threads.net": 2000,
+  "www.threads.com": 2000,
+  "yandex.com": 1500,
+  "api.gdeltproject.org": 5500,
+  "crt.sh": 1000,
+  default: 250,
+};
+
+export function makeHttp({ cacheDir = null, fetchImpl = globalThis.fetch, log = () => {}, ttlMs = 24 * 3600e3 } = {}) {
+  const last = new Map();
+  const stats = [];
+  if (cacheDir) mkdirSync(cacheDir, { recursive: true });
+
+  async function space(host) {
+    const gap = HOST_GAP[host] ?? HOST_GAP.default;
+    const prev = last.get(host) || 0;
+    const wait = prev + gap - Date.now();
+    last.set(host, Math.max(Date.now(), prev + gap));
+    if (wait > 0) await sleep(wait);
+  }
+
+  /**
+   * GET (or POST) a URL. Returns { ok, status, text, url, ms, cached, headers }.
+   * Never throws for HTTP or network errors: a failed call is a result with ok:false.
+   */
+  async function get(url, { headers = {}, timeout = 12000, method = "GET", body, cache = true, redirect = "follow" } = {}) {
+    const key = cacheDir && cache && method === "GET" ? join(cacheDir, sha(url + JSON.stringify(headers)) + ".json") : null;
+    if (key && existsSync(key)) {
+      try {
+        const c = JSON.parse(readFileSync(key, "utf8"));
+        if (Date.now() - c.at < ttlMs) return { ...c.res, cached: true };
+      } catch {}
+    }
+    const host = new URL(url).host;
+    await space(host);
+    const t0 = Date.now();
+    let res;
+    try {
+      const r = await fetchImpl(url, {
+        method,
+        body,
+        redirect,
+        headers: { "user-agent": UA, "accept-language": "en-US,en;q=0.9", ...headers },
+        signal: AbortSignal.timeout(timeout),
+      });
+      const text = await r.text();
+      res = { ok: r.ok, status: r.status, text, url: r.url || url, ms: Date.now() - t0, headers: Object.fromEntries(r.headers || []) };
+    } catch (e) {
+      res = { ok: false, status: 0, text: "", url, ms: Date.now() - t0, error: String(e.name === "TimeoutError" ? "timeout" : e.message || e) };
+    }
+    stats.push({ host, status: res.status, ms: res.ms });
+    log(`  ${res.status || res.error} ${res.ms}ms ${url.slice(0, 120)}`);
+    if (key && res.ok) writeFileSync(key, JSON.stringify({ at: Date.now(), res }));
+    return { ...res, cached: false };
+  }
+
+  async function json(url, opts = {}) {
+    const r = await get(url, { ...opts, headers: { accept: "application/json", ...(opts.headers || {}) } });
+    if (!r.ok) return { ...r, data: null };
+    try {
+      return { ...r, data: JSON.parse(r.text) };
+    } catch {
+      return { ...r, ok: false, data: null, error: "not json" };
+    }
+  }
+  return { get, json, stats };
+}
+
+/** Lower-case, strip accents and punctuation: for comparing names. */
+export function normName(s) {
+  return String(s || "")
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** True when every part of the person's first and last name appears in the text, as words. */
+export function nameIn(text, name) {
+  const t = " " + normName(text) + " ";
+  const parts = normName(name).split(" ").filter((p) => p.length > 1);
+  if (!parts.length) return false;
+  const first = parts[0];
+  const lastPart = parts.at(-1);
+  return t.includes(" " + first + " ") && t.includes(" " + lastPart + " ");
+}
+
+export function stripTags(html) {
+  return String(html || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&#x27;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** og:/twitter: meta tags as an object. */
+export function metaTags(html) {
+  const out = {};
+  for (const m of String(html || "").matchAll(/<meta\s+[^>]*?(?:property|name)=["']([^"']+)["'][^>]*?content=["']([^"']*)["'][^>]*>/gi)) out[m[1].toLowerCase()] = decode(m[2]);
+  for (const m of String(html || "").matchAll(/<meta\s+[^>]*?content=["']([^"']*)["'][^>]*?(?:property|name)=["']([^"']+)["'][^>]*>/gi)) out[m[2].toLowerCase()] ??= decode(m[1]);
+  const t = String(html || "").match(/<title[^>]*>([^<]*)<\/title>/i);
+  if (t) out.title = decode(t[1]).trim();
+  return out;
+}
+function decode(s) {
+  return String(s)
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&#x27;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)));
+}
+
+/**
+ * The ledger: one JSON line per finding in <dir>/ledger.jsonl, ids L-0001 upward.
+ * Rows are { id, at, module, var, tab, label, value, url, grade, tier, ms, anchors, detail, key }.
+ * `key` dedupes: the same module adding the same var/value/url twice keeps one row.
+ */
+export function makeLedger(dir, variables = []) {
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, "ledger.jsonl");
+  const byVar = Object.fromEntries(variables.map((v) => [v.id, v]));
+  const rows = [];
+  const keys = new Set();
+  const misses = [];
+  if (existsSync(file)) {
+    for (const line of readFileSync(file, "utf8").split("\n")) {
+      if (!line.trim()) continue;
+      try {
+        const r = JSON.parse(line);
+        rows.push(r);
+        keys.add(r.key);
+      } catch {}
+    }
+  }
+  let n = rows.reduce((m, r) => Math.max(m, Number(String(r.id).slice(2)) || 0), 0);
+
+  function add(module, f) {
+    const v = byVar[f.var];
+    const value = typeof f.value === "string" ? f.value.trim() : f.value;
+    if (value == null || value === "") return null;
+    const key = sha([module, f.var, JSON.stringify(value), f.url || ""].join("|"));
+    if (keys.has(key)) return rows.find((r) => r.key === key);
+    keys.add(key);
+    const row = {
+      id: "L-" + String(++n).padStart(4, "0"),
+      at: new Date().toISOString(),
+      module,
+      var: f.var,
+      tab: f.tab || v?.tab || "personal",
+      label: f.label || v?.label || f.var,
+      group: f.group || v?.group || "",
+      value,
+      url: f.url || null,
+      grade: GRADES.includes(f.grade) ? f.grade : "w",
+      tier: f.tier || "A",
+      ms: f.ms ?? null,
+      anchors: f.anchors || [],
+      detail: f.detail || null,
+      date: f.date || null,
+      image: f.image || null,
+      key,
+    };
+    rows.push(row);
+    appendFileSync(file, JSON.stringify(row) + "\n");
+    return row;
+  }
+  function miss(module, varId, searched) {
+    misses.push({ module, var: varId, label: byVar[varId]?.label || varId, tab: byVar[varId]?.tab || "personal", searched });
+  }
+  return { add, miss, rows, misses, file };
+}

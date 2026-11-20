@@ -255,6 +255,13 @@ fixes the rows; keep every row, in order. Each row ends in exactly one state:
   none      "None found", graded {n}, and the search: tool and exact query (and which names).
 Never omit a row, never leave a cell blank where a finding, "None found" or a grade belongs.
 
+0. Start from the scripted pass: rooms/{{slug}}/work/osint/{{person-slug}}/osint.json (and its
+   dossier.html). Every row there has a source, a module and a grade: treat each as a lead, confirm
+   it at the source, and keep its ledger id (L-0001) next to the line it supports. Its "misses" list
+   says what the scripts searched and did not find; its candidate accounts carry an identity score.
+   Then go where scripts cannot: your own web search (image results and the preview snippets that
+   show captions and bios from Instagram, Facebook and LinkedIn pages you cannot open), the pages
+   behind the leads, and the rows below. Add what you find with: node scripts/osint/add.mjs.
 1. Anchor identity: the official bio and the LinkedIn profile (what we see under our own
    account, or our export; never scraped). Note photo, city, employers. Use LEADS.md and
    work/connectors/merged.json as leads only: confirm each at a public source before using it.

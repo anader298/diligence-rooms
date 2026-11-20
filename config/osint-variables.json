@@ -1,0 +1,610 @@
+{
+ "tabs": [
+  [
+   "personal",
+   "Personal"
+  ],
+  [
+   "professional",
+   "Professional"
+  ],
+  [
+   "company",
+   "Company"
+  ],
+  [
+   "agenda",
+   "Agenda and priorities"
+  ],
+  [
+   "politics",
+   "Politics and causes"
+  ],
+  [
+   "money",
+   "Money"
+  ],
+  [
+   "records",
+   "Records"
+  ],
+  [
+   "news",
+   "News"
+  ],
+  [
+   "images",
+   "Pictures"
+  ],
+  [
+   "estimates",
+   "Estimates"
+  ]
+ ],
+ "variables": [
+  {
+   "id": "social.accounts",
+   "label": "Public accounts",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.handles",
+   "label": "Handle pattern",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.most_active",
+   "label": "Most active platform",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.linkpage",
+   "label": "Link-in-bio / personal site",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "social.themes",
+   "label": "Post themes (last 12 months)",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "social.tone",
+   "label": "Tone and manner",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "social.top_posts",
+   "label": "Most-liked posts",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "social.work_posts",
+   "label": "What he says about work",
+   "group": "What he posts",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.sports",
+   "label": "Sports he coaches or plays",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.cooking",
+   "label": "Cooking",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.endurance",
+   "label": "Races and fitness",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.media",
+   "label": "Books, film, music",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "hobby.teams",
+   "label": "Teams he follows",
+   "group": "Hobbies and interests",
+   "tab": "personal"
+  },
+  {
+   "id": "place.home_metro",
+   "label": "Home metro",
+   "group": "Places",
+   "tab": "personal"
+  },
+  {
+   "id": "place.second_home",
+   "label": "Second home (region)",
+   "group": "Places",
+   "tab": "personal"
+  },
+  {
+   "id": "place.travel",
+   "label": "Recurring trips",
+   "group": "Places",
+   "tab": "personal"
+  },
+  {
+   "id": "family.partner",
+   "label": "Spouse or partner",
+   "group": "Family and circle",
+   "tab": "personal"
+  },
+  {
+   "id": "family.kids",
+   "label": "Children",
+   "group": "Family and circle",
+   "tab": "personal"
+  },
+  {
+   "id": "family.close_circle",
+   "label": "Most-tagged friends",
+   "group": "Family and circle",
+   "tab": "personal"
+  },
+  {
+   "id": "cause.boards",
+   "label": "Nonprofit boards",
+   "group": "Causes and giving",
+   "tab": "personal"
+  },
+  {
+   "id": "cause.events",
+   "label": "Galas and fundraisers",
+   "group": "Causes and giving",
+   "tab": "personal"
+  },
+  {
+   "id": "cause.political",
+   "label": "Political giving",
+   "group": "Causes and giving",
+   "tab": "politics"
+  },
+  {
+   "id": "pic.headshot",
+   "label": "Official headshot",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "pic.avatar_matches",
+   "label": "Avatar matches",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "pic.event_photos",
+   "label": "Event photos",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "role.title",
+   "label": "Title",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.start",
+   "label": "In the seat since",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.reports_to",
+   "label": "Reports to",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.directs",
+   "label": "Direct reports",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.team_size",
+   "label": "Team size",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.revenue",
+   "label": "Revenue he owns",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.budget",
+   "label": "Budget he controls",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "role.mandate",
+   "label": "His stated mandate",
+   "group": "The seat",
+   "tab": "professional"
+  },
+  {
+   "id": "career.timeline",
+   "label": "Career timeline",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.wins",
+   "label": "Signature wins",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.education",
+   "label": "Education",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.licenses",
+   "label": "Licences and registrations",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.writing",
+   "label": "Bylines and posts",
+   "group": "Voice",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.talks",
+   "label": "Talks and podcasts",
+   "group": "Voice",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.terms",
+   "label": "His words (top terms)",
+   "group": "Voice",
+   "tab": "agenda"
+  },
+  {
+   "id": "voice.priorities",
+   "label": "What he is judged on",
+   "group": "Voice",
+   "tab": "agenda"
+  },
+  {
+   "id": "money.holdings",
+   "label": "Harborline shares",
+   "group": "Money",
+   "tab": "money"
+  },
+  {
+   "id": "money.trades",
+   "label": "Insider trades",
+   "group": "Money",
+   "tab": "money"
+  },
+  {
+   "id": "money.comp",
+   "label": "Pay (estimate)",
+   "group": "Money",
+   "tab": "money"
+  },
+  {
+   "id": "net.overlaps",
+   "label": "Overlaps with our side",
+   "group": "Network",
+   "tab": "professional"
+  },
+  {
+   "id": "net.warm_paths",
+   "label": "Warm paths in",
+   "group": "Network",
+   "tab": "professional"
+  },
+  {
+   "id": "rec.courts",
+   "label": "Court cases",
+   "group": "Record",
+   "tab": "records"
+  },
+  {
+   "id": "rec.sanctions",
+   "label": "Sanctions and exclusions",
+   "group": "Record",
+   "tab": "records"
+  },
+  {
+   "id": "co.arr",
+   "label": "ARR",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.quarter",
+   "label": "Last quarter",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.kpis",
+   "label": "KPIs",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.segments",
+   "label": "Segments",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.peers",
+   "label": "Against peers",
+   "group": "Scale and growth",
+   "tab": "company"
+  },
+  {
+   "id": "co.growth_line",
+   "label": "Named growth priority",
+   "group": "Where they are going",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.hiring",
+   "label": "Open roles",
+   "group": "Where they are going",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.ma",
+   "label": "M&A and partnerships",
+   "group": "Where they are going",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.budget_cycle",
+   "label": "Budget cycle",
+   "group": "Where they are going",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.cash",
+   "label": "Cash and debt",
+   "group": "Money",
+   "tab": "company"
+  },
+  {
+   "id": "co.owners",
+   "label": "Top holders",
+   "group": "Money",
+   "tab": "company"
+  },
+  {
+   "id": "co.concentration",
+   "label": "Customer concentration",
+   "group": "Money",
+   "tab": "company"
+  },
+  {
+   "id": "co.benefit_plans",
+   "label": "Headcount check",
+   "group": "Money",
+   "tab": "company"
+  },
+  {
+   "id": "co.leadership",
+   "label": "Leadership team",
+   "group": "People",
+   "tab": "company"
+  },
+  {
+   "id": "co.exec_changes",
+   "label": "Exec changes, 24 months",
+   "group": "People",
+   "tab": "company"
+  },
+  {
+   "id": "co.reviews",
+   "label": "Employee view",
+   "group": "People",
+   "tab": "company"
+  },
+  {
+   "id": "co.competitors",
+   "label": "Competitors",
+   "group": "Market and risk",
+   "tab": "company"
+  },
+  {
+   "id": "co.legal",
+   "label": "Litigation",
+   "group": "Market and risk",
+   "tab": "records"
+  },
+  {
+   "id": "co.gov",
+   "label": "Government contracts and lobbying",
+   "group": "Market and risk",
+   "tab": "politics"
+  },
+  {
+   "id": "co.domains",
+   "label": "Digital footprint",
+   "group": "Market and risk",
+   "tab": "company"
+  },
+  {
+   "id": "co.private_rev",
+   "label": "Payments unit margin",
+   "group": "Market and risk",
+   "tab": "company"
+  },
+  {
+   "id": "fit.problem",
+   "label": "Their problem we solve",
+   "group": "Fit with us",
+   "tab": "agenda"
+  },
+  {
+   "id": "fit.who_buys",
+   "label": "Who signs",
+   "group": "Fit with us",
+   "tab": "agenda"
+  },
+  {
+   "id": "fit.timing",
+   "label": "Timing",
+   "group": "Fit with us",
+   "tab": "agenda"
+  },
+  {
+   "id": "fit.deal_size",
+   "label": "Deal size (estimate)",
+   "group": "Fit with us",
+   "tab": "agenda"
+  },
+  {
+   "id": "news.articles",
+   "label": "Articles that mention them",
+   "group": "In the news",
+   "tab": "news"
+  },
+  {
+   "id": "news.company",
+   "label": "Company news, last 90 days",
+   "group": "In the news",
+   "tab": "news"
+  },
+  {
+   "id": "pic.image_results",
+   "label": "Image search results",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "pic.reverse",
+   "label": "Reverse image search on the headshot",
+   "group": "Pictures",
+   "tab": "images"
+  },
+  {
+   "id": "social.candidates",
+   "label": "Candidate accounts (scored)",
+   "group": "Accounts and handles",
+   "tab": "personal"
+  },
+  {
+   "id": "career.patents",
+   "label": "Patents (as inventor)",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "career.code",
+   "label": "Public code (GitHub)",
+   "group": "Career",
+   "tab": "professional"
+  },
+  {
+   "id": "voice.quotes",
+   "label": "Quotes in press releases and calls",
+   "group": "Own words",
+   "tab": "agenda"
+  },
+  {
+   "id": "co.filings",
+   "label": "Recent filings",
+   "group": "Filings",
+   "tab": "company"
+  },
+  {
+   "id": "co.facts",
+   "label": "Reported financials (XBRL)",
+   "group": "Scale and money",
+   "tab": "company"
+  },
+  {
+   "id": "co.insiders",
+   "label": "Insider filers at the company",
+   "group": "Ownership",
+   "tab": "money"
+  },
+  {
+   "id": "politics.donations",
+   "label": "Political donations (FEC)",
+   "group": "Politics",
+   "tab": "politics"
+  },
+  {
+   "id": "politics.company_pac",
+   "label": "Company PAC and lobbying",
+   "group": "Politics",
+   "tab": "politics"
+  },
+  {
+   "id": "rec.sanctions_detail",
+   "label": "Sanctions and exclusion list checks",
+   "group": "Records",
+   "tab": "records"
+  },
+  {
+   "id": "place.web_archive",
+   "label": "Archived personal pages",
+   "group": "Places",
+   "tab": "personal"
+  },
+  {
+   "id": "est.team_size",
+   "label": "Team size (estimate)",
+   "group": "Estimates",
+   "tab": "estimates"
+  },
+  {
+   "id": "est.budget",
+   "label": "Budget (estimate)",
+   "group": "Estimates",
+   "tab": "estimates"
+  },
+  {
+   "id": "est.comp",
+   "label": "Pay (estimate)",
+   "group": "Estimates",
+   "tab": "estimates"
+  },
+  {
+   "id": "est.seg_growth",
+   "label": "Growth of their area (estimate)",
+   "group": "Estimates",
+   "tab": "estimates"
+  },
+  {
+   "id": "est.deal_size",
+   "label": "Deal size (estimate)",
+   "group": "Estimates",
+   "tab": "estimates"
+  },
+  {
+   "id": "est.decision_window",
+   "label": "Decision window (estimate)",
+   "group": "Estimates",
+   "tab": "estimates"
+  }
+ ]
+}
