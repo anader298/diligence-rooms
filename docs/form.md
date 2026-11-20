@@ -18,8 +18,10 @@ the research ledgers. AI never writes a bucket's state. The full list is in
   every entry with the two-source rule, so an agent cannot write Verified. An AI slot only takes a
   judgement with citations: `--none` is refused there, and a required AI slot with no such entry
   fails the check.
-- **Check**: `npm run form -- <slug> --check`. `run-room` runs it before the build and stops there
-  if it fails. Add `--draft` to build anyway.
+- **Check**: `npm run form -- <slug> --check`. The build runs the same check itself: `npm run
+  build` refuses a room with form data that fails it (and leaves `site/` as it was), and `run-room`
+  stops there too. Add `--draft` to either to build anyway; only then does the form page say the
+  room is a draft. Rooms without form data build as before.
 - **Look**: `npm run form -- <slug>` shows every bucket with its state. The built room has an "On
   the form" block on each page and a "The form" page.
 

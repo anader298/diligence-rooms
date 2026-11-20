@@ -198,7 +198,7 @@ How I build with AI: [github.com/anader298/how-i-build-with-ai](https://github.c
 
 ```sh
 npm test                # 224 tests
-npm run build           # every room into site/
+npm run build           # every room into site/ (a room failing its form check is refused; --draft builds it anyway)
 npm run lint            # depth score per room
 npm run preview         # http://localhost:8888, no password
 cp .env.example .env    # set ROOM_COOKIE_SECRET and ROOM_PASSWORD_NORTHWIND

@@ -19,6 +19,12 @@
 //   site/<slug>/knowledge.md                  the whole room as one file, for the silent helper
 //   netlify/functions/corpus/<slug>.json      the same, for the live helper functions
 // examples/<name>/ holds rooms kept as finished HTML (copied as they are).
+//
+// The form check: a room with form data (ledgers in work/osint/) is built only when its form
+// check passes (scripts/lib/form.mjs formGate, the same check as npm run form -- <slug> --check).
+// A room that fails is refused, and nothing is built or removed, unless --draft is passed:
+//   node scripts/build.mjs [<slug>] [--draft]
+// Rooms without form data build as before.
 // No dependencies.
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, readdirSync, existsSync, copyFileSync, cpSync } from "node:fs";
@@ -52,6 +58,22 @@ const isFootprint = (id) => /^(socials|partner-socials|names)-/.test(id);
 // Which OSINT module fills which ledger variable (from each module's own declaration): the form
 // uses it to tell "searched, nothing found" from "no tool yet".
 const MODULE_VARS = await moduleVars();
+
+const args = process.argv.slice(2);
+const draft = args.includes("--draft");
+
+// The form and its check, once per room (the pre-build check and the build share them).
+const forms = new Map();
+function formOf(slug) {
+  if (!forms.has(slug)) {
+    const dir = join(roomsRoot, slug);
+    const room = JSON.parse(readFileSync(join(dir, "room.json"), "utf8"));
+    const pageIds = new Set((room.sections || []).flatMap((s) => (s.pages || []).map((p) => p.id)));
+    const form = roomForm(dir, { moduleVars: MODULE_VARS, pageIds });
+    forms.set(slug, { form, gate: form ? formGate(form) : null });
+  }
+  return forms.get(slug);
+}
 
 function fail(msg) {
   console.error("build: " + msg);
@@ -159,8 +181,7 @@ function buildRoom(slug) {
   // renders every bucket on its page with its state, and a "The form" page with all of them.
   // Rooms without ledgers build as before.
   const pageIds0 = new Set(room.sections.flatMap((s) => s.pages.map((p) => p.id)));
-  const form = roomForm(dir, { moduleVars: MODULE_VARS, pageIds: pageIds0 });
-  const gate = form ? formGate(form) : null;
+  const { form, gate } = formOf(slug);
   if (form) {
     if (!pageIds0.has("form")) {
       const home = room.sections.find((s) => s.id === "record") || room.sections.at(-1);
@@ -178,7 +199,7 @@ function buildRoom(slug) {
   const order = [];
   for (const section of room.sections) {
     for (const page of section.pages) {
-      const pg = page._generated && form ? { body: formPage(form, gate) } : readPageBody(dir, page.id);
+      const pg = page._generated && form ? { body: formPage(form, gate, { draft }) } : readPageBody(dir, page.id);
       if (!pg) fail(`missing page rooms/${slug}/pages/${page.id}.html (or .md)`);
       if (form && !page._generated) {
         pg.body = dropEmptyChecklists(pg.body);
@@ -493,15 +514,25 @@ function copyExample(name) {
   return { slug: name, pageCount: files.length };
 }
 
-rmSync(out, { recursive: true, force: true });
-mkdirSync(out, { recursive: true });
-
-const only = process.argv[2];
+const only = args.find((a) => !a.startsWith("--"));
 const slugs = readdirSync(roomsRoot, { withFileTypes: true })
   .filter((d) => d.isDirectory() && (!only || d.name === only))
   .filter((d) => existsSync(join(roomsRoot, d.name, "room.json")) || (console.warn(`build: skipping rooms/${d.name}/ (no room.json)`), false))
   .map((d) => d.name);
 if (!slugs.length) fail("no rooms found in rooms/");
+
+// The form check, before anything is written or removed: a room with form data that fails it
+// is not built (and site/ is left as it was) unless this is a draft build.
+const refused = slugs.filter((s) => formOf(s).gate && !formOf(s).gate.ok);
+for (const s of refused) {
+  const { gate } = formOf(s);
+  console.error(`build: ${s}: form check FAILED (${gate.errors.length})${draft ? "; building anyway as a draft (--draft)" : ""}`);
+  for (const e of gate.errors.slice(0, 40)) console.error(`  - ${e}`);
+}
+if (refused.length && !draft) fail(`not building: the form check failed for ${refused.join(", ")}. Fix what it lists (npm run form -- <slug> --check), or pass --draft to build a draft.`);
+
+rmSync(out, { recursive: true, force: true });
+mkdirSync(out, { recursive: true });
 
 rmSync(corpusRoot, { recursive: true, force: true });
 const built = slugs.map(buildRoom);
@@ -519,4 +550,4 @@ writeFileSync(
     built.map((b) => `/${b.slug}/*\n  Cache-Control: private, max-age=0, no-store\n`).join("\n"),
 );
 
-for (const b of built) console.log(`built ${b.slug}: ${b.pageCount} pages -> site/${b.slug}/ (+ assist.html, knowledge.md)`);
+for (const b of built) console.log(`built ${b.slug}: ${b.pageCount} pages -> site/${b.slug}/ (+ assist.html, knowledge.md)${refused.includes(b.slug) ? " [DRAFT: form check failed]" : ""}`);

@@ -65,7 +65,8 @@ What we want: {{the_ask}}. As-of date: {{today}}.
 
 Rules:
 - Facts go into the ledger as entries (npm run entry, see the top of this file), one per finding,
-  with the source URL; code grades them. Where a bucket has nothing, hand in --none with the search.
+  with the source URL; code grades them. Where a fact bucket has nothing, hand in --none with the
+  search (never on an AI slot: those take a judgement that cites ledger ids).
   On pages, write narrative that points at ledger ids (L-0003) instead of restating the facts.
 - Every factual line carries a source link or a local file path, and one grade:
   {v} verified (read at the source in this session), {p} partly verified,
@@ -478,8 +479,9 @@ people-map, org-chart) from work/connectors/merged.json: Field, Value, Provider,
 with the public source linked once research confirmed it; None found {n} or {u} when no connector
 ran). Fill data-sources from work/connectors/run.json and conflicts.json: every provider row
 (ran or not), credits used, fields filled, and each conflict with what settled it.
-Leave room.json "summary" to P9. Run lint and the build; fix until both pass. Start the local
-preview. Do not deploy.
+Leave room.json "summary" to P9. Run lint (npm run lint -- {{slug}}) and the form check
+(npm run form -- {{slug}} --check); fix until both pass. Do not run the build: run-room builds
+once the last stage is done, and the build refuses a room whose form check fails. Do not deploy.
 ```
 
 ## P9. One card and summary (orchestrator, last; finishes the render)
@@ -493,7 +495,8 @@ only), questions to ask in order, 5 of their terms in plain words, logistics (fr
 meetings[] and deadlines[]), and the open [FILL: …] items. One screen, no scrolling.
 Then write room.json "summary": one paragraph, under 120 words: who we are meeting (names and
 seats), what we want, the three things that matter most, and the main risk. Plain words, no
-grades or links (the pages carry those). Rebuild.
+grades or links (the pages carry those). Run the form check again
+(npm run form -- {{slug}} --check) and fix what it lists; run-room builds after this stage.
 ```
 
 ## P10. Debrief loop (after each meeting)

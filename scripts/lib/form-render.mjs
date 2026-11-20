@@ -54,8 +54,12 @@ export function formBlock(buckets) {
   return `<section class="form-block"><h2>On the form</h2><p class="form-note">Filled by code from the research ledger: ${n("filled")} filled, ${n("empty")} searched with nothing found, ${n("blocked")} could not be checked, ${n("no-tool")} with no tool yet. <a href="form.html">The whole form</a></p>${tableOf(rows)}</section>\n`;
 }
 
-/** The body of the "The form" page: counts, the check, every bucket, and Other findings. */
-export function formPage(form, gate) {
+/**
+ * The body of the "The form" page: counts, the check, every bucket, and Other findings.
+ * opts.draft: the build was run with --draft (only then can a failed check be built, and only
+ * then does the page say so).
+ */
+export function formPage(form, gate, { draft = false } = {}) {
   const c = form.counts;
   const head = `<p>Every bucket this room fills, from the packs the intake chose (${form.packs.map((p) => esc(p.id)).join(", ")}). Each one is in exactly one state, computed from the research ledger: nothing on this page is written by an AI. AI judgement is labelled and lists the ledger rows it rests on.</p>`;
   const counts = `<h2>States</h2><div class="tw"><table><tr><th>State</th><th>Buckets</th><th>What it means</th></tr>` +
@@ -63,7 +67,7 @@ export function formPage(form, gate) {
     `<tr><td>${STATE_LABEL.empty}</td><td>${c.empty}</td><td>A tool or an agent searched and found nothing (what was searched is shown)</td></tr>` +
     `<tr><td>${STATE_LABEL.blocked}</td><td>${c.blocked}</td><td>The tools that feed it were blocked, need a key or a domain, or did not run</td></tr>` +
     `<tr><td>${STATE_LABEL["no-tool"]}</td><td>${c["no-tool"]}</td><td>No module feeds it yet and nobody handed in an entry</td></tr></table></div>`;
-  const check = `<h2>Form check</h2>${gate.ok ? "<p>Passed: every required bucket has a state, every AI entry cites real ledger rows, and Start here is filled.</p>" : `<p>Failed (${gate.errors.length}). The build was allowed as a draft.</p><ul>${gate.errors.slice(0, 60).map((e) => `<li>${esc(e)}</li>`).join("")}</ul>`}${gate.warnings.length ? `<p><small>${gate.warnings.slice(0, 20).map(esc).join("<br>")}</small></p>` : ""}`;
+  const check = `<h2>Form check</h2>${gate.ok ? "<p>Passed: every required bucket has a state, every AI entry cites real ledger rows, and Start here is filled.</p>" : `<p>Failed (${gate.errors.length}).${draft ? " This is a draft: the build was run with --draft, so it went ahead anyway." : ""}</p><ul>${gate.errors.slice(0, 60).map((e) => `<li>${esc(e)}</li>`).join("")}</ul>`}${gate.warnings.length ? `<p><small>${gate.warnings.slice(0, 20).map(esc).join("<br>")}</small></p>` : ""}`;
   const sections = [];
   const keyOf = (b) => `${b.pack}|${b.person || ""}`;
   for (const k of [...new Set(form.buckets.map(keyOf))]) {

@@ -149,7 +149,9 @@ if (!stopped) {
 if (!stopped && (!formFailed || draft)) {
   say("lint and build");
   for (const script of ["lint.mjs", "build.mjs"]) {
-    const r = spawnSync(process.execPath, [join(REPO, "scripts", script), slug], { cwd: REPO, encoding: "utf8", env: process.env });
+    // build.mjs runs the form check itself and refuses a failing room; a draft run says so
+    const extra = script === "build.mjs" && draft ? ["--draft"] : [];
+    const r = spawnSync(process.execPath, [join(REPO, "scripts", script), slug, ...extra], { cwd: REPO, encoding: "utf8", env: process.env });
     console.log((r.stdout + r.stderr).trim());
   }
 }

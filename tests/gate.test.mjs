@@ -122,7 +122,8 @@ process.stdin.on("end", () => {
     assert.equal(run2.status, 0, run2.stdout + run2.stderr);
     assert.match(run2.stdout, /building anyway as a draft/);
     assert.ok(existsSync(join(out, slug, "form.html")), "the draft is built, with its form page");
-    assert.match(readFileSync(join(out, slug, "form.html"), "utf8"), /The build was allowed as a draft/);
+    assert.match(readFileSync(join(out, slug, "form.html"), "utf8"), /This is a draft: the build was run with --draft/, "run-room passes --draft on to the build");
+    assert.match(run2.stdout, /\[DRAFT: form check failed\]/);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }
