@@ -267,9 +267,9 @@ function runEnrich(slug, providers) {
   });
 }
 
-function build() {
+function build(draft = false) {
   return new Promise((resolve) => {
-    execFile(process.execPath, [join(REPO, "scripts", "build.mjs")], { cwd: REPO, timeout: 120000 }, (err, stdout, stderr) =>
+    execFile(process.execPath, [join(REPO, "scripts", "build.mjs"), ...(draft ? ["--draft"] : [])], { cwd: REPO, timeout: 120000 }, (err, stdout, stderr) =>
       resolve({ ok: !err, output: (stdout + stderr).trim() }),
     );
   });
@@ -398,7 +398,7 @@ const server = createServer(async (req, res) => {
         return send(res, 200, { result, ...(await engineState(true)) });
       }
       if (path === "/api/ourside") return send(res, 200, saveOurs(body));
-      if (path === "/api/build") return send(res, 200, await build());
+      if (path === "/api/build") return send(res, 200, await build(body && body.draft === true));
       if (path === "/api/enrich") {
         // Two steps: {confirm:false} returns the estimate; {confirm:true, expectTotal} runs with --yes,
         // and only if the estimate the user saw is still the estimate now.

@@ -204,7 +204,7 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
 
 <section class="panel" id="result" hidden aria-live="polite"></section>
 
-<div class="roomsbar"><h2>Rooms</h2><div class="r"><span id="buildmsg"></span><button class="st-btn" id="buildall" type="button">Build all</button><button class="st-btn" id="refresh" type="button">Refresh</button></div></div>
+<div class="roomsbar"><h2>Rooms</h2><div class="r"><span id="buildmsg"></span><button class="st-btn" id="buildall" type="button">Build all</button><button class="st-btn" id="builddraft" type="button" title="Builds rooms that fail the form check, marked as drafts">Build as draft</button><button class="st-btn" id="refresh" type="button">Refresh</button></div></div>
 <div id="rooms"><p class="empty">Loading…</p></div>
 </div>
 
@@ -680,11 +680,13 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
     }).catch(function (e) { var box = $("rooms"); clear(box); box.appendChild(el("p", { class: "empty", text: "Could not load rooms: " + e.message })); });
   }
   $("refresh").addEventListener("click", loadRooms);
-  $("buildall").addEventListener("click", function () {
-    var b = $("buildall"), m = $("buildmsg"); b.disabled = true; m.textContent = "building…";
-    api("/api/build", {}).then(function (r) { m.textContent = r.ok ? "built" : "build failed"; m.title = r.output; }, function (e) { m.textContent = e.message; })
+  function runBuild(id, draft) {
+    var b = $(id), m = $("buildmsg"); b.disabled = true; m.textContent = draft ? "building drafts…" : "building…";
+    api("/api/build", { draft: draft }).then(function (r) { m.textContent = r.ok ? (draft ? "built as draft" : "built") : "build failed: see the form check (hover)"; m.title = r.output; }, function (e) { m.textContent = e.message; })
       .then(function () { b.disabled = false; loadRooms(); });
-  });
+  }
+  $("buildall").addEventListener("click", function () { runBuild("buildall", false); });
+  $("builddraft").addEventListener("click", function () { runBuild("builddraft", true); });
 
   loadDoctor(); loadEngine().catch(function (e) { msg("Could not check the engines: " + e.message, "bad-t"); }); loadOurs();
   loadRooms().then(function () { infer(); $("people").focus(); });

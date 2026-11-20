@@ -68,17 +68,20 @@ flowchart LR
     O --> P[People agents<br/>one per person,<br/>blind to your side]
     R --> V[Verify<br/>re-fetch sources,<br/>independent grader]
     P --> V
-    V --> B[Render, lint, build]
+    V --> F[Form check<br/>blocks the build<br/>when it fails]
+    F --> B[Render, lint, build]
     B --> G[Password gate]
     G --> RM[The room]
     G --> CP[The companion]
 ```
 
 - **One line in, a whole room out.** A local studio reads the person, the company and the purpose, picks a mode (deal, audit, pitch or interviewing) and an organisation type (private equity, public company, asset owner, startup and five more), and composes the page set in seconds. Research runs only when you start it.
-- **Scripts first, then agents.** A scripted OSINT pass (below) collects what registries and public pages say about each person and the company. The agents start from that ledger, confirm each row at its source, and go where scripts cannot.
+- **Scripts first, then agents.** A scripted OSINT pass (below) files what registries and public pages say about each person and the company into a ledger, each row with its source and grade. The room is a fixed set of buckets. Code works out whether each one was filled, searched and empty, or couldn't be checked. Agents hand in what they find as entries, and code grades them: an agent's finding is never Verified without a script source or an official record behind it.
 - **Three sections to read.** **Start here** (summary, countdown and deadlines, the three things), then **1. The person** (one block per person, split into Personal and Professional), **2. The role, the deal, the specifics** (the ask, meetings, drills, the one card) and **3. The company** (what drives them, the money, filings, the outside view, the org chart). The mirror and the record sit in **Behind the room**.
-- **Agents in parallel, blind where it matters.** Claude Code agents draft every page with a source link on each line. The people agents never read your side's file, so the profiles cannot flatter you. A separate agent re-fetches every source and recomputes every number; that check is a model, not code (see Methodology).
+- **Agents in parallel, blind where it matters.** Agents (Claude Code or Codex) run one fixed stage at a time. They hand in findings as entries and write the narrative pages. The instructions require a source on every line; code checks that every AI judgement cites findings that exist. The people agents are not given your side's file, so the profiles cannot flatter you. A separate agent re-fetches every source and recomputes every number; that check is a model, not code (see Methodology).
 - **Every fact graded:** verified, partly verified, weak, inference, none found, not public or unknown. Every search, including the empty ones, is kept in the OSINT log. `npm run lint` scores each room out of 100 on sources, verified share and pages still empty.
+
+**Map of the code.** An [interactive map](https://anader298.github.io/diligence-rooms/map/) of every part, file and step in plain English, separating what code enforces from what the AI is only instructed to do.
 
 The full method is in [`pipeline/STANDARD.md`](pipeline/STANDARD.md) and every agent brief is in [`pipeline/PROMPTS.md`](pipeline/PROMPTS.md).
 
@@ -136,7 +139,7 @@ npm run osint -- --name "Jane Doe" --company "Acme Corp" --domain acme.com --ope
 
 **Tested on real people (19 to 20 November 2026), scripted pass only.** A public-company EVP: 141 findings in 32 s (proxy pay to the dollar, Form 4 title and trades, revenue, segments, litigation, 27 open roles). A VP at a private manufacturer: 62 findings in 46 s. A recruiter at a private software company: 70 findings in 30 s. Two executives who had just announced they were leaving were flagged with a departure alert. An independent audit of 168 rows found 93% of rows graded verified exactly right and every SEC and Form 5500 figure exact; the errors it found (namesakes, nicknames, units, stale figures) are fixed and tested. The personal side is the weak half: unless the person posts publicly, hobbies, family and causes come back empty, and the dossier says so. Details in [docs/osint.md](docs/osint.md).
 
-**The form.** Every room fills the same buckets, defined as JSON packs in `config/form/` (core per person, core company, one per mode and org type, optional practice). Code computes each bucket's state from the ledgers (filled with grade and source, searched and empty, couldn't check, no tool yet) and renders it on its page; agents hand in entries (`npm run entry`), graded by the same two-source rule as the scripts; AI judgement cites the ledger ids it rests on; `run-room` runs a form check before the build. How to add a bucket, a pack or a tool: [docs/form.md](docs/form.md). The bucket list: [docs/form-buckets.md](docs/form-buckets.md).
+**The form.** Every room fills the same buckets, defined as JSON packs in `config/form/` (core per person, core company, one per mode and org type, optional practice). Code computes each bucket's state from the ledgers (filled with grade and source, searched and empty, couldn't check, no tool yet) and renders it on its page; agents hand in entries (`npm run entry`); code regrades every row when it reads the ledger, and an agent's entry needs a script source or an official record to be Verified; AI judgement must cite ledger ids that exist; the build refuses a room that fails the form check unless `--draft`. How to add a bucket, a pack or a tool: [docs/form.md](docs/form.md). The bucket list: [docs/form-buckets.md](docs/form-buckets.md).
 
 ## The companion: answers on screen during the meeting
 
@@ -187,7 +190,7 @@ Use: Analyze. Lever: commercial and risk. Before a negotiation, partnership talk
 
 - **Playbook or agent, and why.** Mostly a playbook (`pipeline/STANDARD.md`, briefs P0 to P10). Research fans out to agents because the reading is broad and independent; one render step writes the pages; the companion is two fixed calls per question.
 - **How it was built.** Personas that graded their own practice questions agreed with themselves, so grading moved to a separate agent. The OSINT pass was reviewed from a fresh clone by independent agents on five real executives, and the errors they found were fixed, with tests.
-- **How it's checked.** 224 tests (`npm test`). `npm run lint` fails the 16-page synthetic source room at 67/100, by design: 40+ pages are expected.
+- **How it's checked.** 275 tests (`npm test`). `npm run lint` fails the 16-page synthetic source room at 67/100, by design: 40+ pages are expected.
 - **Limits.** Card JSON is read with a regex, the fast lane defaults to an Opus-class model, and the research number check is a model. Next: structured outputs, a small fast model, a code tie-out and a labelled question set.
 
 How I build with AI: [github.com/anader298/how-i-build-with-ai](https://github.com/anader298/how-i-build-with-ai)
@@ -197,7 +200,7 @@ How I build with AI: [github.com/anader298/how-i-build-with-ai](https://github.c
 [`examples/northwind-sample/`](examples/northwind-sample/) is the finished sample as static pages: Avery Freight Analytics prepares to pitch Northwind Logistics, across the table from Dan Ellison (COO), Theo Lindqvist and Ines Carvalho. Twelve pages ship in full and the rest of the 95 are listed. Open `examples/northwind-sample/index.html`; it makes no network calls. [`rooms/northwind/`](rooms/northwind/) is the same counterparty as a source room, to show how the engine renders one.
 
 ```sh
-npm test                # 224 tests
+npm test                # 275 tests
 npm run build           # every room into site/ (a room failing its form check is refused; --draft builds it anyway)
 npm run lint            # depth score per room
 npm run preview         # http://localhost:8888, no password
