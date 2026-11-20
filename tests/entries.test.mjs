@@ -167,3 +167,33 @@ test("regrade: every agent-origin row goes back to its claim and through the two
     rmSync(base, { recursive: true, force: true });
   }
 });
+
+test("AI slots: a none-found entry is refused at submit time and does not clear the slot in the check", () => {
+  const base = mkdtempSync(join(tmpdir(), "ai-none-"));
+  try {
+    const dir = fixtureRoom(base, { rows: [scriptTitle] });
+    assert.throws(() => submitEntry(dir, { bucket: "persona.verdict", person: "jane-doe", none: "nothing public on how she judges vendors" }), /cannot take a "none found" entry/);
+    assert.throws(() => submitEntry(dir, { bucket: "start.summary", none: "not enough to summarise" }), /cannot take a "none found" entry/);
+    // a fact bucket still takes one
+    assert.equal(submitEntry(dir, { bucket: "life.weekends", person: "jane-doe", none: "DDG weekend sailing" }).row.grade, "n");
+
+    // a none-found row on an AI slot written before the refusal (or by hand) is not counted
+    const f = join(dir, "work", "osint", "jane-doe", "ledger.jsonl");
+    writeFileSync(f, readFileSync(f, "utf8") + JSON.stringify({ id: "L-0099", module: "agent", origin: "agent", bucket: "persona.verdict", var: "persona.verdict", entry: "ai", value: "None found", grade: "n", note: "nothing public" }) + "\n");
+    let form = roomForm(dir, { moduleVars: MV });
+    const verdict = form.buckets.find((b) => b.key === "jane-doe/persona.verdict");
+    assert.equal(verdict.state, "empty");
+    assert.equal(verdict.aiOpen, true, "the slot still reads Not written yet");
+    let gate = formGate(form);
+    assert.ok(gate.errors.some((e) => /required AI slot "Verdict: Proven, Mixed or Unproven" \(Jane Doe\) \[persona.verdict\] is not written/.test(e)), gate.errors.join("\n"));
+
+    // a real judgement with citations clears it
+    submitEntry(dir, { bucket: "persona.verdict", person: "jane-doe", value: "Mixed: the seat is on file, the scale claim is not", cites: "L-0001" });
+    form = roomForm(dir, { moduleVars: MV });
+    assert.equal(form.buckets.find((b) => b.key === "jane-doe/persona.verdict").state, "filled");
+    gate = formGate(form);
+    assert.ok(!gate.errors.some((e) => /persona.verdict/.test(e)), gate.errors.join("\n"));
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});

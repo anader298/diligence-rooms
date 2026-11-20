@@ -15,7 +15,9 @@ the research ledgers. AI never writes a bucket's state. The full list is in
   - No tool yet: no module feeds the bucket and nobody handed in an entry.
 - **Entries**: `npm run entry -- <slug> --bucket <id> [--person <slug>] --value ... --url ...`. You
   can also pass `--none "<what was searched>"`, or for an AI slot `--cites L-0003,...`. Code grades
-  every entry with the two-source rule, so an agent cannot write Verified.
+  every entry with the two-source rule, so an agent cannot write Verified. An AI slot only takes a
+  judgement with citations: `--none` is refused there, and a required AI slot with no such entry
+  fails the check.
 - **Check**: `npm run form -- <slug> --check`. `run-room` runs it before the build and stops there
   if it fails. Add `--draft` to build anyway.
 - **Look**: `npm run form -- <slug>` shows every bucket with its state. The built room has an "On

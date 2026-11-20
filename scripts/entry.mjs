@@ -11,6 +11,7 @@
 //
 // --weak: identity not confirmed, or one unconfirmed source (kept at Weak).
 // --none "<what was searched>": searched, nothing found (the bucket shows as searched and empty).
+//   Not on an AI slot: those take a judgement with --cites, and a none-found entry is refused.
 // --cites: for AI judgement slots, the ledger ids the text rests on (bare L-0001 = this bucket's
 // ledger: the person's, or _company for company buckets). Every id must exist.
 // Prints the ledger id and the grade the code gave it.

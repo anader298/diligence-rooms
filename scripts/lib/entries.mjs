@@ -2,8 +2,9 @@
 // value, the source URL and a note; it goes into the same ledger as the script rows and through
 // the same two-source rule (scripts/osint/weights.mjs). An agent never sets a grade: it may ask
 // for Verified, and the row keeps it only when a second, independent source agrees. An agent's row
-// is never a primary record: code marks it origin "agent". AI judgement slots (kind "ai") hold text that cites the ledger ids it
-// rests on; every id must exist.
+// is never a primary record: code marks it origin "agent". AI judgement slots (kind "ai") hold
+// text that cites the ledger ids it rests on; every id must exist, and a "none found" entry is
+// refused on them.
 //
 //   submitEntry(roomDir, { bucket, person, value, url, note, none, weak, cites, date })
 //     -> { row, bucket, ledger, warnings }      throws on a bad entry, with the reason
@@ -76,6 +77,10 @@ export function submitEntry(roomDir, e, { formDir } = {}) {
   // origin "agent" is set here, by code: an entry is never a primary record
   const row = { bucket: inst.id, var: inst.vars[0] || inst.id, entry: inst.kind === "ai" ? "ai" : "fact", origin: "agent", tier: "C", date: e.date || null, note };
 
+  if (e.none && inst.kind === "ai") {
+    // an AI slot holds a judgement that cites the ledger; "none found" would clear it with no judgement written
+    throw new Error(`AI slot "${inst.label}" cannot take a "none found" entry: write the judgement with --value and --cites L-0003,... (the ledger rows it rests on), or leave it open`);
+  }
   if (e.none) {
     // a searched-and-empty entry: what was searched is the evidence
     const searched = String(e.none === true ? note || "" : e.none).trim();

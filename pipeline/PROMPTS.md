@@ -448,8 +448,10 @@ Read the ledger first (rooms/{{slug}}/work/osint/*/ledger.jsonl and the form pag
   npm run entry -- {{slug}} --bucket <id> [--person <slug>] --value "<judgement>" --cites <ids>
 --cites lists the ledger rows the judgement rests on (L-0003 in this person's ledger, or
 <ledger>/L-0003 elsewhere; company slots name the ledger). Code refuses an id that does not exist
-or that is itself an AI entry. A judgement with no evidence behind it is not written: hand in
---none "<what is missing>" instead. Persona slots are cold: never read our side for them.
+or that is itself an AI entry. A judgement with no evidence behind it is not written: leave the
+slot open and add a line to rooms/{{slug}}/work/questions.md saying what is missing. Code refuses
+--none on an AI slot, and a required AI slot left open fails the form check. Persona slots are
+cold: never read our side for them.
 The summary: under 120 words, who, what we want, three things that matter, the main risk.
 Then run npm run form -- {{slug}} --check and fix what it lists.
 ```

@@ -249,23 +249,26 @@ export function computeStates(insts, ledgers, { moduleVars = {}, intake = {} } =
     const base = { key: inst.key, id: inst.id, label: inst.label, page: inst.page, pageId: inst.pageId, group: inst.group, kind: inst.kind, pack: inst.pack, person: inst.person, personName: inst.personName, scope: inst.scope, required: !!inst.required, start: !!inst.start, hint: inst.hint || null, ledger: inst.ledger };
     const done = (state, extra = {}) => ({ ...base, state, grade: null, rows, refs: rows.map((r) => r.ref), why: null, ...extra });
 
-    // AI slots: an entry counts when every ledger id it cites exists.
+    // AI slots: an entry counts when it is an AI entry and every ledger id it cites exists. A
+    // "none found" row cannot clear an AI slot (entries.mjs refuses one; older ledgers may hold
+    // one): it is ignored, so the slot stays "not written" until a judgement with citations is in.
     if (inst.kind === "ai") {
-      const checked = rows.map((r) => {
+      const ignored = rows.filter((r) => NONE_GRADES.includes(r.grade) || (r.entry !== "ai" && !(r.cites || []).length));
+      const checked = rows.filter((r) => !ignored.includes(r)).map((r) => {
         const cites = r.cites || [];
         // a cite must be a row that exists and is evidence (not another AI entry)
         const bad = cites.filter((c) => {
           const hit = resolveRef(ledgers, c, r.ledger);
           return !hit || hit.entry === "ai";
         });
-        return { r, ok: cites.length > 0 && !bad.length, bad, none: NONE_GRADES.includes(r.grade) };
+        return { r, ok: cites.length > 0 && !bad.length, bad };
       });
-      const good = checked.filter((c) => c.ok && !c.none);
-      const bad = checked.flatMap((c) => c.bad.map((x) => ({ row: c.r.ref, cite: x }))).concat(checked.filter((c) => !c.none && !(c.r.cites || []).length).map((c) => ({ row: c.r.ref, cite: "(none)" })));
-      if (good.length) return done("filled", { grade: "i", rows: good.map((c) => c.r), refs: good.map((c) => c.r.ref), badCites: bad });
-      const none = checked.find((c) => c.none);
-      if (none) return done("empty", { why: none.r.note || none.r.value, badCites: bad });
-      return done("empty", { why: rows.length ? "AI entry cites ledger ids that do not exist" : "no AI entry yet", badCites: bad, aiOpen: true });
+      const good = checked.filter((c) => c.ok);
+      const bad = checked.flatMap((c) => c.bad.map((x) => ({ row: c.r.ref, cite: x }))).concat(checked.filter((c) => !(c.r.cites || []).length).map((c) => ({ row: c.r.ref, cite: "(none)" })));
+      const noneRows = ignored.filter((r) => NONE_GRADES.includes(r.grade)).map((r) => r.ref);
+      if (good.length) return done("filled", { grade: "i", rows: good.map((c) => c.r), refs: good.map((c) => c.r.ref), badCites: bad, noneRows });
+      const why = checked.length ? "AI entry cites ledger ids that do not exist" : noneRows.length ? "a none-found entry does not count on an AI slot: write the judgement and cite the ledger rows it rests on" : "no AI entry yet";
+      return done("empty", { why, rows: [], refs: [], badCites: bad, aiOpen: true, noneRows });
     }
 
     const fill = rows.filter((r) => FILL_GRADES.includes(r.grade));
@@ -349,6 +352,7 @@ export function roomForm(roomDir, opts = {}) {
  *  - every required bucket has a real state: not "no tool yet", not "the scripted pass has not run"
  *  - every Start here bucket is filled
  *  - every AI entry cites ledger ids that exist
+ *  - a required AI slot holds an AI entry with citations (a "none found" does not count)
  */
 export function formGate(form) {
   if (!form) return { ok: false, errors: ["no form: the scripted pass has not run (rooms/<slug>/work/osint/ is empty)"], warnings: [] };
@@ -359,7 +363,8 @@ export function formGate(form) {
     if (b.start && b.state !== "filled") errors.push(`Start here: "${b.label}"${who} is not filled (${stateLabel(b)}${b.why ? `: ${b.why}` : ""})`);
     else if (b.required && b.state === "no-tool") errors.push(`required bucket "${b.label}"${who} [${b.id}] has no tool and no entry: hand in an entry or a "none found" with what was searched`);
     else if (b.required && b.state === "blocked" && /has not run/.test(b.why || "")) errors.push(`required bucket "${b.label}"${who} [${b.id}]: the scripted pass has not run`);
-    else if (b.required && b.kind === "ai" && b.aiOpen) errors.push(`required AI slot "${b.label}"${who} [${b.id}] is not written`);
+    else if (b.required && b.kind === "ai" && b.aiOpen) errors.push(`required AI slot "${b.label}"${who} [${b.id}] is not written${b.noneRows?.length ? ` (a none-found entry does not count on an AI slot: ${b.noneRows.join(", ")})` : ""}`);
+    if (b.kind === "ai" && b.noneRows?.length && !(b.required && b.aiOpen)) form.warnings.push(`AI slot "${b.label}"${who} [${b.id}]: none-found entr${b.noneRows.length === 1 ? "y" : "ies"} ${b.noneRows.join(", ")} ignored; an AI slot holds a judgement with citations`);
     for (const c of b.badCites || []) errors.push(`AI entry ${c.row} in "${b.label}"${who} cites ${c.cite}, which is not an evidence row in any ledger`);
   }
   for (const r of form.other) if (r.unknownBucket) form.warnings.push(`ledger row ${r.ref} names bucket "${r.bucket}", which no selected pack has; shown under Other findings`);
