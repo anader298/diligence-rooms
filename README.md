@@ -10,7 +10,7 @@ Due diligence on a company and the people you are about to meet. Type who you ar
 
 **Case study:** [How a private room prepares you for the people across the table](https://dandoungroup.com/case-studies/#diligence)
 
-**See it:** [the sample room](https://anader298.github.io/diligence-rooms/sample/) · [the map of the code](https://anader298.github.io/diligence-rooms/map/)
+**See it:** **STATIC SAMPLE** [the sample room](https://anader298.github.io/diligence-rooms/sample/) · [the map of the code](https://anader298.github.io/diligence-rooms/map/)
 
 **Run it yourself:** clone it, connect your own Claude Code or Codex, and build rooms on your machine ([Launch it](#launch-it-on-your-machine)). Tested from a fresh download on 19 November 2026: a light room on a public company, built unattended with Claude Code, passed the depth check (sources and page count) at 100/100 (57 pages, 324 sources).
 
