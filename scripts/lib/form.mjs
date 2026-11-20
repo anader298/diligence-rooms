@@ -294,8 +294,9 @@ export function computeStates(insts, ledgers, { moduleVars = {}, intake = {} } =
     if (!feed.length) return done("no-tool", { why: inst.hint ? `no module feeds it; where to look: ${inst.hint}` : "no module feeds it; an agent can hand in an entry" });
     const reports = Ls.flatMap((L) => L.modules.filter((m) => feed.includes(m.id)));
     // A module that ran but could not check this bucket's vars (its miss on them is blocked: a
-    // failed call, no key) did not search them, whatever its overall status.
-    const couldNot = new Set(blockedMisses.filter((m) => !misses.some((x) => x.module === m.module && !isBlockedMiss(x))).map((m) => m.module));
+    // failed call, no key) did not search them, whatever its overall status. A per-platform bucket
+    // (match) goes by the modules: a blocked miss on the whole var may be another platform's.
+    const couldNot = new Set(inst.match ? [] : blockedMisses.filter((m) => !misses.some((x) => x.module === m.module && !isBlockedMiss(x))).map((m) => m.module));
     const ranOk = reports.filter((m) => !BLOCKED_STATUS.has(m.status) && !couldNot.has(m.id));
     if (ranOk.length) return done("empty", { why: `searched by ${[...new Set(ranOk.map((m) => m.id))].join(", ")}: nothing found` });
     if (blockedMisses.length) return done("blocked", { why: [...new Set(blockedMisses.map((m) => `${m.module}: ${m.searched}`))].join("; ") });
