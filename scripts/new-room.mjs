@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 // Compose a new room from the skeleton.
 //
-//   npm run new-room -- --company "Acme Capital" --person "Jane Doe" [--person "John Roe"]
+//   npm run new-room -- --company "Acme Capital" [--domain acme.com] --person "Jane Doe" [--person "John Roe"]
 //                       --goal "negotiate a licence" [--mode deal] [--mode audit]
 //                       [--org private-equity] [--date 2026-12-01] [--tier light] [--slug acme]
 //                       [--meeting "2026-12-08 14:00|Round 2|Jane Doe, John Roe|video|60 min"]...
 //                       [--deadline "2026-12-03|Send the case deck|submission"]...
 //
 // --mode can repeat; when it is missing the modes are read from the goal text.
+// --domain is passed to the scripted OSINT pass (five company modules need it).
+// --practice adds the optional practice pages (answer bank, practice bank, push-back gym, mocks).
 // --person can repeat or hold several names separated by commas.
 // Writes rooms/<slug>/room.json, pages/, intake.json, and RUN.sh with the
 // pipeline command (it does not run it). Refuses to overwrite a room.
@@ -16,7 +18,7 @@
 import { parseArgs } from "node:util";
 import { composeRoom, writeRunScript, MODES, ORG_TYPES } from "./lib/compose.mjs";
 
-const usage = `usage: npm run new-room -- --company "Acme Capital" --person "Jane Doe" --goal "negotiate a licence"
+const usage = `usage: npm run new-room -- --company "Acme Capital" [--domain acme.com] --person "Jane Doe" --goal "negotiate a licence" [--practice]
                             [--mode ${MODES.join("|")}]... [--org auto|${ORG_TYPES.join("|")}]
                             [--date YYYY-MM-DD] [--tier full|light] [--slug acme-capital]
                             [--meeting "YYYY-MM-DD HH:MM|title|who|format|length"]...
@@ -28,6 +30,8 @@ try {
     allowPositionals: true,
     options: {
       company: { type: "string" },
+      domain: { type: "string" },
+      practice: { type: "boolean", default: false },
       person: { type: "string", multiple: true },
       goal: { type: "string" },
       mode: { type: "string", multiple: true },
@@ -61,6 +65,8 @@ if (!values.company) {
 try {
   const r = composeRoom({
     company: values.company,
+    domain: values.domain,
+    practice: values.practice,
     people: values.person || [],
     goal: values.goal || "",
     modes: (values.mode || []).flatMap((m) => m.split(",")),

@@ -1,0 +1,41 @@
+{
+  "note": "Optional practice pack, off by default (studio: Practice; CLI: --practice). The page templates stay in core/pages.",
+  "sections": [
+    {
+      "id": "drills",
+      "title": "Practice",
+      "group": "role",
+      "brief": {
+        "level": "Drill",
+        "bullets": [
+          "A short answer bank, graded by someone other than the writer.",
+          "A few push-backs and one mock in the personas' voices."
+        ],
+        "hold": "The answer to the question we fear most."
+      },
+      "pages": [
+        {
+          "id": "answer-bank",
+          "title": "Answer bank",
+          "blurb": "About 20 questions answered in the first person, graded independently."
+        },
+        {
+          "id": "practice-bank",
+          "title": "Practice bank",
+          "blurb": "Run sheet, questions in their voices, push-back drills, grading rule."
+        },
+        {
+          "id": "push-back-gym",
+          "title": "Push-back gym",
+          "blurb": "Vague prompts, push-backs and 'what else' moments, with a score sheet."
+        },
+        {
+          "id": "mock-transcripts",
+          "title": "Mock transcripts",
+          "blurb": "A short screen, the full meeting, the worst case, one-breath lines."
+        }
+      ]
+    }
+  ],
+  "personSections": []
+}

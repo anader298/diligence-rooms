@@ -4,9 +4,11 @@ import { join } from "node:path";
 import { readPageBody, pageFile } from "./pages.mjs";
 import { sha256, PERSON_PAGES, RENAMED_PAGES } from "./compose.mjs";
 
+// Glossary and answer-bank targets were cut (250 -> 40, 150 -> 20): the practice pages are an
+// optional pack now, and the answer-bank count is only checked when a room has one.
 export const TARGETS = {
-  full: { pages: 40, sources: 150, gradedShare: 0.7, glossary: 250, answers: 150 },
-  light: { pages: 10, sources: 40, gradedShare: 0.6, glossary: 60, answers: 40 },
+  full: { pages: 40, sources: 150, gradedShare: 0.7, glossary: 40, answers: 20 },
+  light: { pages: 10, sources: 40, gradedShare: 0.6, glossary: 20, answers: 10 },
 };
 /**
  * Personal life rows checked per person (STANDARD.md sec. 11). Counted from the OSINT log's
@@ -166,7 +168,7 @@ export function lintRoom(roomDir, opts = {}) {
     check("unique sources", r.sources, T.sources),
     check("verified + partly share", Math.round(r.gradedShare * 100) / 100, T.gradedShare),
     check("glossary rows", r.glossaryRows, T.glossary),
-    check("answer bank items", r.answerItems, T.answers),
+    ...(answerPages.length ? [check("answer bank items", r.answerItems, T.answers)] : []),
     check("pages still skeleton", r.skeleton.length, 0, true),
     check("pages with no source link", r.noSource.length, 0, true),
     check("checklist rows with no grade", r.checklist.length, 0, true),

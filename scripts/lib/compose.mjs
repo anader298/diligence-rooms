@@ -6,6 +6,7 @@
 //   templates/skeleton/core/person/<id>.html     per-person pages (id holds __PERSON_SLUG__)
 //   templates/skeleton/modes/<mode>/pack.json    + pages/   interviewing | deal | audit | pitch
 //   templates/skeleton/orgtypes/<type>/pack.json + pages/   asset-owner | private-equity | ...
+//   templates/skeleton/extras/<name>/pack.json   optional packs, off by default (practice)
 //
 // If core/ is not there, the older flat skeleton (templates/skeleton/room.json +
 // pages/) is used as the core and its "persona" page is repeated per person.
@@ -21,6 +22,8 @@ import { createHash } from "node:crypto";
 export const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const MODES = ["interviewing", "deal", "audit", "pitch"];
 export const ORG_TYPES = ["asset-owner", "private-equity", "public-company", "consultancy", "health-system", "government", "startup", "energy", "other"];
+/** Optional page packs (templates/skeleton/extras/<name>), off unless asked for. */
+export const EXTRAS = ["practice"];
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,40}$/;
 /** The per-person page ids, in order (each becomes <id>-<person slug>). */
 export const PERSON_PAGES = ["persona", "interests", "socials", "partner-socials", "linkedin", "education", "writing", "names", "own-words", "network", "public-record", "financials", "timeline", "relate"];
@@ -179,12 +182,12 @@ export function availableOptions(skeletonDir) {
     const found = readdirSync(p, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(join(p, e.name, "pack.json"))).map((e) => e.name);
     return found.length ? [...fallback.filter((x) => found.includes(x)), ...found.filter((x) => !fallback.includes(x))] : fallback;
   };
-  return { modes: list("modes", MODES), orgTypes: list("orgtypes", ORG_TYPES), layout: skeletonLayout(skeletonDir) };
+  return { modes: list("modes", MODES), orgTypes: list("orgtypes", ORG_TYPES), extras: list("extras", EXTRAS), layout: skeletonLayout(skeletonDir) };
 }
 
 /**
  * Compose a room in memory and write it to <roomsDir>/<slug>/.
- * opts: { company, people[], goal, modes[], orgType, date, slug, tier, now }
+ * opts: { company, domain, people[], goal, modes[], orgType, date, slug, tier, practice, now }
  * paths: { skeletonDir, roomsDir, configDir }
  */
 export function composeRoom(opts, paths = {}) {
@@ -196,6 +199,8 @@ export function composeRoom(opts, paths = {}) {
   const company = String(opts.company || "").replace(/\s+/g, " ").trim();
   if (!company) throw new Error("company is required");
   const goal = String(opts.goal || "").trim();
+  const domain = normDomain(opts.domain);
+  if (opts.domain && !domain) warnings.push(`domain "${opts.domain}" does not look like a domain (acme.com); left out`);
   const slug = opts.slug ? String(opts.slug) : slugify(company);
   if (!SLUG_RE.test(slug)) throw new Error(`cannot make a room slug from "${company}"; pass --slug (lower-case letters, digits, dashes)`);
   const dir = join(roomsDir, slug);
@@ -268,7 +273,9 @@ export function composeRoom(opts, paths = {}) {
 
   // 2. packs: modes in order, then the org type, inserted right after the core
   //    section "ask" (at the end if there is none). Same section id = pages merged in.
-  const packs = layout === "packs" ? [...modes.map((m) => ["modes", m]), ["orgtypes", orgType]] : [];
+  // The practice pack (answer bank, practice bank, push-back gym, mock transcripts) is opt-in.
+  const extras = opts.practice === true || opts.practice === "true" ? ["practice"] : [];
+  const packs = layout === "packs" ? [...modes.map((m) => ["modes", m]), ["orgtypes", orgType], ...extras.map((x) => ["extras", x])] : [];
   if (layout === "flat") warnings.push("skeleton has no core/modes/orgtypes yet: used the flat skeleton only");
   const added = [];
   for (const [kind, name] of packs) {
@@ -279,7 +286,7 @@ export function composeRoom(opts, paths = {}) {
     }
     const pack = readJson(join(pdir, "pack.json"));
     // Mode packs sit under the role group, org-type packs under the company group.
-    const packGroup = kind === "modes" ? "role" : "company";
+    const packGroup = kind === "orgtypes" ? "company" : "role";
     for (const ps0 of pack.sections || []) {
       const ps = { ...ps0, group: ps0.group || packGroup };
       const pages = (ps.pages || []).map((p) => ({ ...p, _dirs: [join(pdir, "pages"), ...coreDirs] }));
@@ -343,6 +350,7 @@ export function composeRoom(opts, paths = {}) {
   room.modes = modes;
   room.orgType = orgType;
   room.tier = tier;
+  if (domain) room.domain = domain;
   const ourSideFile = join(configDir, "our-side.json");
   if (existsSync(ourSideFile)) {
     try {
@@ -363,8 +371,10 @@ export function composeRoom(opts, paths = {}) {
     people: people.map(({ name, slug: s }) => ({ name, slug: s })),
     person: people[0].name,
     company,
+    domain: domain || null,
     goal,
     modes,
+    practice: extras.includes("practice"),
     modesInferred: !modesGiven.length,
     orgType,
     orgTypeInferred: orgRaw === "auto",
@@ -407,6 +417,12 @@ export function composeRoom(opts, paths = {}) {
     throw e;
   }
   return { slug, dir, room, intake, pageCount: plan.length, warnings };
+}
+
+/** "https://www.Acme.com/about" -> "acme.com"; "" when it does not look like a domain. */
+export function normDomain(x) {
+  const d = String(x || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/[\/?#].*$/, "");
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d) ? d : "";
 }
 
 function findSource(rawId, fileHint, dirs) {
@@ -462,6 +478,7 @@ export function fillPrompt(text, intake, slug, ours = {}) {
   const vals = {
     rawline: intake.raw_line || [intake.people.map((p) => p.name).join(", "), intake.company, intake.goal].filter(Boolean).join(" | "),
     counterparty: intake.company,
+    domain: intake.domain || "not given",
     theask: intake.goal,
     today: (intake.createdAt || new Date().toISOString()).slice(0, 10),
     ourname: ours.name || "(config/our-side.json: name)",

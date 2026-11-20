@@ -36,6 +36,13 @@ if (why) {
   process.exit(2);
 }
 
+const roomJson = () => {
+  try {
+    return JSON.parse(readFileSync(join(roomDir, "room.json"), "utf8"));
+  } catch {
+    return {};
+  }
+};
 const stamp = () => new Date().toISOString().slice(11, 19);
 const say = (msg) => console.log(`[run ${stamp()}] ${msg}`);
 const usage = { pct: cfg.test?.usagePct ?? null, window: cfg.test?.usageWindow ?? null };
@@ -71,7 +78,10 @@ function finish(code, extra = {}) {
     const args = [join(REPO, "scripts", "osint.mjs"), "--name", p.name, "--out", out];
     const company = intakeEarly.company;
     if (company) args.push("--company", company);
-    if (intakeEarly.domain) args.push("--domain", intakeEarly.domain);
+    // The domain comes from the intake (studio Website field, new-room --domain); rooms made
+    // before it existed may carry it in room.json. Without it the five domain modules skip.
+    const domain = intakeEarly.domain || roomJson().domain;
+    if (domain) args.push("--domain", domain);
     if (p.title) args.push("--title", p.title);
     const r = spawnSync(process.execPath, args, { cwd: REPO, encoding: "utf8", timeout: 240000 });
     console.log(((r.stdout || "") + (r.stderr || "")).trim().split("\n").map((l) => "[osint] " + l).join("\n"));

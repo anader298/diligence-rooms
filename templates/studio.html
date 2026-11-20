@@ -168,6 +168,7 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
 <form class="bar" id="bar" autocomplete="off" novalidate>
   <label><small>Person</small><input id="people" name="people" placeholder="Dan Ellison, Theo Lindqvist" spellcheck="false" aria-label="Person or people, comma-separated"></label>
   <label><small>Company</small><input id="company" name="company" placeholder="Northwind Logistics" spellcheck="false" aria-label="Their company" required></label>
+  <label><small>Website</small><input id="domain" name="domain" placeholder="northwind.example" spellcheck="false" aria-label="Their website domain (optional; five company checks need it)"></label>
   <label class="goal"><small>What you want to do</small><input id="goal" name="goal" placeholder="pitch a network-planning analytics contract" aria-label="What you want to do"></label>
   <button type="submit" id="go">Start</button>
 </form>
@@ -176,6 +177,7 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
   <div class="grp"><span class="lbl" id="modelbl">Mode</span><div class="chips" id="modes" role="group" aria-labelledby="modelbl"></div><span class="auto" id="modeauto"></span></div>
   <div class="grp"><label class="lbl" for="org">Org type</label><select id="org"></select></div>
   <div class="grp"><label class="lbl" for="tier">Depth</label><select id="tier"><option value="full">full</option><option value="light">light</option></select></div>
+  <div class="grp"><label class="lbl" for="practice">Practice pages</label><input type="checkbox" id="practice" aria-describedby="practicehint"><span class="auto" id="practicehint">answer bank, drills, mocks (off by default)</span></div>
 </div>
 <div class="sched">
   <fieldset id="mtgs"><legend>Meetings</legend>
@@ -318,7 +320,7 @@ table.rooms .sub{color:var(--mut);font-size:.78rem}
     var sched = readRows();
     var go = $("go"); go.disabled = true; go.textContent = "Starting…";
     api("/api/start", {
-      people: $("people").value, company: $("company").value, goal: $("goal").value,
+      people: $("people").value, company: $("company").value, domain: $("domain").value, goal: $("goal").value, practice: $("practice").checked,
       modes: state.picked.length ? state.picked : [], orgType: $("org").value, tier: $("tier").value,
       date: (sched.meetings[0] || {}).date || "", meetings: sched.meetings, deadlines: sched.deadlines
     }).then(showResult, function (err) {

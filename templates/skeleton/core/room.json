@@ -348,37 +348,17 @@
     },
     {
       "id": "drills",
-      "title": "Answers, drills and vocabulary",
+      "title": "Vocabulary",
       "group": "role",
       "brief": {
-        "level": "Drill",
+        "level": "Reference",
         "bullets": [
-          "Answers graded by someone other than the writer.",
-          "Push-backs and mocks in the personas' voices."
+          "Their words, in plain English.",
+          "The terms to use back, and the ones to avoid."
         ],
-        "hold": "The answer to the question we fear most."
+        "hold": "The three terms they use most."
       },
       "pages": [
-        {
-          "id": "answer-bank",
-          "title": "Answer bank",
-          "blurb": "100 to 200 questions answered in the first person, graded independently."
-        },
-        {
-          "id": "practice-bank",
-          "title": "Practice bank",
-          "blurb": "Run sheet, questions in their voices, push-back drills, grading rule."
-        },
-        {
-          "id": "push-back-gym",
-          "title": "Push-back gym",
-          "blurb": "Vague prompts, push-backs and 'what else' moments, with a score sheet."
-        },
-        {
-          "id": "mock-transcripts",
-          "title": "Mock transcripts",
-          "blurb": "A short screen, the full meeting, the worst case, one-breath lines."
-        },
         {
           "id": "glossary",
           "title": "Glossary",

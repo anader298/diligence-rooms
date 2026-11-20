@@ -342,6 +342,8 @@ const server = createServer(async (req, res) => {
       if (path === "/api/start") {
         const r = composeRoom({
           company: body.company,
+          domain: typeof body.domain === "string" ? body.domain.slice(0, 120) : "",
+          practice: body.practice === true,
           people: body.people,
           goal: body.goal,
           modes: Array.isArray(body.modes) ? body.modes : [],
