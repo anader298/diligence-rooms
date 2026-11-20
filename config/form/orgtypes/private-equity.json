@@ -1,0 +1,12 @@
+{
+  "id": "orgtypes/private-equity",
+  "label": "Private equity",
+  "scope": "company",
+  "buckets": [
+    {"id": "pe.funds", "label": "Funds and vintages", "page": "fund-history", "group": "Funds", "kind": "list", "required": true, "hint": "Form D, Form ADV, LP reports from public pensions"},
+    {"id": "pe.filings", "label": "Form D and ADV filings", "page": "fund-history", "group": "Funds", "kind": "list", "vars": ["co.filings"]},
+    {"id": "pe.portfolio", "label": "Portfolio companies", "page": "portfolio", "group": "Portfolio", "kind": "list", "vars": ["co.structure"]},
+    {"id": "pe.exits", "label": "Exits", "page": "exits", "group": "Exits", "kind": "list", "vars": ["co.ma"]},
+    {"id": "pe.pattern", "label": "Their pattern", "page": "exits", "group": "AI judgement", "kind": "ai"}
+  ]
+}

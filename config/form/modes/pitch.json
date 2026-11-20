@@ -1,0 +1,18 @@
+{
+  "id": "modes/pitch",
+  "label": "Pitch",
+  "scope": "company",
+  "buckets": [
+    {"id": "pitch.problem", "label": "Their problem we solve", "page": "fit-map", "group": "Fit", "kind": "list", "vars": ["fit.problem"]},
+    {"id": "pitch.deal_size", "label": "Deal size (estimate)", "page": "fit-map", "group": "Fit", "kind": "fact", "vars": ["fit.deal_size", "est.deal_size"]},
+    {"id": "pitch.fit", "label": "Fit: Strong, Partial or Gap", "page": "fit-map", "group": "AI judgement", "kind": "ai", "required": true},
+    {"id": "pitch.who_buys", "label": "Who signs", "page": "buying-path", "group": "Buying path", "kind": "fact", "vars": ["fit.who_buys"]},
+    {"id": "pitch.timing", "label": "Timing", "page": "buying-path", "group": "Buying path", "kind": "fact", "vars": ["fit.timing", "est.decision_window"]},
+    {"id": "pitch.budget_cycle", "label": "Budget cycle", "page": "buying-path", "group": "Buying path", "kind": "fact", "vars": ["co.budget_cycle"]},
+    {"id": "pitch.priorities", "label": "Their stated priorities", "page": "their-priorities", "group": "Priorities", "kind": "list", "vars": ["co.growth_line"]},
+    {"id": "pitch.purchases", "label": "Recent purchases", "page": "their-priorities", "group": "Priorities", "kind": "list", "hint": "Vendor case studies naming them, procurement notices, press"},
+    {"id": "pitch.hiring", "label": "Hiring as a buying signal", "page": "their-priorities", "group": "Priorities", "kind": "list", "vars": ["co.hiring"]},
+    {"id": "pitch.incumbents", "label": "Incumbent vendors and contract dates", "page": "incumbents", "group": "Incumbents", "kind": "list", "hint": "Vendor logo walls, job posts naming tools, DNS records"},
+    {"id": "pitch.objections", "label": "Buyer objections", "page": "buyer-objections", "group": "AI judgement", "kind": "ai"}
+  ]
+}

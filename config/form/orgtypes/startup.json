@@ -1,0 +1,13 @@
+{
+  "id": "orgtypes/startup",
+  "label": "Startup",
+  "scope": "company",
+  "buckets": [
+    {"id": "st.founders", "label": "Founders", "page": "founders", "group": "Founders", "kind": "list", "vars": ["co.leadership"]},
+    {"id": "st.rounds", "label": "Funding rounds", "page": "funding-rounds", "group": "Funding", "kind": "list", "required": true, "hint": "Form D, press releases, investor portfolio pages"},
+    {"id": "st.investors", "label": "Investors", "page": "funding-rounds", "group": "Funding", "kind": "list", "vars": ["co.owners"]},
+    {"id": "st.traction", "label": "Traction claims", "page": "product-and-traction", "group": "Traction", "kind": "list", "vars": ["co.kpis", "co.arr"]},
+    {"id": "st.hiring", "label": "Hiring pace", "page": "product-and-traction", "group": "Traction", "kind": "list", "vars": ["co.hiring"]},
+    {"id": "st.footprint", "label": "Web footprint", "page": "product-and-traction", "group": "Traction", "kind": "list", "vars": ["co.domains"]}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "orgtypes/consultancy",
+  "label": "Consultancy",
+  "scope": "company",
+  "buckets": [
+    {"id": "cs.cases", "label": "Client cases", "page": "client-cases", "group": "Cases", "kind": "list"},
+    {"id": "cs.insights", "label": "Insights and papers", "page": "insights-index", "group": "Insights", "kind": "list", "vars": ["voice.writing"]},
+    {"id": "cs.method", "label": "Their method", "page": "method", "group": "AI judgement", "kind": "ai"}
+  ]
+}

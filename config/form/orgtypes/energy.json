@@ -1,0 +1,9 @@
+{
+  "id": "orgtypes/energy",
+  "label": "Energy",
+  "scope": "company",
+  "buckets": [
+    {"id": "en.assets", "label": "Assets", "page": "assets", "group": "Assets", "kind": "list"},
+    {"id": "en.filings", "label": "Regulatory filings and enforcement", "page": "regulatory-filings", "group": "Filings", "kind": "list", "vars": ["co.filings", "co.enforcement"]}
+  ]
+}

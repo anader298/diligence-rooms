@@ -1,0 +1,10 @@
+{
+  "id": "orgtypes/government",
+  "label": "Government",
+  "scope": "company",
+  "buckets": [
+    {"id": "gov.budget", "label": "Budget", "page": "budget", "group": "Budget", "kind": "list"},
+    {"id": "gov.procurement", "label": "Procurement history", "page": "procurement-history", "group": "Procurement", "kind": "list", "vars": ["co.gov"]},
+    {"id": "gov.statute", "label": "Statute and authority", "page": "statute-and-authority", "group": "Authority", "kind": "list"}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "orgtypes/health-system",
+  "label": "Health system",
+  "scope": "company",
+  "buckets": [
+    {"id": "hs.quality", "label": "CMS quality ratings", "page": "cms-and-quality", "group": "Quality", "kind": "list"},
+    {"id": "hs.community", "label": "Community benefit (990 Schedule H)", "page": "community-benefit", "group": "Community", "kind": "list", "vars": ["co.facts"]},
+    {"id": "hs.area", "label": "Service area", "page": "service-area", "group": "Area", "kind": "list"}
+  ]
+}

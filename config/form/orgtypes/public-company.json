@@ -1,0 +1,13 @@
+{
+  "id": "orgtypes/public-company",
+  "label": "Public company",
+  "scope": "company",
+  "buckets": [
+    {"id": "pub.segments", "label": "Segment results", "page": "segments", "group": "Segments", "kind": "list", "vars": ["co.segments"], "required": true},
+    {"id": "pub.quarter", "label": "Last quarter", "page": "segments", "group": "Segments", "kind": "fact", "vars": ["co.quarter"]},
+    {"id": "pub.peers", "label": "Against peers", "page": "segments", "group": "Segments", "kind": "list", "vars": ["co.peers"]},
+    {"id": "pub.calls", "label": "What management says on calls", "page": "earnings-language", "group": "Calls", "kind": "list", "vars": ["voice.quotes", "voice.priorities"]},
+    {"id": "pub.risks", "label": "Risk factors and litigation", "page": "risk-factors", "group": "Risks", "kind": "list", "vars": ["co.legal"]},
+    {"id": "pub.owners", "label": "Top holders", "page": "risk-factors", "group": "Risks", "kind": "list", "vars": ["co.owners"]}
+  ]
+}

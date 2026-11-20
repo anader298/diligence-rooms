@@ -1,0 +1,13 @@
+{
+  "id": "modes/interviewing",
+  "label": "Interviewing",
+  "scope": "company",
+  "buckets": [
+    {"id": "iv.process", "label": "Rounds and format", "page": "process-intel", "group": "Process", "kind": "list", "required": true, "hint": "Glassdoor, PrepLounge, Fishbowl, Reddit; the recruiter guide"},
+    {"id": "iv.reports", "label": "Candidate and employee reports", "page": "process-intel", "group": "Process", "kind": "list", "vars": ["co.reviews"]},
+    {"id": "iv.postings", "label": "Comparable postings", "page": "role-scan", "group": "Role", "kind": "list", "vars": ["co.hiring"]},
+    {"id": "iv.read", "label": "What the role needs", "page": "role-scan", "group": "AI judgement", "kind": "ai"},
+    {"id": "iv.cases", "label": "Case and exercise types", "page": "case-shapes", "group": "Cases", "kind": "list"},
+    {"id": "iv.judges", "label": "What each interviewer judges", "page": "case-shapes", "group": "AI judgement", "kind": "ai"}
+  ]
+}

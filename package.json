@@ -20,7 +20,9 @@
     "run-room": "node --env-file-if-exists=.env scripts/run-room.mjs",
     "enrich": "node --env-file-if-exists=.env scripts/enrich.mjs",
     "lint": "node scripts/lint.mjs",
-    "osint": "node --env-file-if-exists=.env scripts/osint.mjs"
+    "osint": "node --env-file-if-exists=.env scripts/osint.mjs",
+    "form": "node scripts/form.mjs",
+    "entry": "node scripts/entry.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

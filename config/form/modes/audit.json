@@ -1,0 +1,16 @@
+{
+  "id": "modes/audit",
+  "label": "Audit",
+  "scope": "company",
+  "buckets": [
+    {"id": "audit.claims", "label": "Claims they make about themselves", "page": "claims-register", "group": "Claims", "kind": "list", "required": true, "hint": "Their site, decks, press releases, filings"},
+    {"id": "audit.litigation", "label": "Litigation", "page": "red-flags", "group": "Record", "kind": "list", "vars": ["co.legal"]},
+    {"id": "audit.enforcement", "label": "Regulator actions", "page": "red-flags", "group": "Record", "kind": "list", "vars": ["co.enforcement"]},
+    {"id": "audit.sanctions", "label": "Sanctions screen", "page": "red-flags", "group": "Record", "kind": "list", "vars": ["rec.sanctions_detail"]},
+    {"id": "audit.liens", "label": "Liens and UCC", "page": "red-flags", "group": "Record", "kind": "list"},
+    {"id": "audit.exits", "label": "Key-person exits", "page": "red-flags", "group": "Record", "kind": "list", "vars": ["co.exec_changes"]},
+    {"id": "audit.related", "label": "Related parties", "page": "red-flags", "group": "Record", "kind": "list"},
+    {"id": "audit.financials", "label": "Reconstructed financials", "page": "financial-reconstruction", "group": "Numbers", "kind": "list", "vars": ["co.facts", "co.quarter"]},
+    {"id": "audit.read", "label": "Red-flag read", "page": "red-flags", "group": "AI judgement", "kind": "ai", "required": true}
+  ]
+}

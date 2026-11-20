@@ -1,0 +1,15 @@
+{
+  "id": "modes/deal",
+  "label": "Deal",
+  "scope": "company",
+  "buckets": [
+    {"id": "deal.history", "label": "Their past deals", "page": "their-deals", "group": "Deals", "kind": "list", "vars": ["co.ma"], "required": true},
+    {"id": "deal.pattern", "label": "Their deal pattern", "page": "their-deals", "group": "AI judgement", "kind": "ai"},
+    {"id": "deal.decision_path", "label": "Who signs, the committee, documents", "page": "decision-path", "group": "Decision", "kind": "list", "hint": "Board minutes, filings naming approvers, press on past approvals"},
+    {"id": "deal.window", "label": "Decision window (estimate)", "page": "decision-path", "group": "Decision", "kind": "fact", "vars": ["est.decision_window"]},
+    {"id": "deal.size", "label": "Deal size (estimate)", "page": "numbers", "group": "Numbers", "kind": "fact", "vars": ["est.deal_size", "fit.deal_size"]},
+    {"id": "deal.mandate", "label": "Their mandate criteria", "page": "mandate-fit", "group": "Fit", "kind": "list"},
+    {"id": "deal.batna", "label": "Alternatives, both sides", "page": "batna", "group": "AI judgement", "kind": "ai"},
+    {"id": "deal.objections", "label": "Likely objections", "page": "objections", "group": "AI judgement", "kind": "ai"}
+  ]
+}

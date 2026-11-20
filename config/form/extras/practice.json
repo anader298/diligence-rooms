@@ -1,0 +1,10 @@
+{
+  "id": "extras/practice",
+  "label": "Practice (optional)",
+  "scope": "company",
+  "optional": true,
+  "buckets": [
+    {"id": "practice.top_questions", "label": "The questions they will most likely ask", "page": "answer-bank", "group": "AI judgement", "kind": "ai"},
+    {"id": "practice.feared", "label": "The question we fear most", "page": "push-back-gym", "group": "AI judgement", "kind": "ai"}
+  ]
+}

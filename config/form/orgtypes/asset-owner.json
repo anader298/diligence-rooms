@@ -1,0 +1,10 @@
+{
+  "id": "orgtypes/asset-owner",
+  "label": "Asset owner",
+  "scope": "company",
+  "buckets": [
+    {"id": "ao.mandate", "label": "Mandate and screens", "page": "mandate-and-screens", "group": "Mandate", "kind": "list"},
+    {"id": "ao.reports", "label": "Accountability reports", "page": "accountability-reports", "group": "Reports", "kind": "list", "vars": ["co.filings"]},
+    {"id": "ao.proxy", "label": "Proxy voting and advocacy", "page": "proxy-and-advocacy", "group": "Advocacy", "kind": "list"}
+  ]
+}
