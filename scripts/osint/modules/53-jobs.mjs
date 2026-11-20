@@ -187,7 +187,7 @@ export default {
     const score = (j) => words.reduce((s, w) => s + (normName(j.title).includes(w) ? 3 : 0) + (normName(j.dept || "").includes(w) ? 2 : 0) + (normName(j.text || "").includes(w) ? 0.2 : 0), 0) + (/(director|head|vp|manager|lead)/i.test(j.title) ? 0.5 : 0);
     const ranked = [...jobs].map((j) => ({ ...j, s: score(j) })).sort((a, b) => b.s - a.s || String(b.date).localeCompare(String(a.date)));
     const near = ranked.filter((j) => j.s >= 1);
-    for (const j of (near.length ? near.slice(0, 10) : ranked.slice(0, 5))) add({ var: "co.hiring", value: `${j.title}${j.location ? " · " + j.location : ""}${j.dept ? " · " + j.dept : ""}`, url: j.url || res.url, grade, tier: "A", date: j.date ? String(j.date).slice(0, 10) : null, detail: { relevance: Math.round(j.s * 10) / 10 } });
+    for (const j of (near.length ? near.slice(0, 10) : ranked.slice(0, 5))) add({ var: "co.hiring", value: `${j.title}${j.location ? " · " + j.location : ""}${j.dept ? " · " + j.dept : ""}`, url: j.url || res.url, grade, tier: "A", anchors, date: j.date ? String(j.date).slice(0, 10) : null, detail: { relevance: Math.round(j.s * 10) / 10 } });
 
     // boards that list titles only (Paylocity, Jobvite, Workday): read the top postings' pages
     const thin = ranked.filter((j) => (j.text || "").length < 400 && j.url).slice(0, 8);

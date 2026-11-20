@@ -30,6 +30,22 @@ export function secBase(ctx) {
   return ctx.shared._sec;
 }
 
+/** Up to `max` characters ending at a sentence end (or a word end with "…"), never mid-word. */
+export function wholeSentences(text, max = 360) {
+  const t = String(text || "").replace(/^[-–;,.\s]+/, "").replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  // a sentence end, not an abbreviation ("Tessellate, Inc. ("Tessellate")", "Mr. Lund", "U.S. operations")
+  let end = -1;
+  for (const m of cut.matchAll(/[.;](?=\s)/g)) {
+    const before = cut.slice(Math.max(0, m.index - 6), m.index + 1);
+    if (/\b(Inc|Corp|Co|Ltd|LLC|L\.P|N\.A|Mr|Ms|Mrs|Dr|Jr|Sr|St|No|U\.S|vs|etc)\.$/i.test(before) || /\b[A-Z]\.$/.test(before)) continue;
+    end = m.index;
+  }
+  if (end > max * 0.4) return cut.slice(0, end + 1);
+  return cut.replace(/\s+\S*$/, "") + "…";
+}
+
 const titleCase = (s) => String(s || "").toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase());
 const ref = (shared, key, row) => {
   if (row?.id) (shared.refs ||= {})[key] = row.id;
@@ -76,14 +92,24 @@ const company = {
         const t = htmlText(r.text);
         const i = t.search(/Item\s*5\.02/i);
         const body = i >= 0 ? t.slice(i, i + 1600) : t.slice(0, 1600);
-        const lead = body.replace(/^Item\s*5\.02\.?\s*/i, "").replace(/^(?:Departure of Directors[^.]*?Officers|Election of Directors[^.]*?Officers|Appointment of Certain Officers[^.]*?Officers)\s*\.?\s*/i, "").replace(/^[;,.\s]+/, "");
+        // drop the item heading in any of its forms ("Departure of Directors or Certain Officers;
+        // Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of ...")
+        const lead = body
+          .replace(/^Item\s*5\.02\.?\s*/i, "")
+          .replace(/^[-–\s]*(?:(?:Departure of Directors or (?:Certain|Principal) Officers|Election of Directors|Appointment of (?:Certain|Principal) Officers|Compensatory Arrangements of Certain Officers)[;,.]?\s*)+/i, "")
+          .replace(/^\([a-f]\)\s*(?:Departure|Election|Appointment|Compensatory)[^.]{0,80}?(?:Officers?|Directors?)\s*/i, "")
+          .replace(/^[;,.\s]+/, "");
         const what = sentences(lead).filter((s) => /(appoint|resign|retire|depart|named|terminat|elect|promot|succeed|transition|step)/i.test(s)).slice(0, 2).join(" ");
         // the full 8-K text, not the 320-character row, decides whether the subject is leaving
         if (namesSubject(body, ctx.subject)) {
           const d = departureFrom(body, ctx.subject);
           if (d) (shared.departures ||= []).push({ ...d, newCompany: null, date: f.date, url: f.url, text: body.slice(0, 300), source: "sec 8-K item 5.02" });
         }
-        add({ var: "co.exec_changes", value: `${f.date}: ${(what || lead || body).slice(0, 320)}`, url: f.url, grade: r.ok ? "v" : "w", tier: "A", date: f.date, detail: { items: f.items } });
+        // an annual-meeting vote filed under 5.02/5.07 is not an executive change
+        if (/\b(annual meeting|special meeting)\b[^.]{0,80}\b(stockholders|shareholders)\b[^.]{0,40}\bvot/i.test(lead.slice(0, 300)) && !/(appoint|resign|retire|depart|succeed|step)/i.test(what)) return;
+        let text = wholeSentences(what || lead || body, 360);
+        if (!/[.!?…)"”]$/.test(text)) text += "…"; // the source ran out mid-sentence: say so
+        add({ var: "co.exec_changes", value: `${f.date}: ${text}`, url: f.url, grade: r.ok ? "v" : "w", tier: "A", date: f.date, detail: { items: f.items } });
       }),
     );
     if (!changes.length) miss("co.exec_changes", `no 8-K item 5.02 since ${cutoff} in EDGAR submissions`);
@@ -112,7 +138,10 @@ const company = {
     const niq = latestFact(fx.data, ["NetIncomeLoss", "ProfitLoss"], { duration: "quarter" });
     if (niq && rev?.quarter && niq.end === rev.quarter.end) add({ var: "co.quarter", value: `Net income ${money(niq.val)} for quarter ending ${niq.end}`, url: furl, grade: "v", tier: "A", date: niq.end, detail: niq });
     const rpo = latestFact(fx.data, ["RevenueRemainingPerformanceObligation"]);
-    if (rpo) add({ var: "co.kpis", value: `RPO ${money(rpo.val)} at ${rpo.end}`, url: furl, grade: "v", tier: "A", date: rpo.end, detail: rpo });
+    // a concept the filer stopped tagging years ago is not the current figure
+    const newestEnd = rev?.quarter?.end || rev?.annual?.end || null;
+    if (rpo && newestEnd && (Date.parse(newestEnd) - Date.parse(rpo.end)) / 864e5 > 550) miss("co.kpis", `RPO last tagged in XBRL at ${rpo.end}; not current, not shown`);
+    else if (rpo) add({ var: "co.kpis", value: `RPO ${money(rpo.val)} at ${rpo.end}`, url: furl, grade: "v", tier: "A", date: rpo.end, detail: rpo });
     // each balance-sheet figure carries its own date; a debt value more than a year older than the
     // cash date is a concept the filer stopped using, so it is reported as stale, never as current
     const cash = latestFact(fx.data, CASH);
@@ -202,8 +231,9 @@ async function insider(ctx, cik, ownerCik) {
   const r = own.data.filings.recent;
   const list = r.form.map((form, i) => ({ form, date: r.filingDate[i], acc: r.accessionNumber[i], doc: r.primaryDocument[i] })).filter((f) => ["3", "4", "5", "3/A", "4/A"].includes(f.form));
   const recent = list.filter((f) => f.form.startsWith("4")).slice(0, 10);
-  const form3 = list.filter((f) => f.form.startsWith("3")).at(-1);
-  const pick = [...recent, ...(form3 ? [form3] : [])];
+  // every Form 3 (newest first, up to 4): an owner who sits on another board files Form 3s there too
+  const form3s = list.filter((f) => f.form.startsWith("3")).slice(0, 4);
+  const pick = [...recent, ...form3s.filter((f) => !recent.includes(f))];
   const docs = await Promise.all(
     pick.map(async (f) => {
       const raw = f.doc.replace(/^xsl[^/]+\//, "");
@@ -220,10 +250,13 @@ async function insider(ctx, cik, ownerCik) {
     const row = add({ var: "role.title", value: latest.p.title, url: latest.view, grade: "v", tier: "A", date: latest.date, anchors: ["sec-owner-cik"], detail: { source: `Form ${latest.form} ${/^see remarks?/i.test(latest.p.officerTitle || "") ? "remarks (officerTitle says See Remarks)" : "officerTitle"}`, isDirector: latest.p.isDirector, isOfficer: latest.p.isOfficer, ownerCik } });
     titleSeen(shared, latest.p.title, "form4", row);
   } else if (ok.some((d) => d.p.officerTitle)) miss("role.title", `Form 4 officer title is "${ok.find((d) => d.p.officerTitle).p.officerTitle}" with no title in the remarks`);
-  if (form3) {
-    const f3 = ok.find((d) => d.acc === form3.acc);
-    const when = f3?.p.period || form3.date;
-    add({ var: "career.timeline", value: `Section 16 reporting insider at ${shared.secName || ctx.subject.company} since ${when} (first Form 3${f3?.p.title ? `, title then: ${f3.p.title}` : ""})`, url: docUrl(ownerCik, form3.acc, form3.doc), grade: "v", tier: "A", date: when, detail: { filed: form3.date, eventDate: f3?.p.period || null, note: "the date they became a reporting officer or director, not necessarily the start of the current seat" } });
+  // Form 3s filed for THIS issuer only (ok is already filtered by issuer CIK), oldest last
+  const f3s = ok.filter((d) => d.form.startsWith("3"));
+  if (f3s.length) {
+    const f3 = f3s[0]; // the newest: a second Form 3 means the person left and came back
+    const when = f3.p.period || f3.date;
+    const earlier = f3s.slice(1).map((d) => d.p.period || d.date);
+    add({ var: "career.timeline", value: `Section 16 reporting insider at ${shared.secName || ctx.subject.company} since ${when} (${earlier.length ? "latest" : "first"} Form 3${f3.p.title ? `, title then: ${f3.p.title}` : ""}${earlier.length ? `; an earlier stint began ${earlier.at(-1)}` : ""})`, url: f3.view, grade: "v", tier: "A", date: when, anchors: ["sec-owner-cik"], detail: { filed: f3.date, eventDate: f3.p.period || null, earlierForm3: earlier, note: "the date they became a reporting officer or director, not necessarily the start of the current seat" } });
   }
 
   // trades: open-market buys/sales row by row, everything else summarised
@@ -248,9 +281,11 @@ async function insider(ctx, cik, ownerCik) {
     pos = t ? { ...t, asOf: t.date || newest.p.period || newest.date, url: newest.view } : h ? { ...h, asOf: newest.p.period || newest.date, url: newest.view } : null;
   }
   if (pos) {
-    const px = open.find((t) => t.price)?.price;
+    // value at the newest price on record: a price in the same filing, else the latest trade's, dated
+    const pxT = newest.p.trades.filter((t) => t.price).at(-1) || trades.filter((t) => t.price).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+    const px = pxT?.price;
     shared.personShares = pos.after;
-    add({ var: "money.holdings", value: `${pos.after.toLocaleString()} ${pos.security || "shares"} held ${pos.direct === "I" ? "indirectly" : "directly"} after ${pos.asOf}${px ? ` (≈ ${money(pos.after * px)} at $${px})` : ""}`, url: pos.url || latest.view, grade: "v", tier: "A", date: pos.asOf, detail: { position: pos, filed: newest.date, derivativeRows: trades.filter((t) => t.derivative).length } });
+    add({ var: "money.holdings", value: `${pos.after.toLocaleString()} ${pos.security || "shares"} held ${pos.direct === "I" ? "indirectly" : "directly"} after ${pos.asOf}${px ? ` (≈ ${money(pos.after * px)} at $${px}${pxT.date && pxT.date !== pos.asOf ? `, price of ${pxT.date}` : ""})` : ""}`, url: pos.url || latest.view, grade: "v", tier: "A", date: pos.asOf, detail: { position: pos, filed: newest.date, derivativeRows: trades.filter((t) => t.derivative).length } });
   }
 }
 

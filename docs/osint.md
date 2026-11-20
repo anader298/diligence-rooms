@@ -59,6 +59,24 @@ The scripted pass is strongest on company, role, pay and records, where registri
 
 An independent agent checked 168 of 273 rows from the three runs above against their live sources: 81% correct overall, 93% of rows graded verified exactly right, and all 31 money and number rows from SEC XBRL, Form 4, the proxy and Form 5500 exact. The wrong rows were concentrated in image look-alikes, Wikidata, estimates and identity scoring on namesakes; a second review on four new executives found the same plus nickname misses, unit errors in segment tables and an unflagged departure. All of those were fixed with tests (159 in the suite), and the re-runs showed no namesake graded "likely" and no wrong snapshot card.
 
+## Accuracy pass 2: fitted weights and the two-signal rule
+
+Thirteen subjects were run and every Verified and Partly row, plus every scored account, was checked by hand against its live source: 10 training subjects (8 real executives, 2 fictional controls) and 3 held-out executives used for nothing but measuring. The labels name real people, so they stay in the git-ignored `work/osint/labels*`.
+
+| Slice | Verified rows correct, before | After | Verified or Partly, before | After |
+|---|---|---|---|---|
+| Training (10 subjects) | 303 / 325 (93.2%) | 162 / 163 (99.4%) | 408 / 441 (92.5%) | 406 / 413 (98.3%) |
+| Held out (3 subjects), first measurement | 116 / 158 (73.4%) | 69 / 76 (90.8%) | 180 / 240 (75.0%) | 193 / 233 (82.8%) |
+| Held out, after a second round of fixes found on it (no longer blind) | | 73 / 74 (98.6%) | | 181 / 213 (85.0%) |
+
+What changed:
+
+- **Verified needs two independent signals.** After every run the runner keeps a row Verified only when a second source family agrees (different registries or sites; two pages of one site are one family) or the row is a primary record keyed to the subject: EDGAR by CIK, Forms 3/4 by the owner's filer CIK, a full-list sanctions screen, the domain's own DNS, the job board the careers page links to, or a registry's own zero count. Every other Verified row shows as Partly, with `graded_from` and `grade_basis` on the row. That is why fewer rows are Verified: the rule moves rows, it does not drop them.
+- **Identity weights are fitted.** `config/osint-weights.json` (version 2) holds the weights in bits, fitted by `scripts/osint/fit-weights.mjs` on 123 labelled candidate accounts (9 were the subject's) with leave-one-subject-out checking. Signals with no labelled cases (official link, headshot, place, title) keep their hand values until runs with them are labelled. An account is Verified only at p ≥ 0.99 with two anchors from two sources; the account page alone is one source, so a LinkedIn profile naming the employer is Partly. Every ledger row records the weights version.
+- **False-positive patterns fixed:** other companies that share a word with the company (plan sponsors, award recipients, lobbying clients); a lobbying count that was the API's fuzzy total; Form 3s filed at another company; titles and bios left as current after a filing reports a change of seat; "left" when a succession filing only says the seat changed hands; holdings valued at an old price; percentage lines read as money; sub-metrics and targets read as company KPIs; part-time staff dropped from headcount; table-of-contents page numbers and cut-off 8-K text; parked domains; headlines about a person or a street that shares the company's name; a CEO "asking employees to quit" read as leaving.
+
+Where it is still weak: Partly rows on a company whose name is a common word (one held-out company shares its name with several firms, and registry rows matched by name stay Partly but are often someone else's), a stale employer in a profile headline, and name-only accounts, which stay Weak.
+
 ## The agent layer on top
 
 On the public-company EVP, a research agent starting from the scripted ledger (P4a step 0) took the dossier from 41 to 60 of 94 variables in about 10 minutes and 30 searches: a maiden name that opened her earlier record, a nonprofit board seat, five talks with captions, the revenue her unit owns, and her own words on priorities. Scripts take the registries; agents take what has to be read.

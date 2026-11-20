@@ -146,7 +146,17 @@ const hn = {
     const hits = (r.data?.hits || []).filter((h) => nameMatch(`${h.title || ""} ${String(h.story_text || "").replace(/<[^>]+>/g, " ")} ${String(h.comment_text || "").replace(/<[^>]+>/g, " ")}`, subject));
     if (!hits.length) return ctx.miss("news.articles", `Hacker News: no story or comment naming "${subject.name}"`);
     for (const h of hits.slice(0, 6)) {
-      const text = (h.title || h.comment_text || h.story_text || "").replace(/<[^>]+>/g, " ").slice(0, 200);
+      // HN text is HTML with entities, sometimes encoded twice: decode until stable, then show the
+      // window that names the subject, not the first 200 characters
+      let full = String(h.title || h.comment_text || h.story_text || "").replace(/<[^>]+>/g, " ");
+      for (let k = 0; k < 3; k++) {
+        const d = decodeEntities(full);
+        if (d === full) break;
+        full = d;
+      }
+      full = full.replace(/\s+/g, " ").trim();
+      const at = Math.max(0, full.search(new RegExp(nameParts(subject.name).last, "i")) - 80);
+      const text = (at > 0 ? "…" : "") + full.slice(at, at + 200);
       const co = companyIn(text, subject);
       ctx.add({ var: "news.articles", value: `Hacker News ${h.title ? "story" : "comment"} by ${h.author}: ${text}`, url: `https://news.ycombinator.com/item?id=${h.objectID}`, date: String(h.created_at || "").slice(0, 10), grade: co ? "p" : "w", tier: "C", anchors: co ? ["name", "company"] : ["name"] });
     }

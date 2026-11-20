@@ -9,6 +9,7 @@ import { join, dirname, basename } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { makeHttp, makeLedger, normName, namesSubject } from "./core.mjs";
 import { departureFrom, normCompany } from "./colib.mjs";
+import { loadWeights, corroborate } from "./weights.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(HERE, "..", "..");
@@ -112,6 +113,41 @@ export function departureCheck(subject, rows, shared = {}) {
   };
 }
 
+const STAYS = /\b(will remain|remains? (?:with|at|as|in)|will continue|continue to serve|stay(?:s)? on|serve as (?:a )?(?:senior )?advis[eo]r|senior advis[eo]r|transition period|support the transition|president of the [\w' ]*foundation)\b/i;
+
+/**
+ * Once a later source reports the subject left the seat, the title rows read from older sources
+ * are out of date: they drop to Weak and say so, instead of showing as the current title.
+ */
+const GENERIC_ROLE = new Set("executive vice president senior chief officer evp svp vp head of the and director general manager global group".split(" "));
+const ROLE_WORD = /\b(president|vice president|vp|evp|svp|officer|chief|head of|director|general manager)\b/i;
+export function markStale(rows, date, ref = null) {
+  const cut = date ? String(date).slice(0, 10) : null;
+  // distinctive words of the old title ("logistics" from "EVP, Logistics")
+  const oldWords = new Set(rows.filter((r) => r.var === "role.title" && r.module !== "departure").flatMap((r) => normName(r.value).split(" ")).filter((w) => w.length > 3 && !GENERIC_ROLE.has(w)));
+  for (const r of rows) {
+    // search snippets and profiles that still describe the old seat in the present ("is Exec VP: Logistics")
+    if (["search", "person-news", "profiles"].includes(r.module) && ["career.timeline", "news.articles"].includes(r.var) && (r.grade === "v" || r.grade === "p") && (!cut || !r.date || String(r.date).slice(0, 10) < cut)) {
+      const t = String(r.value || "");
+      if (ROLE_WORD.test(t) && normName(t).split(" ").some((w) => oldWords.has(w)) && !/\b(former|formerly|previously|until|retir\w*|step(?:s|ped)? down|succeed\w*)\b/i.test(t)) {
+        r.graded_from = r.grade;
+        r.grade = "w";
+        r.grade_basis = `may describe the old seat: a later source (${ref || "departure check"}) reports a change${cut ? ` on ${cut}` : ""}`;
+        continue;
+      }
+    }
+    if (r.var !== "role.title" || r.module === "departure" || r.module === "agent") continue;
+    // a title filed more than 30 days after the change is the new seat; a Form 4 filed at the exit
+    // (the closing of a merger, the last trades) still prints the old title
+    if (cut && r.date && (Date.parse(String(r.date).slice(0, 10)) - Date.parse(cut)) / 864e5 > 30) continue;
+    if (r.grade === "w" || r.grade === "i") continue;
+    r.graded_from = r.grade;
+    r.grade = "w";
+    r.grade_basis = `out of date: a later source (${ref || "departure check"}) reports a change of seat${cut ? ` on ${cut}` : ""}`;
+    r.detail = { ...(r.detail || {}), staleAfter: cut, staleRef: ref };
+  }
+}
+
 /**
  * subject: { name, company, domain, title, city, state, handles[], aliases[], ticker, cik, photo }
  * Returns { subject, rows, misses, alerts, modules: [{ id, status, ms, found, error, why }] }.
@@ -183,9 +219,14 @@ export async function runOsint(subject, { outDir, only = null, log = console.log
       const dep = departureCheck(subject, ledger.rows, shared);
       if (dep.best) {
         const b = dep.best;
-        ledger.add("departure", {
+        const when = b.date ? String(b.date).slice(0, 10) : "date unknown";
+        // "steps down as President ... will remain as a senior advisor": a change of seat, not an exit
+        const stays = !b.newCompany && dep.departures.some((x) => STAYS.test(x.text || ""));
+        const depRow = ledger.add("departure", {
           var: "role.title",
-          value: `Left ${subject.company || "the company"} (${b.date ? String(b.date).slice(0, 10) : "date unknown"})${b.newCompany ? ` → ${b.newCompany}` : ""}`,
+          // "Left" only when a source names where they went; a succession filing ("appointed X,
+          // succeeding <subject>") says the seat changed hands, not that the person left the company
+          value: b.newCompany ? `Left ${subject.company || "the company"} (${when}) → ${b.newCompany}` : `No longer in the current seat at ${subject.company || "the company"} (reported ${when})${stays ? "; the source says they stay on in another capacity" : ""}`,
           url: b.url,
           grade: "p",
           tier: "B",
@@ -194,14 +235,23 @@ export async function runOsint(subject, { outDir, only = null, log = console.log
           detail: { evidence: dep.departures.slice(0, 5).map((x) => ({ source: x.source, text: x.text, url: x.url, date: x.date, newCompany: x.newCompany })) },
         });
         alerts.push(...dep.alerts.map((a) => ({ ...a, module: "departure" })));
+        markStale(ledger.rows, b.date, depRow?.id);
       }
     }
     const ms = mods.filter((m) => (m.lane || "fast") === lane);
     if (ms.length) await Promise.all(ms.map(runOne));
   }
 
+  // The two-signal rule: a row stays Verified only when two independent sources agree or it is
+  // a primary record; every row records the weights version in force. Rewrite the ledger file.
+  const weights = loadWeights();
+  corroborate(ledger.rows, subject, weights);
+  for (const r of ledger.rows) r.weights ??= weights.id;
+  writeFileSync(ledger.file, ledger.rows.map((r) => JSON.stringify(r)).join("\n") + (ledger.rows.length ? "\n" : ""));
+
   const result = {
     subject,
+    weights: weights.id,
     ranAt: new Date().toISOString(),
     seconds: Math.round((Date.now() - t0) / 100) / 10,
     tabs: schema.tabs,
