@@ -54,6 +54,8 @@ const ref = (shared, key, row) => {
 
 const company = {
   id: "sec",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.filings", "co.exec_changes", "co.facts", "co.quarter", "co.kpis", "co.cash"],
   label: "SEC EDGAR: company filings and XBRL financials",
   lane: "fast",
   needs: ["company"],
@@ -167,6 +169,8 @@ const company = {
 
 const person = {
   id: "sec-person",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["money.trades", "money.holdings", "money.comp", "role.title", "role.start", "career.timeline", "career.education", "voice.priorities", "voice.quotes", "co.exec_changes"],
   label: "SEC EDGAR: the person in Forms 3/4, proxy and 8-Ks",
   lane: "fast",
   needs: ["name", "company"],

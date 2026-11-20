@@ -33,6 +33,8 @@ export function hnActivity(user, comments) {
 
 export default {
   id: "dev-communities",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.accounts", "social.dev_activity"],
   label: "Developer communities (Stack Overflow, Hacker News activity)",
   lane: "slow",
   needs: ["name"],

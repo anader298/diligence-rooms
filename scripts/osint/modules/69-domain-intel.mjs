@@ -40,6 +40,8 @@ export function dnsHost(ns, domain) {
 
 export default {
   id: "domain-intel",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.domains"],
   label: "Domain registration (RDAP): age, registrar, DNS host",
   lane: "fast",
   needs: ["domain"],

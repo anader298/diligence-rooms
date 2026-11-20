@@ -73,6 +73,8 @@ export function parseDetail(json) {
 
 export default {
   id: "brokercheck-iapd",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["career.licenses", "rec.disclosures"],
   label: "FINRA BrokerCheck and SEC IAPD: registrations, firms, exams, disclosures",
   lane: "fast",
   needs: ["name"],

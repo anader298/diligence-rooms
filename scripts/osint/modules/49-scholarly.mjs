@@ -56,6 +56,8 @@ export function crossrefWorks(json, subject) {
 
 export default {
   id: "scholarly",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["career.publications", "career.education"],
   label: "Scholarly record (ORCID, OpenAlex, Semantic Scholar, Crossref)",
   lane: "fast",
   needs: ["name"],

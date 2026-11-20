@@ -33,6 +33,8 @@ async function sitemapHints(http, root, statuses) {
 
 export default {
   id: "leadership",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.leadership", "role.title", "career.timeline", "career.education", "role.start", "role.mandate", "career.wins", "pic.headshot", "role.reports_to", "news.company"],
   label: "Company site: leadership team, bio, headshot, press",
   lane: "fast",
   needs: ["domain"],

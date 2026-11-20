@@ -67,6 +67,8 @@ async function loadList(http, id, log) {
 
 export default {
   id: "records",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["rec.sanctions_detail", "rec.sanctions", "rec.courts"],
   label: "Sanctions, exclusions and court records",
   lane: "fast",
   needs: ["name"],

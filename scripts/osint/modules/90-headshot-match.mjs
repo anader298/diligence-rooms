@@ -45,6 +45,8 @@ export function avatarsOf(shared = {}, ref = null) {
 
 export default {
   id: "headshot-match",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["pic.avatar_matches"],
   label: "Headshot vs avatars: multi-crop perceptual hash (opt-in)",
   lane: "heavy",
   flag: "--heavy headshot-match",

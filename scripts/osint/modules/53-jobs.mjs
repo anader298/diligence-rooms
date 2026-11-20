@@ -114,6 +114,8 @@ function slugGuesses(subject) {
 
 export default {
   id: "jobs",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.hiring", "role.directs", "voice.priorities", "fit.problem"],
   label: "Job board: open roles, teams, reporting lines, tools",
   lane: "fast",
   needs: ["company"],

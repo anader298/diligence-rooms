@@ -196,6 +196,8 @@ async function lookup(ctx, country, names) {
 
 export default {
   id: "intl-registries",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.registry", "co.leadership", "role.title", "role.start"],
   label: "National company registers (FR, NO, CZ; UK with key): officers and roles",
   lane: "fast",
   needs: ["company"],

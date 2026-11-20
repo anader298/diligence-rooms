@@ -37,6 +37,8 @@ export function extractQuotes(text, subject) {
 
 export default {
   id: "quotes",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["voice.quotes"],
   label: "Quotes attributed to the person (press releases, news, SEC exhibits)",
   lane: "slow",
   needs: ["name"],

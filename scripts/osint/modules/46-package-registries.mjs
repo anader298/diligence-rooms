@@ -36,6 +36,8 @@ export function pypiUser(html) {
 
 export default {
   id: "package-registries",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["career.code"],
   label: "Package registries (crates.io, RubyGems, PyPI)",
   lane: "slow",
   needs: ["name"],

@@ -105,6 +105,8 @@ export function familyLeads(snippet) {
 
 export default {
   id: "search",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.work_posts", "social.accounts", "news.articles", "voice.talks", "voice.writing", "family.close_circle", "family.partner", "hobby.endurance", "cause.boards", "career.timeline", "family.kids", "place.home_metro"],
   label: "Web search (profiles, talks, races, boards, obituary and wedding leads)",
   lane: "fast",
   needs: ["name"],

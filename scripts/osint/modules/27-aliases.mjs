@@ -47,6 +47,8 @@ export function aliasesIn(text, subject) {
 
 export default {
   id: "aliases",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["names.aliases"],
   label: "Other names (maiden, former) from snippets",
   lane: "sweep",
   needs: ["name"],

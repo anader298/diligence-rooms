@@ -39,6 +39,8 @@ export function anchoredRoot(a, shared = {}) {
 
 export default {
   id: "verified-links",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.proofs"],
   label: "Verified links between accounts (Keybase proofs, Mastodon verified fields, GitHub social accounts)",
   lane: "slow",
   needs: ["name"],

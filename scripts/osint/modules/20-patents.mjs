@@ -63,6 +63,8 @@ export function patentsFrom(json, subject) {
 
 export default {
   id: "patents",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["career.patents", "place.home_metro", "hobby.sports", "hobby.cooking", "hobby.endurance", "hobby.media", "hobby.teams"],
   label: "Patents as inventor (Google Patents; USPTO Open Data Portal with key)",
   lane: "fast",
   needs: ["name"],

@@ -42,6 +42,8 @@ const ymd = (d) => d.toISOString().slice(0, 10).replace(/-/g, "");
 
 export default {
   id: "wikipedia",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["bio.wikipedia", "news.attention"],
   label: "Wikipedia article and pageview spikes",
   lane: "fast",
   needs: ["name"],

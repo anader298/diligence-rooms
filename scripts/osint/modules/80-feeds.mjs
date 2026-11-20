@@ -37,6 +37,8 @@ export const channelIdFrom = (html) => String(html || "").match(/"(?:channelId|e
 
 export default {
   id: "feeds",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["voice.writing", "voice.talks"],
   label: "Blog and video feeds of confirmed accounts (Medium, Substack, WordPress, personal site, YouTube)",
   lane: "slow",
   needs: ["name"],

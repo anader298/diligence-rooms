@@ -19,6 +19,8 @@ export function googleVolumes(json, subject) {
 
 export default {
   id: "books",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["voice.books"],
   label: "Books as author (Open Library; Google Books with key)",
   lane: "slow",
   needs: ["name"],

@@ -16,6 +16,8 @@ export function leiBrief(d) {
 
 export default {
   id: "registries",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.structure"],
   label: "Corporate group: parent and subsidiaries (GLEIF)",
   lane: "fast",
   needs: ["company"],

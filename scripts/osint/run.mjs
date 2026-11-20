@@ -30,6 +30,14 @@ export async function loadModules(only = null) {
   return out;
 }
 
+/**
+ * { module id: [vars it fills] } for every module, from each module's own `vars` declaration.
+ * The form (scripts/lib/form.mjs) uses it to tell "searched, nothing found" from "no tool yet".
+ */
+export async function moduleVars() {
+  return Object.fromEntries((await loadModules()).map((m) => [m.id, m.vars || []]));
+}
+
 const stamp = () => new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 
 /**
@@ -168,12 +176,12 @@ export async function runOsint(subject, { outDir, only = null, log = console.log
   const heavyOn = (m) => heavy === "all" || (Array.isArray(heavy) && (heavy.includes("all") || heavy.includes(m.id))) || (only || []).includes(m.id);
   const runOne = async (m) => {
     if (m.lane === "heavy" && !heavyOn(m)) {
-      report.push({ id: m.id, label: m.label, lane: m.lane, status: "skipped", why: `opt-in: add --heavy ${m.id}${m.flag ? ` (or ${m.flag})` : ""}`, ms: 0, found: 0 });
+      report.push({ id: m.id, label: m.label, vars: m.vars || [], lane: m.lane, status: "skipped", why: `opt-in: add --heavy ${m.id}${m.flag ? ` (or ${m.flag})` : ""}`, ms: 0, found: 0 });
       return;
     }
     const missing = (m.needs || []).filter((k) => !(subject[k] || shared[k]));
     if (missing.length) {
-      report.push({ id: m.id, label: m.label, status: "skipped", why: `needs ${missing.join(", ")}`, ms: 0, found: 0 });
+      report.push({ id: m.id, label: m.label, vars: m.vars || [], status: "skipped", why: `needs ${missing.join(", ")}`, ms: 0, found: 0 });
       return;
     }
     const before = ledger.rows.length;
@@ -208,7 +216,7 @@ export async function runOsint(subject, { outDir, only = null, log = console.log
     if (status === "ok" && set) status = set.status;
     // modules in a lane run at once, so count this module's own rows, not the ledger's growth
     const found = ledger.rows.slice(before).filter((r) => r.module === m.id).length;
-    report.push({ id: m.id, label: m.label, lane: m.lane, status, ms: Date.now() - t0, found, error, why: set?.why || null, env: (m.env || []).filter((k) => !process.env[k]) });
+    report.push({ id: m.id, label: m.label, vars: m.vars || [], lane: m.lane, status, ms: Date.now() - t0, found, error, why: set?.why || null, env: (m.env || []).filter((k) => !process.env[k]) });
     log(`${status === "ok" ? "✓" : status === "blocked" || status === "partial" ? "!" : "✗"} ${m.id.padEnd(18)} ${String(found).padStart(3)} rows  ${((Date.now() - t0) / 1000).toFixed(1)}s${error ? "  " + error : set?.why ? "  " + set.status + ": " + set.why : ""}`);
   };
 

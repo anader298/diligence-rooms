@@ -46,6 +46,8 @@ export function readArticle(res, subject) {
 
 export default {
   id: "article-extract",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["news.article_text", "voice.quotes"],
   label: "Article text: byline, date, what it says about them (opt-in)",
   lane: "heavy",
   flag: "--heavy article-extract --articles <urls>",

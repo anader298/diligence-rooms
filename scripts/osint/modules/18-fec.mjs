@@ -44,6 +44,8 @@ export function donationRow(rec, m) {
 
 export default {
   id: "fec",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["politics.donations", "cause.political", "place.home_metro"],
   label: "Political donations (FEC)",
   lane: "fast",
   needs: ["name"],

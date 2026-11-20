@@ -30,6 +30,8 @@ export function podcastIndexEpisodes(json, subject) {
 
 export default {
   id: "media-feeds",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["voice.talks"],
   label: "Podcast appearances (iTunes, Podcast Index)",
   lane: "fast",
   needs: ["name"],

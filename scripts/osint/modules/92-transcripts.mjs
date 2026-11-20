@@ -61,6 +61,8 @@ const ts = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2
 
 export default {
   id: "transcripts",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["voice.transcripts"],
   label: "Talk and podcast transcripts (opt-in: --transcribe)",
   lane: "heavy",
   flag: "--transcribe",

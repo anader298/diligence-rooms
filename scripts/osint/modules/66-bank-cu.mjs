@@ -44,6 +44,8 @@ const k = (n) => money(Number(n) * 1000); // FDIC reports in thousands of dollar
 
 export default {
   id: "bank-cu",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.facts", "co.leadership", "role.title"],
   label: "Banks and credit unions: FDIC BankFind, NCUA",
   lane: "fast",
   needs: ["company"],

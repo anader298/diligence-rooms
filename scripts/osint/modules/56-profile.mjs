@@ -27,6 +27,8 @@ export function headlineIsPerson(title, company) {
 
 const wikidata = {
   id: "wikidata",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.facts", "co.leadership", "co.owners"],
   label: "Wikidata: founded, HQ, headcount, parent, CEO",
   lane: "slow", // after the SEC address and the first web-archive capture, which it is checked against
   needs: ["company"],
@@ -93,6 +95,8 @@ const wikidata = {
 
 const gdelt = {
   id: "company-news",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["news.company"],
   label: "Company news, last 90 days (GDELT, Google News RSS fallback)",
   lane: "fast",
   needs: ["company"],
@@ -147,6 +151,8 @@ const decode = (s) => s.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&")
 
 const form5500 = {
   id: "form5500",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.benefit_plans", "co.facts"],
   label: "DOL Form 5500: benefit plans and participant counts",
   lane: "fast",
   needs: ["company"],
@@ -203,6 +209,8 @@ const form5500 = {
 
 const nonprofit = {
   id: "nonprofit",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.facts"],
   label: "ProPublica Nonprofit Explorer (nonprofits only)",
   lane: "fast",
   needs: ["company"],

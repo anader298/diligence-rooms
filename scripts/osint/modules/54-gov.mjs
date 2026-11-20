@@ -112,6 +112,8 @@ async function pac(ctx) {
 
 export default {
   id: "gov",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.gov", "politics.company_pac"],
   label: "Government: federal awards, lobbying, company PAC",
   lane: "fast",
   needs: ["company"],

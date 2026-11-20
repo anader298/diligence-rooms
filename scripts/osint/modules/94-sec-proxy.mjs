@@ -38,6 +38,8 @@ const parts = (y) => [["salary", y.salary], ["bonus", y.bonus], ["stock", y.stoc
 
 export default {
   id: "sec-proxy",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.exec_pay", "money.comp", "voice.priorities"],
   label: "Proxy pay tables: every NEO, pay vs performance, pay ratio (opt-in, edgartools)",
   lane: "heavy",
   flag: "--heavy sec-proxy",

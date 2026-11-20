@@ -64,6 +64,8 @@ export function readExif(list, base = "") {
 
 export default {
   id: "doc-metadata",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["doc.metadata"],
   label: "Document metadata in the corpus: authors, software, dates (opt-in, exiftool)",
   lane: "heavy",
   flag: "--heavy doc-metadata --docs <dir>",

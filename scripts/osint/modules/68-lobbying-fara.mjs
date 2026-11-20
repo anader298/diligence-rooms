@@ -30,6 +30,8 @@ export function matchFara(json, names) {
 
 export default {
   id: "lobbying-fara",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["politics.person_lobbying", "politics.company_pac"],
   label: "Registered lobbyist (lda.gov) and foreign agent (FARA) checks",
   lane: "fast",
   needs: ["name"],

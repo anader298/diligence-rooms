@@ -6,6 +6,8 @@ import { companyBase } from "../resolve.mjs";
 
 export default {
   id: "company-resolve",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.identifiers", "co.registry"],
   label: "Company identifiers: SEC CIK, GLEIF LEI, Wikidata QID",
   lane: "fast",
   needs: ["company"],

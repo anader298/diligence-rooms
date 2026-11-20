@@ -122,6 +122,8 @@ export function candidateHandles(subject, shared = {}) {
 
 export default {
   id: "accounts",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.accounts"],
   label: "Username sweep across ~35 sites",
   lane: "sweep",
   needs: ["name"],

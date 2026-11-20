@@ -5,6 +5,8 @@ import { estimates, titleFor } from "../colib.mjs";
 
 export default {
   id: "estimates",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["est.team_size", "est.budget", "est.comp", "est.seg_growth", "est.deal_size", "est.decision_window"],
   label: "Estimates: team, budget, pay, growth, deal size, timing",
   lane: "late",
   needs: [],

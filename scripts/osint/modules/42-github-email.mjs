@@ -25,6 +25,8 @@ export function commitAuthors(json, today = new Date().toISOString().slice(0, 10
 
 export default {
   id: "github-email",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.proofs"],
   label: "GitHub login behind the work email (commit search)",
   lane: "fast",
   needs: ["name"],

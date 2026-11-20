@@ -52,6 +52,8 @@ export function approxDate(rel, now = Date.now()) {
 
 export default {
   id: "talks",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["voice.talks"],
   label: "Talks and interviews on YouTube",
   lane: "fast",
   needs: ["name"],

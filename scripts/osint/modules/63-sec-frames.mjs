@@ -51,6 +51,8 @@ export function standing(cik, peers, by, nNear = 4) {
 
 export default {
   id: "sec-frames",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.peers"],
   label: "SEC XBRL frames: revenue, profit and assets against same-SIC peers",
   lane: "fast",
   needs: ["company"],

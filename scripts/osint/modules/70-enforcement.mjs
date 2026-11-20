@@ -39,6 +39,8 @@ export function summarize(fac) {
 
 export default {
   id: "enforcement",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.enforcement"],
   label: "EPA ECHO: environmental compliance, enforcement and penalties",
   lane: "slow",
   needs: ["company"],

@@ -77,6 +77,8 @@ export function matchRecords(recs, subject, shared = {}) {
 
 export default {
   id: "licenses",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["career.licenses", "career.education"],
   label: "Professional licences: NPI, NY attorneys, Colorado DORA, Texas TDLR",
   lane: "fast",
   needs: ["name"],

@@ -30,6 +30,8 @@ export function imageKeeps(t, subject, roleTitle = "") {
 
 export default {
   id: "images",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["pic.image_results", "pic.reverse"],
   label: "Image search and reverse image search on the headshot",
   lane: "slow",
   needs: ["name"],

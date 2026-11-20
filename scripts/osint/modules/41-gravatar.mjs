@@ -31,6 +31,8 @@ export function gravatarTie(p, cand, subject) {
 
 export default {
   id: "gravatar",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.proofs"],
   label: "Gravatar profile by work email (verified linked accounts)",
   lane: "fast",
   needs: ["name"],

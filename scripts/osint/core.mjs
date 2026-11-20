@@ -2,8 +2,10 @@
 // ledger, and the context every module receives. Node built-in fetch only, no dependencies.
 //
 // A module is a plain object:
-//   { id, label, lane: "fast" | "sweep" | "slow", needs: ["name" | "company" | "domain" | ...],
-//     env: ["OPTIONAL_KEY"], async run(ctx) }
+//   { id, label, vars: ["co.facts", ...], lane: "fast" | "sweep" | "slow",
+//     needs: ["name" | "company" | "domain" | ...], env: ["OPTIONAL_KEY"], async run(ctx) }
+// `vars` lists the ledger variables it can fill; the form uses it to tell "searched, nothing
+// found" from "no tool yet" for each bucket.
 // It reports what it finds with ctx.add({ var, value, url, grade, ... }) and what it searched
 // but did not find with ctx.miss(var, what). Every add becomes one ledger row; nothing a module
 // says reaches the dossier without a row.

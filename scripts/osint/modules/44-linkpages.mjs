@@ -45,6 +45,8 @@ export function relMeLinks(html) {
 
 export default {
   id: "linkpages",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.linkpage"],
   label: "Link-in-bio pages and personal-site rel=me links",
   lane: "slow",
   needs: ["name"],

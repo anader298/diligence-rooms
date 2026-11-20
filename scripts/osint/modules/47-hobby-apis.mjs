@@ -29,6 +29,8 @@ export function chessRatings(stats) {
 
 export default {
   id: "hobby-apis",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["hobby.media", "hobby.games"],
   label: "Hobby APIs (Discogs, Letterboxd, chess.com ratings)",
   lane: "slow",
   needs: ["name"],

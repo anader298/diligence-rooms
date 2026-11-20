@@ -260,6 +260,8 @@ const GRADE = { verified: "v", likely: "p", unclear: "w", namesake: "i" };
 
 export default {
   id: "identity",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.candidates", "social.accounts", "social.handles", "role.status"],
   label: "Identity score for every candidate account",
   lane: "late",
   needs: ["name"],

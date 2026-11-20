@@ -86,6 +86,8 @@ async function doh(http, name, type) {
 
 const dns = {
   id: "dns",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.domains", "fit.problem"],
   label: "DNS: mail provider and SaaS stack from TXT/SPF",
   lane: "sweep",
   needs: ["domain"],
@@ -110,6 +112,8 @@ const dns = {
 
 const crtsh = {
   id: "crtsh",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.domains", "fit.problem"],
   label: "Certificate transparency: subdomains (crt.sh)",
   lane: "slow",
   needs: ["domain"],
@@ -144,6 +148,8 @@ const crtsh = {
 
 const wayback = {
   id: "wayback",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.domains"],
   label: "Web archive: first capture of the company site",
   lane: "sweep",
   needs: ["domain"],

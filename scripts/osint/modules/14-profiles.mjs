@@ -31,6 +31,8 @@ export function parseLinkedInDesc(desc) {
 
 export default {
   id: "profiles",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.themes", "place.home_metro", "social.linkpage", "career.code", "voice.writing", "career.education", "career.timeline", "social.top_posts", "social.work_posts", "social.most_active", "hobby.sports", "hobby.cooking", "hobby.endurance", "hobby.media", "hobby.teams"],
   label: "Read confirmed public profiles (bio, posts, code, places, hobbies)",
   lane: "slow",
   needs: ["name"],

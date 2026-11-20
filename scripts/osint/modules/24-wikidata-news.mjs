@@ -13,6 +13,8 @@ const claimTime = (e, p) => live(e, p).map((c) => c.mainsnak?.datavalue?.value?.
 
 const wikidata = {
   id: "person-wikidata",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["career.timeline", "career.education", "family.partner"],
   label: "Wikidata entity (notable people)",
   lane: "fast",
   needs: ["name"],
@@ -69,6 +71,8 @@ const newsKeeps = (title, subject) => nameMatch(title, subject) || companyIn(tit
 
 const gdelt = {
   id: "person-news",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["news.articles"],
   label: "News naming the person, last 12 months (GDELT, Google News)",
   lane: "sweep", // after the company GDELT call in the fast lane: GDELT allows one call per 5 s
   needs: ["name"],
@@ -133,6 +137,8 @@ const gdelt = {
 
 const hn = {
   id: "hn",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["news.articles"],
   label: "Hacker News mentions",
   lane: "fast",
   needs: ["name"],
@@ -165,6 +171,8 @@ const hn = {
 
 const wayback = {
   id: "person-wayback",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["place.web_archive"],
   label: "Archived personal sites (Wayback Machine)",
   lane: "slow",
   needs: ["name"],

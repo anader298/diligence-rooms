@@ -98,6 +98,8 @@ const short = (s) => String(s || "").replace(/\s*-\s*(Treasury|State|Commerce) D
 
 export default {
   id: "sanctions-csl",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["rec.sanctions_detail"],
   label: "US Consolidated Screening List (OFAC, BIS Entity List, ITAR and more; trade.gov)",
   lane: "fast",
   needs: ["name"],

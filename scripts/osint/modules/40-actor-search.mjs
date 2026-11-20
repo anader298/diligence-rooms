@@ -61,6 +61,8 @@ export function mastodonMatches(json, subject, instance) {
 
 export default {
   id: "actor-search",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["social.accounts"],
   label: "Name search for accounts (Mastodon)",
   lane: "fast",
   needs: ["name"],

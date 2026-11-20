@@ -92,6 +92,8 @@ async function exhibit991(http, cik, f) {
 
 export default {
   id: "sec-docs",
+  /** The ledger variables this module fills (config/form buckets read them to say "no tool yet"). */
+  vars: ["co.segments", "co.facts", "co.legal", "co.arr", "co.growth_line", "voice.priorities", "co.kpis"],
   label: "SEC filings read: segments, KPIs, themes, legal",
   lane: "slow",
   needs: ["company"],
