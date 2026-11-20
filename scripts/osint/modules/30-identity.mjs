@@ -18,6 +18,8 @@
 // Only verified and likely accounts become social.accounts; the rest are social.candidates.
 
 import { nameMatch, nameAdjacent, nameIn, companyIn, placeIn, knownPlaces, handleFromUrl, hostOf, normName, derivedHandles } from "../person-lib.mjs";
+import { loadWeights, identityProb, sourceFamily } from "../weights.mjs";
+import { othersLeave } from "../colib.mjs";
 
 /** Merge accounts from the sweep, search profile hits and Wikidata into one candidate list. */
 export function gatherCandidates(shared = {}) {
@@ -92,6 +94,11 @@ export function scoreCandidate(c, subject, sharedIn = {}, all = [], ctx = {}) {
   const texts = ctx.texts || careerTexts(subject, sharedIn);
   const reasons = [];
   const fam = new Set();
+  // features for the fitted weights; signal sources: where each piece of evidence came from
+  // (the account page itself is one source, whatever it says about name, employer and place)
+  const F = {};
+  const self = c.site || hostOf(c.url) || "profile";
+  const src = new Set();
   let s = 0;
   let contra = false;
   let otherEmployer = null;
@@ -101,6 +108,7 @@ export function scoreCandidate(c, subject, sharedIn = {}, all = [], ctx = {}) {
     s += 2;
     reasons.push("name +2");
     fam.add("name");
+    F.name = true;
   }
   const co = statedCompany(c);
   if (co && companyIn(co, subject)) {
@@ -108,20 +116,27 @@ export function scoreCandidate(c, subject, sharedIn = {}, all = [], ctx = {}) {
     reasons.push("employer on profile +5");
     fam.add("company");
     fam.add("employer");
+    F.employer_on_profile = true;
+    src.add(self);
   } else if (companyIn(text, subject) || (c.wikidataAnchors || []).includes("company")) {
     s += 4;
     reasons.push("company +4");
     fam.add("company");
+    F.company_text = true;
+    src.add((c.wikidataAnchors || []).includes("company") && !companyIn(text, subject) ? "wiki" : self);
   } else if (co && subject.company && normName(co).length > 2 && !/^(self|self employed|freelance|retired|n a|none|student|stealth)$/.test(normName(co))) {
     const hit = named ? knownEmployer(co, texts) : null;
     if (hit) {
       s += 4;
       reasons.push(`employer "${co}" named with ${subject.company} in "${hit.title.slice(0, 70)}" +4`);
       fam.add("career");
+      F.career = true;
+      src.add(sourceFamily(hit.url, subject) || "news");
       otherEmployer = { name: co, evidence: hit.url, title: hit.title };
     } else {
       s -= 3;
       contra = true;
+      F.employer_contra = true;
       reasons.push(`other company "${co}" -3`);
     }
   }
@@ -130,6 +145,8 @@ export function scoreCandidate(c, subject, sharedIn = {}, all = [], ctx = {}) {
     s += 4;
     reasons.push((c.sources || []).includes("sweep:given") ? "handle given by you +4" : "linked from an official page +4");
     fam.add("link");
+    F.link = true;
+    src.add((c.sources || []).includes("sweep:given") ? "given" : official.has(String(c.url || "").toLowerCase().replace(/\/$/, "")) ? "company-site" : "wiki");
   }
   const places = knownPlaces(subject, shared);
   const loc = c.location || (c.snippet || c.bio || "").match(/Location:\s*([^·|]+)/)?.[1] || null;
@@ -137,9 +154,12 @@ export function scoreCandidate(c, subject, sharedIn = {}, all = [], ctx = {}) {
     s += 2;
     reasons.push("place +2");
     fam.add("place");
+    F.place = true;
+    src.add(self);
   } else if (loc && places.length && !placeIn(loc, subject, shared)) {
     s -= 3;
     contra = true;
+    F.place_contra = true;
     reasons.push(`other place "${loc.trim()}" -3`);
   }
   const tw = titleWordsOf([subject.title, sharedIn.roleTitle].filter(Boolean).join(" "));
@@ -147,12 +167,16 @@ export function scoreCandidate(c, subject, sharedIn = {}, all = [], ctx = {}) {
     s += 2;
     reasons.push("title words +2");
     fam.add("title");
+    F.title = true;
+    src.add(self);
   }
   const rev = (sharedIn.reverseHits || []).find((h) => (c.handle && String(h.page).toLowerCase().includes(String(c.handle).toLowerCase()) && hostOf(h.page).includes(c.site)) || String(h.page).replace(/\/$/, "") === String(c.url).replace(/\/$/, ""));
   if (rev || (c.avatar && sharedIn.headshot && c.avatar === sharedIn.headshot && sharedIn.headshotFrom && !sharedIn.headshotFrom.startsWith(c.site))) {
     s += 3;
     reasons.push("headshot reused +3");
     fam.add("image");
+    F.image = true;
+    src.add("image");
   }
   // Same handle elsewhere counts only when that other account has its own anchor beyond the name,
   // and never for a handle we derived from the name ourselves.
@@ -162,6 +186,8 @@ export function scoreCandidate(c, subject, sharedIn = {}, all = [], ctx = {}) {
       s += 2;
       reasons.push(`same handle on anchored ${same.map((o) => o.site).join(", ")} +2`);
       fam.add("handle");
+      F.handle_peer = true;
+      for (const o of same) src.add(o.site);
     }
   }
   const hard = [...fam].filter((f) => f !== "name" && f !== "handle" && f !== "employer");
@@ -170,15 +196,23 @@ export function scoreCandidate(c, subject, sharedIn = {}, all = [], ctx = {}) {
   const shown = c.name || c.title || "";
   const exactName = [subject.name, ...(subject.aliases || [])].filter(Boolean).some((n) => nameIn(shown, n) && nameAdjacent(shown, n));
   const exactEmployer = fam.has("employer") && named && exactName;
+  if (c.handle && derived.has(String(c.handle).toLowerCase())) F.derived_handle = true;
+  if (!c.bio && !c.snippet && !c.company && !c.location && !(c.followers > 0)) F.empty_profile = true;
+  const W = ctx.weights || loadWeights();
+  const prob = identityProb(F, W);
+  const th = W.identity.thresholds;
+  // Verified: the fitted probability, two anchor families beyond the name, and two independent
+  // sources (the account page alone is one source, however much it says).
+  const strongEnough = hard.length + (fam.has("handle") ? 1 : 0) >= 2 || exactEmployer;
   const verdict =
-    named && s >= 7 && (hard.length + (fam.has("handle") ? 1 : 0) >= 2 || exactEmployer)
+    named && prob.p >= th.verified && strongEnough && src.size >= 2
       ? "verified"
-      : (contra && !hard.length) || s <= -3
+      : (contra && !hard.length) || s <= -3 || (contra && prob.p <= th.namesake)
         ? "namesake"
-        : named && hard.length && s >= 4
+        : named && hard.length && prob.p >= th.likely
           ? "likely"
           : "unclear";
-  return { score: s, verdict, reasons, families: [...fam].filter((f) => f !== "employer"), otherEmployer };
+  return { score: s, verdict, reasons, families: [...fam].filter((f) => f !== "employer"), otherEmployer, features: F, p: Math.round(prob.p * 1e4) / 1e4, bits: prob.bits, signalSources: [...src], weights: W.id };
 }
 
 /** A peer account's own anchor (company, place, image or link), without the handle rule. */
@@ -211,7 +245,8 @@ export function departureSignals(subject, shared = {}, scored = []) {
     const formerCo = near && companyIn(near[0], subject);
     const parts = head.split(JOIN);
     const joinsElsewhere = parts.length > 2 && !companyIn(parts.slice(2).join(" "), subject) && ROLE.test(parts.slice(2).join(" "));
-    if (!(formerCo || DEPART.test(head) || joinsElsewhere)) continue;
+    // "asks employees to quit" is about other people leaving, not the subject
+    if (!(formerCo || (DEPART.test(head) && !othersLeave(head)) || joinsElsewhere)) continue;
     const k = normName(head).slice(0, 50);
     if (seen.has(k)) continue;
     seen.add(k);
@@ -238,7 +273,7 @@ export default {
     } else {
       const by = (v) => scored.filter((c) => c.verdict === v);
       const line = (c) => `${c.site || hostOf(c.url)}${c.handle ? ` @${c.handle}` : ""}${c.name || c.title ? ` — "${String(c.name || c.title).slice(0, 70)}"` : ""}`;
-      const detailOf = (c) => ({ score: c.score, verdict: c.verdict, reasons: c.reasons, sources: c.sources, site: c.site, handle: c.handle || null, bio: c.bio ? String(c.bio).slice(0, 200) : null, location: c.location || null, followers: c.followers ?? null, stage: "identity" });
+      const detailOf = (c) => ({ score: c.score, verdict: c.verdict, p: c.p, bits: c.bits, features: c.features, signalSources: c.signalSources, weights: c.weights, reasons: c.reasons, sources: c.sources, site: c.site, handle: c.handle || null, bio: c.bio ? String(c.bio).slice(0, 200) : null, location: c.location || null, followers: c.followers ?? null, stage: "identity" });
       // Verified and likely: the subject's accounts. One row each, avatar shown.
       for (const c of [...by("verified"), ...by("likely")]) {
         ctx.add({ var: "social.accounts", value: `${line(c)} — ${c.verdict} (${c.score >= 0 ? "+" : ""}${c.score}: ${c.reasons.join(", ")})`, url: c.url, grade: GRADE[c.verdict], tier: "B", anchors: c.families, image: c.avatar || null, detail: detailOf(c) });

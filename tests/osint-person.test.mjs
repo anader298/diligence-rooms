@@ -75,8 +75,10 @@ test("search module: profile only when the title names him; sidebar mentions dro
   const acc = res.rows.filter((r) => r.var === "social.accounts");
   assert.equal(acc.length, 1);
   assert.equal(acc[0].url, "https://www.linkedin.com/in/janedoe");
-  assert.equal(acc[0].grade, "v");
+  // one source (the LinkedIn page itself) states name and employer: Partly, not Verified
+  assert.equal(acc[0].grade, "p");
   assert.equal(acc[0].module, "identity");
+  assert.equal(acc[0].weights, acc[0].detail.weights);
   assert.ok(!res.rows.some((r) => r.url?.includes("someone-else")));
   const place = res.rows.find((r) => r.var === "place.home_metro");
   assert.match(place.value, /Austin, Texas/);
@@ -177,10 +179,16 @@ test("identity score: employer on the profile verifies, a different company mark
   const shared = { reverseHits: [] };
   const s1 = scoreCandidate(li, JANE, shared, all);
   assert.equal(s1.score, 7);
-  assert.equal(s1.verdict, "verified"); // name +2, employer on the profile +5
+  // name +2, employer on the profile +5: the page alone is one source, so likely (Partly), never verified
+  assert.equal(s1.verdict, "likely");
+  assert.deepEqual(s1.signalSources, ["linkedin"]);
   const s1b = scoreCandidate(li, { ...JANE, city: "Austin" }, { reverseHits: [{ page: "https://www.linkedin.com/in/janedoe" }] }, all);
-  assert.equal(s1b.verdict, "verified");
   assert.ok(s1b.reasons.includes("headshot reused +3"));
+  assert.ok(["likely", "verified"].includes(s1b.verdict));
+  // employer, headshot and an official link: three anchors from three sources verify
+  const s1c = scoreCandidate(li, JANE, { reverseHits: [{ page: "https://www.linkedin.com/in/janedoe" }], officialLinks: ["https://www.linkedin.com/in/janedoe"] }, all);
+  assert.equal(s1c.verdict, "verified");
+  assert.ok(s1c.p >= 0.99 && s1c.signalSources.length >= 2);
   // The YouTube account shares only a handle derived from the name: no bonus, name alone = unclear.
   const s2 = scoreCandidate(yt, JANE, shared, all);
   assert.equal(s2.score, 2);

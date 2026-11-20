@@ -151,6 +151,8 @@ export default {
       for (const m of n.html.matchAll(/<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]{20,400}?)<\/a>/gi)) {
         const t = htmlText(m[2]);
         if (t.length < 25 || t.length > 220 || t.split(" ").length < 5) continue;
+        // menu and navigation labels ("News & events Open link menu", "Read more about our press")
+        if (/\b(open|close|toggle) (link )?menu\b|\bskip to\b|\bread more\b|\bview all\b|\bsee all\b|\bsubscribe\b/i.test(t)) continue;
         const u = abs(n.url, m[1]);
         if (!u || !/(news|press|release|blog|story|stories|article|20\d\d)/i.test(new URL(u).pathname) || new URL(u).pathname.split("/").filter(Boolean).length < 2) continue;
         if (u && !links.has(u)) links.set(u, t);

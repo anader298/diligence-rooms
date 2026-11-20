@@ -1,0 +1,154 @@
+{
+  "version": 2,
+  "id": "osint-weights@2",
+  "note": "Identity weights in bits (log2 likelihood ratio) and the rules for the Verified grade. Version 1 was the hand values of the additive score (prior chosen so +4 points reads p 0.93 and +7 reads p 0.99). Higher versions are fitted by scripts/osint/fit-weights.mjs on labelled candidates; every ledger row records the version that scored it.",
+  "fitted": {
+    "at": "2026-11-20",
+    "method": "logistic regression in bits, L2 prior sd 0.5 bits around the hand values",
+    "candidates": 123,
+    "theirs": 9,
+    "subjects": 10,
+    "handValues": {
+      "name": 2,
+      "employer_on_profile": 5,
+      "company_text": 4,
+      "career": 4,
+      "link": 4,
+      "place": 2,
+      "title": 2,
+      "image": 3,
+      "handle_peer": 2,
+      "employer_contra": -3,
+      "place_contra": -3,
+      "derived_handle": 0,
+      "empty_profile": 0
+    },
+    "support": {
+      "name": {
+        "pos": 9,
+        "neg": 114
+      },
+      "employer_on_profile": {
+        "pos": 1,
+        "neg": 0
+      },
+      "company_text": {
+        "pos": 1,
+        "neg": 0
+      },
+      "career": {
+        "pos": 1,
+        "neg": 0
+      },
+      "link": {
+        "pos": 0,
+        "neg": 0
+      },
+      "place": {
+        "pos": 0,
+        "neg": 0
+      },
+      "title": {
+        "pos": 0,
+        "neg": 0
+      },
+      "image": {
+        "pos": 0,
+        "neg": 0
+      },
+      "handle_peer": {
+        "pos": 0,
+        "neg": 0
+      },
+      "employer_contra": {
+        "pos": 1,
+        "neg": 13
+      },
+      "place_contra": {
+        "pos": 0,
+        "neg": 0
+      },
+      "derived_handle": {
+        "pos": 8,
+        "neg": 93
+      },
+      "empty_profile": {
+        "pos": 5,
+        "neg": 61
+      }
+    },
+    "thresholdNote": "likely = posterior above 0.5: on the labelled candidates every anchored account that was theirs scored 0.58-0.73 and no namesake scored above 0.10; verified also needs two independent sources (see weights.mjs). sd 0.5 chosen by leave-one-subject-out log loss (0.244 vs 0.253 at sd 2).",
+    "labelledFrom": "10 panel subjects (8 real, 2 synthetic), hand-checked against live sources; labels kept outside the repo",
+    "unfittedNote": "link, image, place, title and handle_peer had no labelled cases in this panel (nothing fed the official-links list and no headshot match fired), so they keep their hand values; refit with scripts/osint/fit-weights.mjs once runs with those signals are labelled. The design doc proposes +6 for a close headshot hash; that is left to the fit."
+  },
+  "identity": {
+    "prior": -4.99,
+    "features": {
+      "name": 1.73,
+      "employer_on_profile": 5.05,
+      "company_text": 4.07,
+      "career": 4.07,
+      "link": 4,
+      "place": 2,
+      "title": 2,
+      "image": 3,
+      "handle_peer": 2,
+      "employer_contra": -2.86,
+      "place_contra": -3,
+      "derived_handle": -0.27,
+      "empty_profile": -0.07
+    },
+    "thresholds": {
+      "verified": 0.99,
+      "likely": 0.5,
+      "namesake": 0.05
+    }
+  },
+  "rows": {
+    "minOverlap": 0.6,
+    "primary": [
+      {
+        "module": "sec",
+        "family": "sec",
+        "note": "EDGAR submissions and XBRL company facts, keyed by the issuer CIK"
+      },
+      {
+        "module": "sec-person",
+        "family": "sec",
+        "anchor": "sec-owner-cik",
+        "note": "Forms 3/4 filed by the person's own filer CIK at this issuer"
+      },
+      {
+        "module": "sec-person",
+        "family": "sec",
+        "anchor": "proxy-neo",
+        "note": "named executive officer table in the issuer's proxy"
+      },
+      {
+        "module": "records",
+        "family": "sanctions",
+        "note": "full-list screens of OFAC SDN and HHS-OIG LEIE"
+      },
+      {
+        "module": "dns",
+        "family": "dns",
+        "note": "the company domain's own DNS records"
+      },
+      {
+        "module": "jobs",
+        "anchor": "linked-from-company-site",
+        "note": "the job board the company's own careers page links to"
+      },
+      {
+        "module": "gov",
+        "valueRe": "^No ",
+        "note": "a registry that answered with zero records (none found is the registry's own count)"
+      },
+      {
+        "module": "fec",
+        "valueRe": "^No ",
+        "note": "FEC returned zero contribution records under every name form"
+      }
+    ]
+  }
+}

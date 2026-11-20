@@ -54,7 +54,9 @@ export function revenueSplits(html, { from = 0 } = {}) {
     if (labels.some((l) => /cost of|operating expenses|gross profit|net income|income tax|deferred|contract liabilit|receivable|notes due|thereafter|amortiz/i.test(l))) continue;
     // header rows ("In millions 2026 2025", a lone year, "Three months ended") are not lines
     const isHeader = (r) => /^\(?\s*(?:\$\s*)?in (thousands|millions|billions)\b/i.test(r[0]) || /^\d{4}$/.test(r[0]) || r.slice(1).every((c) => /^(19|20)\d\d$/.test(c));
-    const lines = rows.filter((r) => r.length >= 2 && !isHeader(r) && N(r[1]) != null && !/^total/i.test(r[0]) && /[a-z]/i.test(r[0]) && r[0].length < 80);
+    // "Percentage of total revenue" and "% change" lines are ratios, not money
+    const isRatio = (r) => /\b(percent(age)?|% of|% change|as a %|change)\b|%/i.test(r[0]) || r.slice(1, 3).some((c) => /%\s*$/.test(String(c || "")));
+    const lines = rows.filter((r) => r.length >= 2 && !isHeader(r) && !isRatio(r) && N(r[1]) != null && !/^total/i.test(r[0]) && /[a-z]/i.test(r[0]) && r[0].length < 80);
     if (lines.length < 2 || lines.length > 12) continue;
     const { scale, how, guessed } = tableScale(html, t.at, rows);
     const firstData = rows.indexOf(lines[0]);
@@ -148,12 +150,18 @@ export default {
           shared.employees = n;
           shared.employeesSource = `10-K ${tenK.date}`;
         }
-        const erow = add({ var: "co.facts", value: `${n.toLocaleString()} employees (10-K ${tenK.date})`, url: tenK.url, grade: "v", tier: "A", date: tenK.date, detail: { quote: text.slice(Math.max(0, emp.index - 120), emp.index + 120) } });
+        // "approximately 167,000 full-time and 109,000 part-time associates": say both, never one as the total
+        const near = text.slice(emp.index, emp.index + 260);
+        const pt = /full[- ]time/i.test(emp[0]) ? near.match(/(?:and|plus|with)\s+(?:approximately\s+|about\s+)?([\d,]{3,9})\s+part[- ]time/i) : null;
+        const label = /full[- ]time/i.test(emp[0]) ? `${n.toLocaleString()} full-time${pt ? ` and ${pt[1]} part-time` : ""} employees` : `${n.toLocaleString()} employees`;
+        const erow = add({ var: "co.facts", value: `${label} (10-K ${tenK.date})`, url: tenK.url, grade: "v", tier: "A", date: tenK.date, detail: { quote: text.slice(Math.max(0, emp.index - 120), emp.index + 120) } });
         if (mine && erow?.id) (shared.refs ||= {}).employees = erow.id;
       }
       const i3 = [...text.matchAll(/Item\s*3\.?\s*Legal Proceedings/gi)].map((m) => m.index).at(-1);
-      if (i3 != null) {
-        const body = text.slice(i3, i3 + 1500).replace(/Item\s*4\.[\s\S]*$/i, "");
+      const i3body = (i) => text.slice(i, i + 1500).replace(/Item\s*4\.[\s\S]*$/i, "");
+      // the table of contents also says "Item 3. Legal Proceedings 19": skip a body that is only a page number
+      if (i3 != null && i3body(i3).replace(/^Item\s*3\.?\s*Legal Proceedings\s*/i, "").trim().length >= 40) {
+        const body = i3body(i3);
         add({ var: "co.legal", value: `10-K Item 3: ${body.replace(/^Item\s*3\.?\s*Legal Proceedings\s*/i, "").slice(0, 300)}`, url: tenK.url, grade: "v", tier: "A", date: tenK.date, detail: { text: body } });
       }
       const ia = text.search(/Item\s*1A\.?\s*Risk Factors(?!\s*\d)/i);
@@ -169,7 +177,7 @@ export default {
     // ---- earnings releases: KPIs, themes now vs the release before
     const [now, prev] = rels;
     if (now) {
-      const kp = kpisFrom(now.text);
+      const kp = kpisFrom(now.text, { company: subject.company });
       for (const x of kp) add({ var: x.kpi === "ARR" ? "co.arr" : "co.kpis", value: `${x.kpi}: ${x.value} (${now.date} release)`, url: now.url, grade: "v", tier: "A", date: now.date, detail: { context: x.context } });
       if (!kp.some((x) => x.kpi === "ARR")) miss("co.arr", `no ARR figure in the ${now.date} earnings release`);
       const words = titleWords(titleFor(shared, subject)?.title);

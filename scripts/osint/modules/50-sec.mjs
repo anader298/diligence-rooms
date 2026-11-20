@@ -202,8 +202,9 @@ async function insider(ctx, cik, ownerCik) {
   const r = own.data.filings.recent;
   const list = r.form.map((form, i) => ({ form, date: r.filingDate[i], acc: r.accessionNumber[i], doc: r.primaryDocument[i] })).filter((f) => ["3", "4", "5", "3/A", "4/A"].includes(f.form));
   const recent = list.filter((f) => f.form.startsWith("4")).slice(0, 10);
-  const form3 = list.filter((f) => f.form.startsWith("3")).at(-1);
-  const pick = [...recent, ...(form3 ? [form3] : [])];
+  // every Form 3 (newest first, up to 4): an owner who sits on another board files Form 3s there too
+  const form3s = list.filter((f) => f.form.startsWith("3")).slice(0, 4);
+  const pick = [...recent, ...form3s.filter((f) => !recent.includes(f))];
   const docs = await Promise.all(
     pick.map(async (f) => {
       const raw = f.doc.replace(/^xsl[^/]+\//, "");
@@ -220,10 +221,13 @@ async function insider(ctx, cik, ownerCik) {
     const row = add({ var: "role.title", value: latest.p.title, url: latest.view, grade: "v", tier: "A", date: latest.date, anchors: ["sec-owner-cik"], detail: { source: `Form ${latest.form} ${/^see remarks?/i.test(latest.p.officerTitle || "") ? "remarks (officerTitle says See Remarks)" : "officerTitle"}`, isDirector: latest.p.isDirector, isOfficer: latest.p.isOfficer, ownerCik } });
     titleSeen(shared, latest.p.title, "form4", row);
   } else if (ok.some((d) => d.p.officerTitle)) miss("role.title", `Form 4 officer title is "${ok.find((d) => d.p.officerTitle).p.officerTitle}" with no title in the remarks`);
-  if (form3) {
-    const f3 = ok.find((d) => d.acc === form3.acc);
-    const when = f3?.p.period || form3.date;
-    add({ var: "career.timeline", value: `Section 16 reporting insider at ${shared.secName || ctx.subject.company} since ${when} (first Form 3${f3?.p.title ? `, title then: ${f3.p.title}` : ""})`, url: docUrl(ownerCik, form3.acc, form3.doc), grade: "v", tier: "A", date: when, detail: { filed: form3.date, eventDate: f3?.p.period || null, note: "the date they became a reporting officer or director, not necessarily the start of the current seat" } });
+  // Form 3s filed for THIS issuer only (ok is already filtered by issuer CIK), oldest last
+  const f3s = ok.filter((d) => d.form.startsWith("3"));
+  if (f3s.length) {
+    const f3 = f3s[0]; // the newest: a second Form 3 means the person left and came back
+    const when = f3.p.period || f3.date;
+    const earlier = f3s.slice(1).map((d) => d.p.period || d.date);
+    add({ var: "career.timeline", value: `Section 16 reporting insider at ${shared.secName || ctx.subject.company} since ${when} (${earlier.length ? "latest" : "first"} Form 3${f3.p.title ? `, title then: ${f3.p.title}` : ""}${earlier.length ? `; an earlier stint began ${earlier.at(-1)}` : ""})`, url: f3.view, grade: "v", tier: "A", date: when, anchors: ["sec-owner-cik"], detail: { filed: f3.date, eventDate: f3.p.period || null, earlierForm3: earlier, note: "the date they became a reporting officer or director, not necessarily the start of the current seat" } });
   }
 
   // trades: open-market buys/sales row by row, everything else summarised
@@ -248,9 +252,11 @@ async function insider(ctx, cik, ownerCik) {
     pos = t ? { ...t, asOf: t.date || newest.p.period || newest.date, url: newest.view } : h ? { ...h, asOf: newest.p.period || newest.date, url: newest.view } : null;
   }
   if (pos) {
-    const px = open.find((t) => t.price)?.price;
+    // value at the newest price on record: a price in the same filing, else the latest trade's, dated
+    const pxT = newest.p.trades.filter((t) => t.price).at(-1) || trades.filter((t) => t.price).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+    const px = pxT?.price;
     shared.personShares = pos.after;
-    add({ var: "money.holdings", value: `${pos.after.toLocaleString()} ${pos.security || "shares"} held ${pos.direct === "I" ? "indirectly" : "directly"} after ${pos.asOf}${px ? ` (≈ ${money(pos.after * px)} at $${px})` : ""}`, url: pos.url || latest.view, grade: "v", tier: "A", date: pos.asOf, detail: { position: pos, filed: newest.date, derivativeRows: trades.filter((t) => t.derivative).length } });
+    add({ var: "money.holdings", value: `${pos.after.toLocaleString()} ${pos.security || "shares"} held ${pos.direct === "I" ? "indirectly" : "directly"} after ${pos.asOf}${px ? ` (≈ ${money(pos.after * px)} at $${px}${pxT.date && pxT.date !== pos.asOf ? `, price of ${pxT.date}` : ""})` : ""}`, url: pos.url || latest.view, grade: "v", tier: "A", date: pos.asOf, detail: { position: pos, filed: newest.date, derivativeRows: trades.filter((t) => t.derivative).length } });
   }
 }
 

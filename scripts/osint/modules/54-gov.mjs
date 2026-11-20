@@ -1,19 +1,16 @@
 // Government money and influence: federal awards (USAspending), lobbying (lda.gov) and a
 // company PAC (FEC committees). All keyless; FEC uses FEC_API_KEY, else the public DEMO_KEY
 // (40 calls an hour, shared). A rate-limited FEC call is recorded as not checked.
-import { normCompany, money, isCompanyPac } from "../colib.mjs";
+import { normCompany, sameCompany, money, isCompanyPac } from "../colib.mjs";
 
-const same = (a, b) => {
-  const x = normCompany(a).split(" ");
-  const y = normCompany(b);
-  return x.length && x.every((t) => y.split(" ").includes(t));
-};
+// the record names the company itself, not another company sharing a word with it
+const same = (a, b) => sameCompany(a, b);
 
 const USA = "https://api.usaspending.gov/api/v2/search/spending_by_award/";
 
 /** Every page of a USAspending award search (100 a page, up to `max` pages). */
-export async function usaspendingAll(http, filters, { max = 5 } = {}) {
-  const body = { filters, fields: ["Award ID", "Recipient Name", "Award Amount", "Awarding Agency", "Start Date", "Description"], limit: 100, sort: "Award Amount", order: "desc" };
+export async function usaspendingAll(http, filters, { max = 5, sort = "Award Amount" } = {}) {
+  const body = { filters, fields: ["Award ID", "Recipient Name", "Award Amount", "Awarding Agency", "Start Date", "Description"], limit: 100, sort, order: "desc" };
   const all = [];
   let more = true;
   let status = null;
@@ -49,13 +46,19 @@ async function usaspending(ctx) {
   const rows = res.results.filter((x) => same(subject.company, x["Recipient Name"]));
   const related = [...new Set(res.results.filter((x) => !same(subject.company, x["Recipient Name"])).map((x) => x["Recipient Name"]))];
   const web = `https://www.usaspending.gov/search/?hash=&keyword=${encodeURIComponent(subject.company)}`;
-  if (!rows.length) return add({ var: "co.gov", value: `No federal contracts to "${subject.company}" in USAspending (FY2008-now)`, url: web, grade: res.more ? "p" : "v", tier: "A", detail: { otherRecipients: related.slice(0, 5), pagesRead: res.pages, truncated: res.more } });
+  if (!rows.length) return add({ var: "co.gov", value: `No federal contracts to "${subject.company}" in USAspending (FY2008-now)${related.length ? `; ${related.length} similarly named recipient${related.length === 1 ? "" : "s"} not counted (e.g. ${related.slice(0, 2).join("; ")})` : ""}`, url: web, grade: res.more || related.length ? "p" : "v", tier: "A", detail: { otherRecipients: related.slice(0, 5), pagesRead: res.pages, truncated: res.more } });
   const total = rows.reduce((s, x) => s + (x["Award Amount"] || 0), 0);
   const agencies = {};
   for (const x of rows) agencies[x["Awarding Agency"]] = (agencies[x["Awarding Agency"]] || 0) + (x["Award Amount"] || 0);
-  const byDate = [...rows].sort((a, b) => String(b["Start Date"] || "").localeCompare(String(a["Start Date"] || "")));
+  let byDate = [...rows].sort((a, b) => String(b["Start Date"] || "").localeCompare(String(a["Start Date"] || "")));
+  if (res.more) {
+    // the amount-sorted pages stop before the newest small awards: read the newest ones directly
+    const recent = await usaspendingAll(http, filters, { max: 1, sort: "Start Date" });
+    const fresh = (recent.results || []).filter((x) => same(subject.company, x["Recipient Name"]));
+    if (fresh.length) byDate = [...fresh, ...byDate].filter((x, i, a) => a.findIndex((y) => y["Award ID"] === x["Award ID"]) === i).sort((a, b) => String(b["Start Date"] || "").localeCompare(String(a["Start Date"] || "")));
+  }
   const latest = byDate[0]?.["Start Date"];
-  add({ var: "co.gov", value: `${rows.length}${res.more ? "+" : ""} federal contract awards, ${money(total)} total; top agencies ${Object.entries(agencies).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([a, v]) => `${a} ${money(v)}`).join(", ")}; latest start ${latest}`, url: web, grade: "v", tier: "A", date: latest, detail: { agencies, recipients: [...new Set(rows.map((x) => x["Recipient Name"]))], relatedRecipients: related.slice(0, 10), pagesRead: res.pages, truncated: res.more } });
+  add({ var: "co.gov", value: `${rows.length}${res.more ? "+" : ""} federal contract awards, ${money(total)}${res.more ? " in the largest " + rows.length + " read" : " total"}; top agencies ${Object.entries(agencies).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([a, v]) => `${a} ${money(v)}`).join(", ")}; latest start ${latest}`, url: web, grade: "v", tier: "A", date: latest, detail: { agencies, recipients: [...new Set(rows.map((x) => x["Recipient Name"]))], relatedRecipients: related.slice(0, 10), pagesRead: res.pages, truncated: res.more } });
   // the newest real awards first (at least $25k, last five years): what they do for the government now
   const since = new Date(Date.now() - 5 * 365 * 864e5).toISOString().slice(0, 10);
   const notable = byDate.filter((x) => (x["Award Amount"] || 0) >= 25000 && String(x["Start Date"] || "") >= since);
@@ -79,7 +82,9 @@ async function lobbying(ctx) {
   const firms = [...new Set(rows.map((f) => f.registrant?.name).filter(Boolean))];
   const issues = [...new Set(rows.flatMap((f) => (f.lobbying_activities || []).map((a) => a.general_issue_code_display)).filter(Boolean))];
   const years = [...new Set(rows.map((f) => f.filing_year))].sort();
-  add({ var: "politics.company_pac", value: `Lobbies: ${r.data.count} LDA filings as client (${years[0]}-${years.at(-1)}), ${money(spend)} in the latest ${rows.length}; firms ${firms.slice(0, 3).join(", ")}; issues ${issues.slice(0, 4).join(", ")}`, url: web, grade: "v", tier: "A", date: rows[0]?.dt_posted?.slice(0, 10), detail: { firms, issues, years } });
+  // r.data.count is the API's fuzzy name search (other clients that share a word): never print it;
+  // count only the filings whose client is the company itself, in the page read
+  add({ var: "politics.company_pac", value: `Lobbies: ${rows.length} LDA filings as client in the latest ${(r.data.results || []).length} retrieved (${years[0]}${years.length > 1 ? "-" + years.at(-1) : ""}), ${money(spend)} reported in them; firms ${firms.slice(0, 3).join(", ")}; issues ${issues.slice(0, 4).join(", ")}`, url: web, grade: "v", tier: "A", date: rows[0]?.dt_posted?.slice(0, 10), detail: { firms, issues, years, apiFuzzyCount: r.data.count, matched: rows.length } });
   add({ var: "co.gov", value: `Federal lobbying on ${issues.slice(0, 5).join(", ") || "unspecified issues"} (${firms.length} firm${firms.length === 1 ? "" : "s"})`, url: web, grade: "v", tier: "A" });
 }
 

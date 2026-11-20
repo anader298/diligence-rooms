@@ -78,6 +78,21 @@ export function normCompany(s) {
     .trim();
 }
 
+// words a registrant adds to its own name without becoming another company
+const SAME_CO_EXTRA = new Set("systems software international intl usa us america americas global worldwide enterprises federal government public sector of north na".split(" "));
+/**
+ * True when a record's name (a plan sponsor, an award recipient, a lobbying client) is the
+ * company itself: the same core name, plus at most generic words ("Acme Systems Incorporated").
+ * "Acme Interior Services" and "Valdez Gravel & Acme" are other companies that share a word.
+ */
+export function sameCompany(company, recordName) {
+  const x = normCompany(company).replace(/&/g, " and ").split(" ").filter(Boolean);
+  const y = normCompany(recordName).replace(/&/g, " and ").split(" ").filter(Boolean);
+  if (!x.length || y.length < x.length) return false;
+  for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return false;
+  return y.slice(x.length).every((t) => SAME_CO_EXTRA.has(t));
+}
+
 /**
  * Pick the SEC registrant for a company name (or ticker) from company_tickers.json.
  * Returns { cik, ticker, title, score } or null. Exact normalised match wins; otherwise the
@@ -676,8 +691,9 @@ export function titleWords(title) {
 // ---------------------------------------------------------------- earnings releases
 
 /** KPI mentions with numbers: ARR, NRR, RPO, customers > $100k, DBNR, gross margin. */
-export function kpisFrom(text) {
+export function kpisFrom(text, { company = "" } = {}) {
   const t = String(text || "");
+  const coWords = new Set(normName(company).split(" ").filter(Boolean));
   const pats = [
     ["ARR", /\b(?:ARR|annual(?:ized)? recurring revenue)\b[^.]{0,80}?(\$\s?[\d.,]+\s?(?:million|billion|[MB])\b)/i],
     ["ARR growth", /\b(?:ARR|annual(?:ized)? recurring revenue)\b[^.]{0,80}?(\d+(?:\.\d+)?%)/i],
@@ -697,17 +713,41 @@ export function kpisFrom(text) {
   // the period a flow figure covers, read from the same sentence: "for the nine months ended September 30"
   const PERIOD = /\b(?:for the |in the |during the )?((?:three|six|nine|twelve)[- ]months?(?: ended [A-Z][a-z]+ \d{1,2}(?:, \d{4})?)?|(?:third|second|first|fourth) quarter(?: of (?:fiscal )?\d{4})?|(?:fiscal )?(?:year|full[- ]year)(?: \d{4})?(?: ended [A-Z][a-z]+ \d{1,2}(?:, \d{4})?)?|trailing twelve months|year[- ]to[- ]date|Q[1-4](?: \d{4})?)\b/i;
   for (const [k, re] of pats) {
-    const m = t.match(re);
-    if (m) {
+    // every match, then the first that is a reported, company-wide figure: "AI-first ARR grew 150%"
+    // is a sub-metric and "targeting 44% operating margin" is a target, not a result
+    const cands = [];
+    for (const m of t.matchAll(new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g"))) {
       const i = m.index;
       const sStart = Math.max(t.lastIndexOf(". ", i) + 2, i - 300, 0);
       const sEnd = t.indexOf(". ", i + m[0].length);
       const sentence = t.slice(sStart, sEnd < 0 ? i + m[0].length + 200 : sEnd + 1);
+      const forward = k !== "Guidance" && FORWARD.test(t.slice(Math.max(sStart, i - 60), i + m[0].length));
+      const mod = k === "Guidance" ? null : subMetric(t.slice(Math.max(0, i - 40), i), coWords);
+      cands.push({ m, i, sentence, forward, mod });
+      if (cands.length >= 12) break;
+    }
+    const c = cands.find((x) => !x.forward && !x.mod) || cands.find((x) => !x.forward);
+    if (c) {
+      const { m, i, sentence, mod } = c;
       const period = /Free cash flow|Operating margin|Gross margin|Customers >\$100k/.test(k) ? sentence.match(PERIOD)?.[1] || null : null;
-      out.push({ kpi: k, value: m[1].replace(/\s+/g, " ").replace(/,$/, "") + (period ? ` (${period})` : ""), period, context: t.slice(Math.max(0, i - 40), i + m[0].length + 40).trim() });
+      const gaap = /margin/i.test(k) ? (/\bnon-GAAP\b/i.test(t.slice(Math.max(0, i - 30), i + m[0].length)) ? "non-GAAP " : /\bGAAP\b/.test(t.slice(Math.max(0, i - 30), i + m[0].length)) ? "GAAP " : "") : "";
+      out.push({ kpi: mod ? `${mod} ${k}` : gaap ? `${gaap}${k.toLowerCase()}` : k, value: m[1].replace(/\s+/g, " ").replace(/,$/, "") + (period ? ` (${period})` : ""), period, subMetric: mod || null, context: t.slice(Math.max(0, i - 40), i + m[0].length + 40).trim() });
     }
   }
   return out;
+}
+
+const FORWARD = /\b(target(?:s|ing|ed)?|expect(?:s|ed|ing)?|outlook|guidance|anticipat\w*|forecast\w*|goal|aim(?:s|ing)? (?:for|to)|project(?:s|ed|ing)?|plan(?:s|ned)? to)\b/i;
+/** A qualifier right before a KPI name ("AI-first ARR", "Digital Media ARR"): a sub-metric. */
+function subMetric(before, coWords = new Set()) {
+  // the company's own name before a KPI ("Total Acme ARR") is not a qualifier
+  const words = String(before).trimEnd().split(/\s+/);
+  while (words.length && coWords.has(normName(words.at(-1)))) words.pop();
+  const m = (words.length ? words.join(" ") + " " : "").match(/((?:[A-Z][\w&]*(?:-[\w]+)*\s){0,2}[A-Z][\w&]*(?:-[\w]+)+|(?:[A-Z][\w&]*\s){0,1}[A-Z][a-z][\w&]*)\s*$/);
+  if (!m) return null;
+  const w = m[1].trim().split(/\s+/).filter((x) => !coWords.has(normName(x))).join(" ");
+  if (!w) return null;
+  return /^(The|Total|Our|And|Its|Their|Company|Q[1-4]|Fiscal|Annual|Annualized|Net|Ending|Strong|Record|Quarterly|GAAP|Non-GAAP|Adjusted)$/i.test(w) ? null : w;
 }
 
 export const THEMES = { AI: /\b(AI|artificial intelligence|agentic|generative|GenAI|LLM)\b/g, growth: /\bgrowth\b/gi, platform: /\bplatform\b/gi, efficiency: /\b(efficienc\w*|margin expansion|cost (?:savings|reduction))\b/gi, restructuring: /\b(restructur\w*|reduction in force|layoffs?)\b/gi, acquisition: /\b(acqui\w+|M&A|merger)\b/gi, cloud: /\b(cloud|SaaS)\b/gi, security: /\b(security|cyber\w*)\b/gi, customers: /\bcustomers?\b/gi, recurring: /\b(recurring|subscription|ARR)\b/gi, "free cash flow": /\bfree cash flow\b/gi, debt: /\b(debt|leverage|revolver|credit facility)\b/gi };
@@ -873,6 +913,15 @@ function staleYear(src) {
 // ---------------------------------------------------------------- departures
 
 const LEFT_VERB = "(?:(?:decision|intention|intent|plans?) to (?:step down|resign|retire|leave|depart)|(?:planned |upcoming |pending )?retirement|has left|left|leaves|is leaving|quits|quit|departs|departed|is departing|will depart|resigned|resigns|has resigned|will resign|stepped down|steps down|will step down|is stepping down|retired|retires|will retire|exits|exited|was terminated|separated from)";
+/**
+ * The leaving verb belongs to someone else: "asks employees to quit", "tells staff they can leave",
+ * "urges workers to resign", "offers buyouts to those who quit". The subject is the one asking.
+ */
+const OTHERS = "(?:employees|staff|workers|people|team(?: members)?|managers|engineers|anyone|those|everyone|colleagues|users|customers|members|holdouts|them)";
+export function othersLeave(text) {
+  const t = String(text || "");
+  return new RegExp(`\\b(?:ask|tell|urge|encourage|want|invite|let|allow|order|push|force|offer|pay|dare|warn|challenge|told)(?:s|ed|ing)?\\b[^.;]{0,60}?\\b(?:to|can|could|should|may|free to)\\s+(?:quit|leave|resign|exit|depart|walk)`, "i").test(t) || new RegExp(`\\b${OTHERS}\\b[^.;]{0,30}?\\b(?:to |who |that |can |could |should )(?:quit|leave|resign|exit|depart)`, "i").test(t);
+}
 const JOIN_VERB = "(?:joins|joined|has joined|to join|will join|named|appointed|hired|taps|tapped|appoints|names|hires|lands at|moves to|heads to)";
 const JOIN_DIRECT = "(?:joins|joined|has joined|is joining|to join|will join|lands at|moves to|heads to|jumps to|defects to)";
 const APPOINTED = "(?:named|appointed|hired|tapped|promoted|elected)";
@@ -909,7 +958,7 @@ export function departureFrom(text, subject) {
   }
   // 2. "<subject> quits / leaves / resigns" within the same clause, not after "succeed(s) ... who"
   const lv = after.match(new RegExp(`^[^.;]{0,90}?\\b${LEFT_VERB}\\b`, "i"));
-  if (lv && !/\b(succeed|replac|follow|after|who|whose)\w*\b/i.test(lv[0].slice(hit.n.length))) {
+  if (lv && !/\b(succeed|replac|follow|after|who|whose)\w*\b/i.test(lv[0].slice(hit.n.length)) && !othersLeave(lv[0].slice(hit.n.length))) {
     const j = after.match(new RegExp(`\\b(?:to (?:join|take up [^.]{0,40}? at|become [^.]{0,60}? (?:at|of))|for|joins|joining)\\s+${ORG}`));
     const nc = j && !isOwn(j[1]) && !/^(the|a|an|personal|family|other)\b/i.test(j[1]) ? clean(j[1]) : null;
     return { left: true, newCompany: nc, why: "says they left" };
@@ -956,8 +1005,12 @@ export function isCompanyPac(c, company) {
 
 /** A parked or for-sale page (the domain belonged to someone else, or to no one, at that date). */
 export function isParkedPage(html) {
-  const t = htmlText(String(html || "").slice(0, 60000)).toLowerCase();
-  if (t.length < 40) return true;
+  const raw = String(html || "").slice(0, 60000);
+  // parking networks show up in the markup, not the text: AdSense for Domains, Afternic, Bodis...
+  if (/adsense\/domains|\/caf\.js|imgaft\.com|parkingcrew|bodis\.com|sedoparking|above\.com\/marketplace|domainsponsor|parklogic|namedrive/i.test(raw)) return true;
+  const t = htmlText(raw).toLowerCase();
+  // a near-empty page is parked, unless it is a JavaScript app shell (a bundle or a CSRF token)
+  if (t.length < 40) return !/<script[^>]+src=["'][^"']*(application|app|main|bundle|vendor|runtime)[^"']*\.js|name=["']csrf-token["']|id=["'](root|app)["']/i.test(raw);
   return /(this domain (?:name )?(?:is|may be) for sale|domain (?:is )?for sale|buy this domain|make an offer on this domain|hugedomains|sedo(?:parking)?\b|dan\.com|afternic|parked (?:free|by|domain)|domain parking|this web page is parked|godaddy\.com.{0,40}parked|is available for purchase|future home of something quite cool|website coming soon|under construction)/i.test(t);
 }
 
