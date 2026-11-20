@@ -1,5 +1,6 @@
 // The company's domain: mail provider and SaaS verification tokens from DNS (their stack),
 // subdomains from certificate transparency (crt.sh), first web-archive capture.
+import { isParkedPage } from "../colib.mjs";
 
 const MX = [
   [/google(mail)?\.com|googlemail/i, "Google Workspace"],
@@ -118,7 +119,11 @@ const crtsh = {
     const d = subject.domain.replace(/^www\./, "");
     const u = `https://crt.sh/?q=${encodeURIComponent("%." + d)}&output=json&exclude=expired`;
     let r = await http.json(u, { timeout: 15000 });
-    if (!r.data) r = await http.json(`https://crt.sh/?q=${encodeURIComponent("%." + d)}&output=json`, { timeout: 8000 });
+    let scope = "unexpired certificates";
+    if (!r.data) {
+      r = await http.json(`https://crt.sh/?q=${encodeURIComponent("%." + d)}&output=json`, { timeout: 8000 });
+      scope = "all certificates, expired included";
+    }
     if (!r.data) return miss("co.domains", `crt.sh ${r.status || r.error} (often slow or overloaded)`);
     const names = new Set();
     let first = null;
@@ -131,7 +136,7 @@ const crtsh = {
     }
     const list = [...names].sort();
     const notable = list.filter((n) => /(^|\.|-)(vpn|sso|okta|auth|login|jira|confluence|gitlab|github|jenkins|staging|stage|dev|test|uat|api|portal|shop|store|status|support|help|docs|mail|webmail|owa|citrix|remote|sap|erp|crm|hr|ats|careers|investors?|ir|partners?|app|admin|grafana|kibana|vault)\b/.test(n.replace(d, "")));
-    add({ var: "co.domains", value: `${list.length} subdomains in certificate logs${notable.length ? `; notable: ${notable.slice(0, 12).join(", ")}` : ""}`, url: `https://crt.sh/?q=%25.${d}`, grade: "v", tier: "A", date: first ? first.slice(0, 10) : null, detail: { subdomains: list.slice(0, 300), notable, firstCert: first } });
+    add({ var: "co.domains", value: `${list.length} subdomains in certificate logs (${scope})${notable.length ? `; notable: ${notable.slice(0, 12).join(", ")}` : ""}`, url: `https://crt.sh/?q=%25.${d}`, grade: "v", tier: "A", detail: { subdomains: list.slice(0, 300), notable, oldestCertInSet: first, scope } });
     const hints = notable.filter((n) => /(jira|confluence|gitlab|jenkins|okta|sap|citrix|grafana|kibana|vault|erp|crm)/.test(n));
     if (hints.length) add({ var: "fit.problem", value: `Self-hosted systems in subdomains: ${hints.slice(0, 8).join(", ")}`, url: `https://crt.sh/?q=%25.${d}`, grade: "i", tier: "A" });
   },
@@ -144,14 +149,29 @@ const wayback = {
   needs: ["domain"],
   budgetMs: 20000,
   async run(ctx) {
-    const { http, add, miss, subject } = ctx;
+    const { http, add, miss, subject, shared } = ctx;
     const d = subject.domain.replace(/^www\./, "");
-    const r = await http.json(`https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(d)}&output=json&fl=timestamp,original&limit=1`, { timeout: 15000 });
-    const row = r.data?.[1];
-    if (!row) return miss("co.domains", `Wayback CDX ${r.status || r.error || "no captures"}`);
-    const ts = row[0];
+    // first captures that returned a page (status 200), one a month, oldest first
+    const r = await http.json(`https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(d)}&output=json&fl=timestamp,original&filter=statuscode:200&collapse=timestamp:6&limit=8`, { timeout: 15000 });
+    const caps = (r.data || []).slice(1);
+    if (!caps.length) return miss("co.domains", `Wayback CDX ${r.status || r.error || "no captures that returned a page"}`);
+    // skip parked and for-sale pages: those are a previous owner (or nobody), not the company
+    let first = null;
+    let parked = 0;
+    for (const [ts, orig] of caps.slice(0, 4)) {
+      const p = await http.get(`https://web.archive.org/web/${ts}id_/${orig}`, { timeout: 12000 });
+      if (p.ok && isParkedPage(p.text)) {
+        parked++;
+        continue;
+      }
+      first = [ts, orig, p.ok];
+      break;
+    }
+    if (!first) return miss("co.domains", `Wayback: the first ${parked} captures of ${d} are parked or for-sale pages`);
+    const [ts, orig, read] = first;
     const date = `${ts.slice(0, 4)}-${ts.slice(4, 6)}-${ts.slice(6, 8)}`;
-    add({ var: "co.domains", value: `${d} first archived ${date}`, url: `https://web.archive.org/web/${ts}/${row[1]}`, grade: "v", tier: "A", date, detail: { note: "site age: a floor for when the company was online" } });
+    shared.firstSeenYear = Number(ts.slice(0, 4));
+    add({ var: "co.domains", value: `${d} first served a page in the web archive on ${date}${parked ? ` (${parked} earlier parked/for-sale capture${parked === 1 ? "" : "s"} skipped)` : ""}`, url: `https://web.archive.org/web/${ts}/${orig}`, grade: read ? "v" : "p", tier: "A", date, detail: { note: "when the domain first served a real page; it may have belonged to a previous owner, so it is not the company's founding date", parkedSkipped: parked } });
   },
 };
 

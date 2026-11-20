@@ -59,7 +59,9 @@ export function makeHttp({ cacheDir = null, fetchImpl = globalThis.fetch, log = 
       try {
         const c = JSON.parse(readFileSync(key, "utf8"));
         if (Date.now() - c.at < ttlMs) return { ...c.res, cached: true };
-      } catch {}
+      } catch (e) {
+        log(`  cache file unreadable, refetching: ${key} (${e.message})`);
+      }
     }
     const host = new URL(url).host;
     await space(host);
@@ -105,6 +107,78 @@ export function normName(s) {
     .replace(/[^a-z0-9 ]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/**
+ * Common English first-name nicknames: formal name -> short forms. Shared by the SEC, proxy,
+ * search and handle code so "Dan Holloway" finds the filings of "Daniel Holloway" and back.
+ */
+export const NICKNAMES = {
+  richard: ["rick", "rich", "dick", "ricky"], robert: ["rob", "bob", "bobby", "bert"], william: ["will", "bill", "billy", "liam"],
+  james: ["jim", "jimmy", "jamie"], john: ["jack", "johnny", "jon"], joseph: ["joe", "joey"], michael: ["mike", "mick", "mikey"],
+  thomas: ["tom", "tommy"], christopher: ["chris", "topher"], daniel: ["dan", "danny"], matthew: ["matt"], anthony: ["tony"],
+  david: ["dave", "davey"], steven: ["steve"], stephen: ["steve"], andrew: ["andy", "drew"], edward: ["ed", "eddie", "ted", "ned"],
+  gabriel: ["gabe"], benjamin: ["ben", "benji"], samuel: ["sam", "sammy"], alexander: ["alex", "xander", "sandy"], nicholas: ["nick", "nicky"],
+  jonathan: ["jon", "jonny"], timothy: ["tim", "timmy"], gregory: ["greg"], patrick: ["pat", "paddy"], kenneth: ["ken", "kenny"],
+  ronald: ["ron", "ronnie"], donald: ["don", "donnie"], charles: ["charlie", "chuck", "chas"], frederick: ["fred", "freddie"],
+  lawrence: ["larry"], leonard: ["leo", "len", "lenny"], raymond: ["ray"], gerald: ["gerry", "jerry"], jeffrey: ["jeff"], geoffrey: ["geoff", "jeff"],
+  joshua: ["josh"], zachary: ["zach", "zack"], nathaniel: ["nate", "nat"], nathan: ["nate"], phillip: ["phil"], philip: ["phil"],
+  douglas: ["doug"], bradley: ["brad"], frank: ["frankie"], francis: ["frank"], franklin: ["frank"], henry: ["hank", "harry"],
+  harold: ["harry", "hal"], walter: ["walt"], albert: ["al", "bert"], alfred: ["al", "alfie"], peter: ["pete"], vincent: ["vince", "vinny"],
+  terrence: ["terry"], terence: ["terry"], eugene: ["gene"], theodore: ["ted", "teddy", "theo"], stanley: ["stan"], russell: ["russ"],
+  mitchell: ["mitch"], randall: ["randy"], gary: ["gar"], jacob: ["jake"], kevin: ["kev"], abraham: ["abe"], isaac: ["ike"],
+  elizabeth: ["liz", "beth", "betsy", "lisa", "eliza", "betty"], katherine: ["kate", "katie", "kathy", "kat"], kathryn: ["kate", "kathy", "katie"],
+  catherine: ["kate", "cathy", "cat"], jennifer: ["jen", "jenny", "jenn"], margaret: ["maggie", "peggy", "meg", "marge"], rebecca: ["becky", "becca"],
+  susan: ["sue", "susie"], deborah: ["deb", "debbie"], patricia: ["pat", "trish", "patty", "tricia"], victoria: ["vicky", "tori"],
+  christine: ["chris", "chrissy"], christina: ["chris", "tina"], alexandra: ["alex", "lexi", "sandra"], samantha: ["sam"], kimberly: ["kim"],
+  jessica: ["jess", "jessie"], cynthia: ["cindy"], pamela: ["pam"], barbara: ["barb", "barbie"], dorothy: ["dot", "dottie"], judith: ["judy"],
+  abigail: ["abby"], amanda: ["mandy"], melissa: ["missy", "mel"], stephanie: ["steph"], theresa: ["terry", "tess"], teresa: ["terry", "tess"],
+  valerie: ["val"], virginia: ["ginny"], ferrante: ["ally", "allie"], madeline: ["maddie"], josephine: ["jo", "josie"], suzanne: ["sue", "suzy"],
+  nancy: ["nan"], sandra: ["sandy"], gwendolyn: ["gwen"], frances: ["fran"], jacqueline: ["jackie"], danielle: ["dani"], nicole: ["nikki"],
+};
+const SHORT_TO_FORMAL = {};
+for (const [formal, shorts] of Object.entries(NICKNAMES)) for (const s of shorts) (SHORT_TO_FORMAL[s] ||= []).push(formal);
+
+/** First names that refer to the same person: "dan" -> [dan, daniel, danny]; "daniel" -> [daniel, dan, danny]. */
+export function firstNameForms(first) {
+  const f = normName(first);
+  const out = new Set([f]);
+  for (const n of NICKNAMES[f] || []) out.add(n);
+  for (const formal of SHORT_TO_FORMAL[f] || []) {
+    out.add(formal);
+    for (const n of NICKNAMES[formal] || []) out.add(n);
+  }
+  return [...out].filter(Boolean);
+}
+
+/**
+ * Every "First Last" the subject may be filed under: the given name, --aliases, and the formal
+ * and short forms of the first name ("Dan Holloway" -> "Daniel Holloway", "Danny Holloway").
+ * Ordered: given name first, aliases next, then the formal forms, then other short forms.
+ */
+export function nameForms(subject) {
+  const names = [subject?.name, ...(subject?.aliases || [])].filter(Boolean).map((s) => String(s).trim());
+  const out = new Set(names);
+  for (const n of names) {
+    const parts = n.split(/\s+/).filter((p) => !/^(jr|sr|ii|iii|iv|phd|md|mba)\.?$/i.test(p));
+    if (parts.length < 2) continue;
+    const first = parts[0];
+    const last = parts.at(-1);
+    const forms = firstNameForms(first);
+    const formal = forms.filter((x) => NICKNAMES[x]);
+    for (const f of [...formal, ...forms]) out.add(`${f.charAt(0).toUpperCase()}${f.slice(1)} ${last}`);
+  }
+  // keep one spelling per normalised name
+  const seen = new Set();
+  return [...out].filter((n) => {
+    const k = normName(n);
+    return !seen.has(k) && seen.add(k);
+  });
+}
+
+/** True when the text names the subject under any of its name forms. */
+export function namesSubject(text, subject) {
+  return nameForms(subject).some((n) => nameIn(text, n));
 }
 
 /** True when every part of the person's first and last name appears in the text, as words. */
@@ -171,7 +245,9 @@ export function makeLedger(dir, variables = []) {
         const r = JSON.parse(line);
         rows.push(r);
         keys.add(r.key);
-      } catch {}
+      } catch {
+        console.warn(`ledger: skipped an unreadable line in ${file}`);
+      }
     }
   }
   let n = rows.reduce((m, r) => Math.max(m, Number(String(r.id).slice(2)) || 0), 0);

@@ -3,7 +3,7 @@
 // are collapsed by title. With PATENTSVIEW_API_KEY (free) the PatentsView inventor endpoint
 // adds the inventor's last known city and state.
 
-import { nameParts, normName, companyIn, hobbiesIn, stripTags } from "../person-lib.mjs";
+import { nameParts, normName, companyIn, hobbiesIn, stripTags, blockedMiss } from "../person-lib.mjs";
 
 /** Collapse Google Patents results to one per invention, keeping those that name the subject. */
 export function patentsFrom(json, subject) {
@@ -42,7 +42,7 @@ export default {
       r = await http.json(pu, { timeout: 12000 });
     }
     if (!r.ok) {
-      ctx.miss("career.patents", `Google Patents xhr: HTTP ${r.status || r.error}${/Sorry\.\.\./.test(r.text || "") ? " (Google's unusual-traffic page for this IP; clears on its own)" : ""} — patents not checked, unknown rather than none`);
+      blockedMiss(ctx, "career.patents", "Google Patents", r, `${env.PATENTSVIEW_API_KEY ? "" : "set PATENTSVIEW_API_KEY (free) for a second source, or "}retry in an hour (Google's unusual-traffic page clears on its own)`);
     } else {
       const pats = patentsFrom(r.data, subject);
       if (!pats.length) ctx.miss("career.patents", `Google Patents: no patents with inventor ${first} ${last}`);

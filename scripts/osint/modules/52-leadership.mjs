@@ -1,6 +1,6 @@
 // The company's own site: leadership/team pages (names, titles, bios, headshots), the
 // subject's bio page if there is one, and press/news titles that name them.
-import { nameIn, normName, metaTags } from "../core.mjs";
+import { nameIn, normName, metaTags, namesSubject, nameForms } from "../core.mjs";
 import { parseLeadership, htmlText, bioFrom, educationFrom, careerFrom, startFrom, titleFromBio, looksLikeTitle, sentences } from "../colib.mjs";
 
 const PATHS = ["/leadership", "/about/leadership", "/company/leadership", "/about-us/leadership", "/about/leadership-team", "/about/team", "/about/management", "/team", "/our-team", "/management", "/leadership-team", "/about/executive-team", "/about/meet-the-team/executive-team/", "/about-us", "/about", "/company", "/who-we-are"];
@@ -14,9 +14,12 @@ const abs = (base, href) => {
   }
 };
 
-async function sitemapHints(http, root) {
+const BLOCK = new Set([401, 403, 429, 503, 999]);
+
+async function sitemapHints(http, root, statuses) {
   const out = new Set();
   const r = await http.get(root + "/sitemap.xml", { timeout: 8000 });
+  statuses.push(r.status || 0);
   if (!r.ok) return [];
   let locs = [...r.text.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((m) => m[1]);
   const subs = locs.filter((l) => /sitemap.*\.xml/i.test(l) && /(page|post-type-page|pages|company|about)/i.test(l)).slice(0, 2);
@@ -37,12 +40,14 @@ export default {
   async run(ctx) {
     const { http, add, miss, subject, shared } = ctx;
     const root = `https://${subject.domain.replace(/^www\./, "")}`;
-    const hints = await sitemapHints(http, root);
+    const statuses = [];
+    const hints = await sitemapHints(http, root, statuses);
     const urls = [...new Set([...hints, ...PATHS.map((p) => root + p)])];
     const pages = (
       await Promise.all(
         urls.map(async (u) => {
           const r = await http.get(u, { timeout: 10000 });
+          statuses.push(r.status || 0);
           if (!r.ok || !/<html|<body|<div/i.test(r.text)) return null;
           return { url: r.url || u, html: r.text, people: parseLeadership(r.text) };
         }),
@@ -53,26 +58,36 @@ export default {
     for (const p of pages) if (!byUrl.has(p.url)) byUrl.set(p.url, p);
     const uniq = [...byUrl.values()];
     const best = uniq.filter((p) => p.people.length >= 2).sort((a, b) => b.people.length - a.people.length)[0];
+    // a site that answers 403 to every path is "not checked", never "no page"
+    const blocked = statuses.filter((x) => BLOCK.has(x)).length;
+    const okCount = statuses.filter((x) => x >= 200 && x < 300).length;
+    const blockedAll = !okCount && blocked > 0;
+    const codes = [...new Set(statuses.filter((x) => BLOCK.has(x)))].join("/");
+    const blockNote = `HTTP ${codes} on ${blocked} of ${statuses.length} paths`;
 
     if (best) {
       const team = best.people.slice(0, 20);
       shared.leadership = team.map(({ name, title }) => ({ name, title }));
-      for (const p of team.slice(0, 15)) add({ var: "co.leadership", value: `${p.name}, ${p.title}`, url: best.url, grade: "v", tier: "C", detail: { bio: p.bio?.slice(0, 500) || null, img: p.img } });
-    } else miss("co.leadership", `no leadership/team page with names and titles on ${subject.domain} (tried ${urls.length} paths incl. sitemap hints)`);
+      // a title in its own element is the site's word; one cut from a bio sentence is a reading of it
+      for (const p of team.slice(0, 15)) add({ var: "co.leadership", value: `${p.name}, ${p.title}`, url: best.url, grade: p.titleFrom === "prose" ? "p" : "v", tier: "C", detail: { bio: p.bio?.slice(0, 500) || null, img: p.img, titleFrom: p.titleFrom } });
+    } else if (blockedAll) {
+      ctx.status?.("blocked", `${subject.domain} refused scripted requests (${blockNote})`);
+      miss("co.leadership", `blocked (${blockNote}) on ${subject.domain}: leadership pages not checked`);
+    } else miss("co.leadership", `no leadership/team page with names and titles on ${subject.domain} (tried ${urls.length} paths incl. sitemap hints${blocked ? `; ${blockNote}` : ""})`);
 
     // ---- the subject: on a team page, or on their own bio page
     let me = null;
     for (const p of uniq) {
-      const hit = p.people.find((x) => nameIn(x.name, subject.name));
+      const hit = p.people.find((x) => namesSubject(x.name, subject));
       if (hit) {
         me = { ...hit, url: p.url };
         break;
       }
     }
-    const slug = normName(subject.name).replace(/ /g, "-");
+    const slugs = nameForms(subject).map((n) => normName(n).replace(/ /g, "-"));
     let own = null;
     for (const p of uniq) {
-      const m = [...p.html.matchAll(/href=["']([^"']+)["']/g)].map((x) => x[1]).find((h) => h.toLowerCase().includes(slug) && !/linkedin|twitter|facebook|mailto/i.test(h));
+      const m = [...p.html.matchAll(/href=["']([^"']+)["']/g)].map((x) => x[1]).find((h) => slugs.some((slug) => h.toLowerCase().includes(slug)) && !/linkedin|twitter|facebook|mailto/i.test(h));
       if (m) {
         own = abs(p.url, m);
         break;
@@ -86,7 +101,7 @@ export default {
         const meta = htmlText(htmlText(mt["og:description"] || mt.description || "").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
         const first = subject.name.split(/\s+/)[0];
         const metaBio = meta.length > 200 && (meta.includes(first) || meta.includes(subject.name.split(/\s+/).at(-1))) ? meta : "";
-        const fromBody = bioFrom(text, subject.name);
+        const fromBody = bioFrom(text, subject);
         const bio = metaBio && metaBio.length > fromBody.length * 0.6 ? metaBio : fromBody || metaBio;
         const img = [...r.text.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]).find((t) => normName(t).includes(normName(subject.name).split(" ").at(-1)));
         const src = img?.match(/(?:data-lazy-src|data-src|src)=["']([^"']+)/i)?.[1];
@@ -94,12 +109,13 @@ export default {
       }
     }
     if (!me) {
-      for (const v of ["career.timeline", "pic.headshot"]) miss(v, `"${subject.name}" not on ${subject.domain} leadership/team pages${own ? "" : " and no bio page link"}`);
+      for (const v of ["career.timeline", "pic.headshot"]) miss(v, blockedAll ? `${subject.domain} blocked (${blockNote}): the subject's bio page was not checked` : `"${subject.name}" not on ${subject.domain} leadership/team pages${own ? "" : " and no bio page link"}`);
     } else {
+      const fromEl = me.title && looksLikeTitle(me.title) && me.titleFrom !== "prose";
       const title = me.title && looksLikeTitle(me.title) ? me.title : me.bio ? titleFromBio(me.bio) : null;
       if (title) {
-        shared.roleTitle ??= title;
-        add({ var: "role.title", value: title, url: me.url, grade: "v", tier: "C", anchors: ["company-site"] });
+        const row = add({ var: "role.title", value: title, url: me.url, grade: fromEl ? "v" : "p", tier: "C", anchors: ["company-site"], detail: { titleFrom: fromEl ? "page element" : "bio sentence" } });
+        (shared.titles ||= []).push({ title, source: "leadership", ref: row?.id || null });
       }
       const bio = me.bio || "";
       if (bio) {
@@ -119,13 +135,15 @@ export default {
       }
       // reports-to: the top of the team page, when the subject is not the top
       const ceo = (shared.leadership || []).find((p) => /\b(chief executive|ceo|president)\b/i.test(p.title));
-      if (ceo && !nameIn(ceo.name, subject.name) && /\b(vp|vice president|chief|cfo|cto|coo|cio|cmo|cro|evp|svp|general manager|head of)\b/i.test(title || "")) add({ var: "role.reports_to", value: `Likely ${ceo.name} (${ceo.title}): top of the leadership page`, url: best?.url || me.url, grade: "i", tier: "C" });
+      if (ceo && !namesSubject(ceo.name, subject) && /\b(vp|vice president|chief|cfo|cto|coo|cio|cmo|cro|evp|svp|general manager|head of)\b/i.test(title || "")) add({ var: "role.reports_to", value: `Likely ${ceo.name} (${ceo.title}): top of the leadership page`, url: best?.url || me.url, grade: "i", tier: "C" });
     }
 
     // ---- press and news titles that name the subject
     const last = subject.name.split(/\s+/).at(-1);
+    const newsStatus = [];
     const news = (await Promise.all(NEWS.map(async (p) => {
       const r = await http.get(root + p, { timeout: 8000 });
+      newsStatus.push(r.status || 0);
       return r.ok ? { url: r.url || root + p, html: r.text } : null;
     }))).filter(Boolean);
     const links = new Map();
@@ -138,12 +156,13 @@ export default {
         if (u && !links.has(u)) links.set(u, t);
       }
     }
-    const mine = [...links].filter(([, t]) => t.includes(last));
+    const mine = [...links].filter(([, t]) => t.includes(last) && (namesSubject(t, subject) || new RegExp(`\\b${last}\\b`).test(t)));
     for (const [u, t] of mine.slice(0, 5)) add({ var: "news.company", value: t, url: u, grade: "v", tier: "C", anchors: ["names-subject"] });
     if (news.length && !mine.length) {
       const latest = [...links].slice(0, 5);
       for (const [u, t] of latest) add({ var: "news.company", value: t, url: u, grade: "p", tier: "C" });
     }
-    if (!news.length) miss("news.company", `no /news or /press page on ${subject.domain}`);
+    const newsBlocked = newsStatus.filter((x) => BLOCK.has(x)).length;
+    if (!news.length) miss("news.company", newsBlocked && !newsStatus.some((x) => x >= 200 && x < 300) ? `${subject.domain} blocked /news and /press (HTTP ${[...new Set(newsStatus.filter((x) => BLOCK.has(x)))].join("/")} on ${newsBlocked} of ${newsStatus.length} paths): not checked` : `no /news or /press page on ${subject.domain}`);
   },
 };

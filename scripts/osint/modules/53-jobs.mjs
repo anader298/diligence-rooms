@@ -2,7 +2,7 @@
 // (Greenhouse, Lever, Ashby, Gem, SmartRecruiters, Workable, Recruitee, Jobvite, Paylocity,
 // Workday, BambooHR), else probes slug guesses on the keyless JSON APIs.
 import { normName } from "../core.mjs";
-import { parseJobs, paylocityPageData, parseJobviteHtml, deptOf, termCounts, reportsTo, titleWords, normCompany, htmlText, stripBoilerplate } from "../colib.mjs";
+import { parseJobs, paylocityPageData, parseJobviteHtml, deptOf, termCounts, reportsTo, titleWords, normCompany, htmlText, stripBoilerplate, titleFor } from "../colib.mjs";
 
 const CAREERS = ["/careers", "/careers/", "/jobs", "/company/careers", "/about/careers", "/careers/open-positions/", "/join-us", "/work-with-us", "/about-us/careers"];
 
@@ -90,7 +90,9 @@ async function fetchBoard(http, b) {
       let d = null;
       try {
         d = JSON.parse(r.text);
-      } catch {}
+      } catch {
+        d = null; // Workday answered with HTML (blocked or moved): treated as no board
+      }
       const jobs = (d?.jobPostings || []).map((j) => ({ title: j.title, dept: null, location: j.locationsText, url: `https://${b.slug}.${wd}.myworkdayjobs.com/${site}${j.externalPath}`, text: "", date: j.postedOn }));
       return { url: `https://${b.slug}.${wd}.myworkdayjobs.com/${site}`, api: u, jobs, ok: !!d, total: d?.total };
     }
@@ -133,7 +135,9 @@ export default {
             if (/(open (positions|roles|jobs)|view (all )?(jobs|openings|positions)|see (all )?(jobs|openings)|current openings|job openings|search jobs|all jobs|join our team)/i.test(t) || /open-positions|openings|job-board|all-jobs/i.test(m[1])) {
               try {
                 hops.add(new URL(m[1], p.url).href);
-              } catch {}
+              } catch {
+                // a malformed href on the careers page: skip it
+              }
             }
           }
         const more = await Promise.all([...hops].slice(0, 3).map((u) => http.get(u, { timeout: 10000 })));
@@ -175,13 +179,15 @@ export default {
     }
     shared.jobsByDept = byDept;
     const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => `${k} ${v}`).join(", ");
-    add({ var: "co.hiring", value: `${shared.jobs} open roles on ${board.kind} (${top(byDept, 6)}); top locations: ${top(byLoc, 4)}`, url: res.url, grade, tier: "A", anchors, detail: { ats: board.kind, slug: board.slug, how: board.how, api: res.api, byDept, byLocation: byLoc } });
+    const jobsRow = add({ var: "co.hiring", value: `${shared.jobs} open roles on ${board.kind} (${top(byDept, 6)}); top locations: ${top(byLoc, 4)}`, url: res.url, grade, tier: "A", anchors, detail: { ats: board.kind, slug: board.slug, how: board.how, api: res.api, byDept, byLocation: byLoc } });
 
-    // the 15 roles closest to the subject's seat
-    const words = titleWords(shared.roleTitle || subject.title);
+    if (jobsRow?.id) (shared.refs ||= {}).jobs = jobsRow.id;
+    // the roles closest to the subject's seat: up to 10 that share a word with their title, else the 5 newest senior ones
+    const words = titleWords(titleFor(shared, subject)?.title);
     const score = (j) => words.reduce((s, w) => s + (normName(j.title).includes(w) ? 3 : 0) + (normName(j.dept || "").includes(w) ? 2 : 0) + (normName(j.text || "").includes(w) ? 0.2 : 0), 0) + (/(director|head|vp|manager|lead)/i.test(j.title) ? 0.5 : 0);
     const ranked = [...jobs].map((j) => ({ ...j, s: score(j) })).sort((a, b) => b.s - a.s || String(b.date).localeCompare(String(a.date)));
-    for (const j of ranked.slice(0, 15)) add({ var: "co.hiring", value: `${j.title}${j.location ? " · " + j.location : ""}${j.dept ? " · " + j.dept : ""}`, url: j.url || res.url, grade, tier: "A", date: j.date ? String(j.date).slice(0, 10) : null, detail: { relevance: Math.round(j.s * 10) / 10 } });
+    const near = ranked.filter((j) => j.s >= 1);
+    for (const j of (near.length ? near.slice(0, 10) : ranked.slice(0, 5))) add({ var: "co.hiring", value: `${j.title}${j.location ? " · " + j.location : ""}${j.dept ? " · " + j.dept : ""}`, url: j.url || res.url, grade, tier: "A", date: j.date ? String(j.date).slice(0, 10) : null, detail: { relevance: Math.round(j.s * 10) / 10 } });
 
     // boards that list titles only (Paylocity, Jobvite, Workday): read the top postings' pages
     const thin = ranked.filter((j) => (j.text || "").length < 400 && j.url).slice(0, 8);
@@ -204,7 +210,8 @@ export default {
     if (rt.length) {
       const mineRt = rt.filter(([t]) => words.some((w) => normName(t).includes(w)));
       if (mineRt.length) add({ var: "role.directs", value: `${mineRt.reduce((s, [, n]) => s + n, 0)} open roles report to ${mineRt.map(([t]) => t).join(" / ")}`, url: res.url, grade: "i", tier: "C", detail: { reportsTo: rt } });
-      add({ var: "role.team_size", value: `Postings name these managers: ${rt.slice(0, 5).map(([t, n]) => `${t} (${n})`).join(", ")}`, url: res.url, grade: "i", tier: "C", detail: { reportsTo: rt } });
+      // managers named in postings describe the company's org, not the subject's team: filed under hiring
+      add({ var: "co.hiring", value: `Postings name these managers: ${rt.slice(0, 5).map(([t, n]) => `${t} (${n})`).join(", ")}`, url: res.url, grade: "i", tier: "C", detail: { reportsTo: rt } });
     }
     const relevant = stripBoilerplate(ranked.filter((j) => j.s >= 1).map((j) => `${j.title}. ${j.text || ""}`));
     const terms = termCounts(relevant.length >= 3 ? relevant : texts);

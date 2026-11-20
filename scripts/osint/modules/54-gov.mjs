@@ -1,7 +1,7 @@
 // Government money and influence: federal awards (USAspending), lobbying (lda.gov) and a
-// company PAC (FEC committees). All keyless; FEC uses FEC_API_KEY, else fec.gov's own public
-// web key, else DEMO_KEY.
-import { normCompany, money } from "../colib.mjs";
+// company PAC (FEC committees). All keyless; FEC uses FEC_API_KEY, else the public DEMO_KEY
+// (40 calls an hour, shared). A rate-limited FEC call is recorded as not checked.
+import { normCompany, money, isCompanyPac } from "../colib.mjs";
 
 const same = (a, b) => {
   const x = normCompany(a).split(" ");
@@ -9,30 +9,57 @@ const same = (a, b) => {
   return x.length && x.every((t) => y.split(" ").includes(t));
 };
 
+const USA = "https://api.usaspending.gov/api/v2/search/spending_by_award/";
+
+/** Every page of a USAspending award search (100 a page, up to `max` pages). */
+export async function usaspendingAll(http, filters, { max = 5 } = {}) {
+  const body = { filters, fields: ["Award ID", "Recipient Name", "Award Amount", "Awarding Agency", "Start Date", "Description"], limit: 100, sort: "Award Amount", order: "desc" };
+  const all = [];
+  let more = true;
+  let status = null;
+  let pages = 0;
+  for (let page = 1; more && page <= max; page++) {
+    const r = await http.get(USA, { method: "POST", body: JSON.stringify({ ...body, page }), headers: { "content-type": "application/json", accept: "application/json" }, timeout: 20000 });
+    status = r.status || r.error;
+    let d = null;
+    try {
+      d = JSON.parse(r.text);
+    } catch {
+      d = null;
+    }
+    if (!d?.results) {
+      if (page === 1) return { error: status, results: null };
+      break;
+    }
+    pages++;
+    all.push(...d.results);
+    more = !!d.page_metadata?.hasNext;
+  }
+  return { results: all, more, pages };
+}
+
 async function usaspending(ctx) {
   const { http, add, miss, subject } = ctx;
-  const body = {
-    filters: { recipient_search_text: [subject.company], award_type_codes: ["A", "B", "C", "D"], time_period: [{ start_date: "2007-10-01", end_date: new Date().toISOString().slice(0, 10) }] },
-    fields: ["Award ID", "Recipient Name", "Award Amount", "Awarding Agency", "Start Date", "Description"],
-    limit: 100,
-    sort: "Award Amount",
-    order: "desc",
-  };
-  const r = await http.get("https://api.usaspending.gov/api/v2/search/spending_by_award/", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json", accept: "application/json" }, timeout: 20000 });
-  let d = null;
-  try {
-    d = JSON.parse(r.text);
-  } catch {}
-  if (!d?.results) return miss("co.gov", `USAspending ${r.status || r.error}`);
-  const rows = d.results.filter((x) => same(subject.company, x["Recipient Name"]));
+  const filters = { recipient_search_text: [subject.company], award_type_codes: ["A", "B", "C", "D"], time_period: [{ start_date: "2007-10-01", end_date: new Date().toISOString().slice(0, 10) }] };
+  const res = await usaspendingAll(http, filters);
+  if (!res.results) {
+    if ([403, 429].includes(res.error)) ctx.status?.("blocked", `USAspending ${res.error}`);
+    return miss("co.gov", `USAspending ${res.error}: not checked`);
+  }
+  const rows = res.results.filter((x) => same(subject.company, x["Recipient Name"]));
+  const related = [...new Set(res.results.filter((x) => !same(subject.company, x["Recipient Name"])).map((x) => x["Recipient Name"]))];
   const web = `https://www.usaspending.gov/search/?hash=&keyword=${encodeURIComponent(subject.company)}`;
-  if (!rows.length) return add({ var: "co.gov", value: `No federal contracts to "${subject.company}" in USAspending (FY2008-now)`, url: web, grade: "v", tier: "A", detail: { otherRecipients: [...new Set(d.results.map((x) => x["Recipient Name"]))].slice(0, 5) } });
+  if (!rows.length) return add({ var: "co.gov", value: `No federal contracts to "${subject.company}" in USAspending (FY2008-now)`, url: web, grade: res.more ? "p" : "v", tier: "A", detail: { otherRecipients: related.slice(0, 5), pagesRead: res.pages, truncated: res.more } });
   const total = rows.reduce((s, x) => s + (x["Award Amount"] || 0), 0);
   const agencies = {};
   for (const x of rows) agencies[x["Awarding Agency"]] = (agencies[x["Awarding Agency"]] || 0) + (x["Award Amount"] || 0);
-  const latest = rows.map((x) => x["Start Date"]).sort().at(-1);
-  add({ var: "co.gov", value: `${rows.length}${rows.length === 100 ? "+" : ""} federal contract awards, ${money(total)} total; top agencies ${Object.entries(agencies).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([a, v]) => `${a} ${money(v)}`).join(", ")}; latest start ${latest}`, url: web, grade: "v", tier: "A", date: latest, detail: { agencies, recipients: [...new Set(rows.map((x) => x["Recipient Name"]))] } });
-  for (const x of rows.slice(0, 3)) add({ var: "co.gov", value: `${money(x["Award Amount"])} ${x["Awarding Agency"]} ${x["Start Date"]}: ${String(x.Description || "").slice(0, 120)}`, url: `https://www.usaspending.gov/award/${x.generated_internal_id}`, grade: "v", tier: "A", date: x["Start Date"] });
+  const byDate = [...rows].sort((a, b) => String(b["Start Date"] || "").localeCompare(String(a["Start Date"] || "")));
+  const latest = byDate[0]?.["Start Date"];
+  add({ var: "co.gov", value: `${rows.length}${res.more ? "+" : ""} federal contract awards, ${money(total)} total; top agencies ${Object.entries(agencies).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([a, v]) => `${a} ${money(v)}`).join(", ")}; latest start ${latest}`, url: web, grade: "v", tier: "A", date: latest, detail: { agencies, recipients: [...new Set(rows.map((x) => x["Recipient Name"]))], relatedRecipients: related.slice(0, 10), pagesRead: res.pages, truncated: res.more } });
+  // the newest real awards first (at least $25k, last five years): what they do for the government now
+  const since = new Date(Date.now() - 5 * 365 * 864e5).toISOString().slice(0, 10);
+  const notable = byDate.filter((x) => (x["Award Amount"] || 0) >= 25000 && String(x["Start Date"] || "") >= since);
+  for (const x of notable.slice(0, 3)) add({ var: "co.gov", value: `${money(x["Award Amount"])} ${x["Awarding Agency"]} ${x["Start Date"]}: ${String(x.Description || "").slice(0, 120)}`, url: `https://www.usaspending.gov/award/${x.generated_internal_id}`, grade: "v", tier: "A", date: x["Start Date"] });
 }
 
 async function lobbying(ctx) {
@@ -40,10 +67,14 @@ async function lobbying(ctx) {
   const name = normCompany(subject.company);
   const u = `https://lda.gov/api/v1/filings/?client_name=${encodeURIComponent(subject.company)}&page_size=25&ordering=-dt_posted`;
   const r = await http.json(u, { timeout: 20000 });
-  if (!r.data) return miss("politics.company_pac", `lda.gov lobbying API ${r.status || r.error}`);
+  if (!r.data) {
+    if ([403, 429].includes(r.status)) ctx.status?.("blocked", `lda.gov ${r.status}`);
+    return miss("politics.company_pac", `lda.gov lobbying API ${r.status || r.error}: not checked`);
+  }
   const rows = (r.data.results || []).filter((f) => same(subject.company, f.client?.name || ""));
   const web = `https://lda.gov/filings/public/filing/search/?client=${encodeURIComponent(subject.company)}`;
-  if (!rows.length) return add({ var: "politics.company_pac", value: `No federal lobbying filings with "${subject.company}" as client (lda.gov)`, url: web, grade: "v", tier: "A", detail: { query: name, apiCount: r.data.count } });
+  // "none" is verified only when the API itself counted zero; otherwise the first page held only namesakes
+  if (!rows.length) return add({ var: "politics.company_pac", value: `No federal lobbying filings with "${subject.company}" as client (lda.gov)`, url: web, grade: r.data.count === 0 ? "v" : "p", tier: "A", detail: { query: name, apiCount: r.data.count } });
   const spend = rows.reduce((s, f) => s + Number(f.income || f.expenses || 0), 0);
   const firms = [...new Set(rows.map((f) => f.registrant?.name).filter(Boolean))];
   const issues = [...new Set(rows.flatMap((f) => (f.lobbying_activities || []).map((a) => a.general_issue_code_display)).filter(Boolean))];
@@ -52,23 +83,25 @@ async function lobbying(ctx) {
   add({ var: "co.gov", value: `Federal lobbying on ${issues.slice(0, 5).join(", ") || "unspecified issues"} (${firms.length} firm${firms.length === 1 ? "" : "s"})`, url: web, grade: "v", tier: "A" });
 }
 
-async function fecKey(http, env) {
-  if (env.FEC_API_KEY) return { key: env.FEC_API_KEY, headers: {} };
-  const r = await http.get("https://www.fec.gov/data/committees/", { timeout: 10000 });
-  const k = r.text?.match(/API_KEY_PUBLIC\s*=\s*['"]([A-Za-z0-9]{30,})['"]/)?.[1];
-  return k ? { key: k, headers: { referer: "https://www.fec.gov/" } } : { key: "DEMO_KEY", headers: {} };
+/** FEC_API_KEY when set, else the public DEMO_KEY. Never a key lifted from fec.gov's pages. */
+export function fecKey(env = process.env) {
+  return env.FEC_API_KEY || "DEMO_KEY";
 }
 
 async function pac(ctx) {
   const { http, add, miss, subject, env } = ctx;
-  const { key, headers } = await fecKey(http, env);
+  const key = fecKey(env);
   const q = normCompany(subject.company);
-  const u = `https://api.open.fec.gov/v1/committees/?q=${encodeURIComponent(q)}&per_page=20&api_key=${key}`;
-  const r = await http.json(u, { headers, timeout: 15000 });
-  if (!r.data) return miss("politics.company_pac", `FEC committees API ${r.status}${r.status === 429 ? " (rate limit; set FEC_API_KEY)" : ""}`);
-  const rows = (r.data.results || []).filter((c) => same(subject.company, c.name) || same(subject.company, c.sponsor_candidate_list?.[0] || "") || (c.organization_type === "C" && normCompany(c.name).includes(q)));
+  const u = `https://api.open.fec.gov/v1/committees/?q=${encodeURIComponent(q)}&per_page=50&api_key=${key}`;
+  const r = await http.json(u, { timeout: 15000 });
   const web = `https://www.fec.gov/data/committees/?q=${encodeURIComponent(q)}`;
-  if (!rows.length) return add({ var: "politics.company_pac", value: `No FEC-registered PAC named for ${subject.company}`, url: web, grade: "v", tier: "A" });
+  if (!r.data) {
+    if (r.status === 429 || r.status === 403) ctx.status?.("blocked", `FEC ${r.status}${key === "DEMO_KEY" ? " on DEMO_KEY" : ""}`);
+    return miss("politics.company_pac", `FEC committees API ${r.status || r.error}${r.status === 429 ? ` (rate limit${key === "DEMO_KEY" ? " on the shared DEMO_KEY; set FEC_API_KEY" : ""})` : ""}: company PAC unknown, not checked`);
+  }
+  // the company's own PAC: a non-candidate committee whose connected organisation is the company
+  const rows = (r.data.results || []).filter((c) => isCompanyPac(c, subject.company));
+  if (!rows.length) return add({ var: "politics.company_pac", value: `No FEC-registered PAC connected to ${subject.company}`, url: web, grade: (r.data.results || []).length ? "p" : "v", tier: "A", detail: { checked: (r.data.results || []).length, namesakes: (r.data.results || []).slice(0, 8).map((c) => c.name) } });
   for (const c of rows.slice(0, 3)) add({ var: "politics.company_pac", value: `${c.name} (${c.committee_id}), ${c.committee_type_full || c.committee_type}${c.cycles?.length ? `, active cycles ${c.cycles.slice(-3).join(", ")}` : ""}${c.last_file_date ? `, last filed ${c.last_file_date}` : ""}`, url: `https://www.fec.gov/data/committee/${c.committee_id}/`, grade: "v", tier: "A", date: c.last_file_date || null, detail: c });
 }
 
@@ -78,7 +111,7 @@ export default {
   lane: "fast",
   needs: ["company"],
   env: ["FEC_API_KEY"],
-  budgetMs: 30000,
+  budgetMs: 50000, // USAspending pages are read one after another (up to 5 x 100 awards)
   async run(ctx) {
     await Promise.all([usaspending(ctx), lobbying(ctx), pac(ctx)]);
   },

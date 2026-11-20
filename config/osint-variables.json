@@ -290,7 +290,7 @@
   },
   {
    "id": "money.holdings",
-   "label": "Harborline shares",
+   "label": "Shares held",
    "group": "Money",
    "tab": "money"
   },

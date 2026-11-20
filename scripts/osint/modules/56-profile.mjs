@@ -2,6 +2,8 @@
 // GDELT news in the last 90 days, DOL Form 5500 benefit plans (participants = headcount
 // check, works for private companies), ProPublica Nonprofit Explorer for nonprofits.
 import { normCompany, money } from "../colib.mjs";
+import { normName } from "../core.mjs";
+import { secBase } from "./50-sec.mjs";
 
 const same = (a, b) => {
   const x = normCompany(a).split(" ");
@@ -12,7 +14,7 @@ const same = (a, b) => {
 const wikidata = {
   id: "wikidata",
   label: "Wikidata: founded, HQ, headcount, parent, CEO",
-  lane: "fast",
+  lane: "slow", // after the SEC address and the first web-archive capture, which it is checked against
   needs: ["company"],
   budgetMs: 20000,
   async run(ctx) {
@@ -29,7 +31,12 @@ const wikidata = {
     const pick = (dom && ents.find((x) => site(x).some((w) => w.includes(dom)))) || ents.find((x) => isCo(x) && same(subject.company, x.labels?.en?.value || ""));
     if (!pick) return miss("co.facts", `Wikidata has items named like "${subject.company}" but none with website ${dom || "?"} or a company description`);
     const anchored = dom && site(pick).some((w) => w.includes(dom));
-    const claim = (p) => pick.claims?.[p] || [];
+    // deprecated statements are values Wikidata itself marks wrong or outdated; a preferred one beats the rest
+    const claim = (p) => {
+      const all = (pick.claims?.[p] || []).filter((c) => c.rank !== "deprecated");
+      const pref = all.filter((c) => c.rank === "preferred");
+      return pref.length ? pref : all;
+    };
     const val = (c) => c.mainsnak?.datavalue?.value;
     const refIds = [...new Set(["P159", "P749", "P169", "P452", "P414", "P17"].flatMap((p) => claim(p).map((c) => val(c)?.id)).filter(Boolean))];
     const lab = refIds.length ? await http.json(`${API}?action=wbgetentities&ids=${refIds.join("|")}&props=labels&languages=en&format=json`, { timeout: 10000 }) : null;
@@ -39,22 +46,32 @@ const wikidata = {
     const facts = {};
     const inc = val(claim("P571")[0])?.time;
     if (inc) facts.founded = inc.slice(1, 5);
-    if (claim("P159").length) facts.hq = claim("P159").map((c) => L(val(c)?.id)).join(", ");
+    // the SEC business address is the registrant's own filing; Wikidata's HQ is community-edited and often stale
+    if (subject.company) await secBase(ctx).catch(() => null);
+    const secAddr = shared.secAddress;
+    if (secAddr?.city) facts.hq = `${secAddr.city}${secAddr.state ? ", " + secAddr.state : ""} (SEC business address)`;
+    else if (claim("P159").length) facts.hq = claim("P159").map((c) => L(val(c)?.id)).join(", ") + " (Wikidata)";
     const emp = latest("P1128");
     if (emp?.v?.amount) facts.employees = `${Number(emp.v.amount).toLocaleString()}${emp.t ? ` (${emp.t.slice(1, 5)})` : ""}`;
     if (claim("P749").length) facts.parent = claim("P749").map((c) => L(val(c)?.id)).join(", ");
     if (claim("P169").length) facts.ceo = L(val(claim("P169").at(-1))?.id);
-    if (claim("P452").length) facts.industry = claim("P452").slice(0, 3).map((c) => L(val(c)?.id)).join(", ");
+    if (shared.sic) facts.industry = `${shared.sic} (SEC SIC code)`;
+    else if (claim("P452").length) facts.industry = claim("P452").slice(0, 3).map((c) => L(val(c)?.id)).join(", ") + " (Wikidata)";
     if (claim("P414").length) facts.exchange = claim("P414").map((c) => L(val(c)?.id)).join(", ");
     const rev = latest("P2139");
     if (rev?.v?.amount) facts.revenue = `${money(Number(rev.v.amount))}${rev.t ? ` (${rev.t.slice(1, 5)})` : ""}`;
     if (!Object.keys(facts).length) return miss("co.facts", `Wikidata ${pick.id} has no founding, HQ or headcount claims`);
+    let setFallback = false;
     if (emp?.v?.amount) {
       shared.employeesFallback = Number(emp.v.amount);
-      shared.employeesFallbackSource = `Wikidata ${emp.t.slice(1, 5) || ""}`;
+      shared.employeesFallbackSource = `Wikidata ${emp.t.slice(1, 5) || "(undated)"}`;
+      setFallback = true;
     }
-    const grade = anchored ? "v" : "p";
-    add({ var: "co.facts", value: Object.entries(facts).map(([k, v]) => `${k} ${v}`).join("; "), url, grade, tier: "A", anchors: anchored ? ["website-match"] : ["name-match"], detail: { id: pick.id, label: pick.labels?.en?.value, description: pick.descriptions?.en?.value, ...facts } });
+    // one community-edited source is never "verified"; a website match makes it a fair reading
+    const grade = anchored ? "p" : "w";
+    if (facts.founded && shared.firstSeenYear && Number(facts.founded) > shared.firstSeenYear + 1) facts.founded += ` (the domain served a page from ${shared.firstSeenYear}, possibly under an earlier owner or entity)`;
+    const wrow = add({ var: "co.facts", value: "Wikidata: " + Object.entries(facts).map(([k, v]) => `${k} ${v}`).join("; "), url, grade, tier: "A", anchors: anchored ? ["website-match"] : ["name-match"], detail: { id: pick.id, label: pick.labels?.en?.value, description: pick.descriptions?.en?.value, note: "community-edited; checked against the SEC address and SIC code where the company files", ...facts } });
+    if (setFallback && wrow?.id) (shared.refs ||= {}).employeesFallback = wrow.id;
     if (facts.ceo) add({ var: "co.leadership", value: `${facts.ceo}, CEO (Wikidata)`, url, grade: "p", tier: "A" });
     if (facts.parent) add({ var: "co.owners", value: `Parent: ${facts.parent}`, url, grade, tier: "A" });
   },
@@ -85,7 +102,9 @@ const gdelt = {
       n++;
       add({ var: "news.company", value: `${title} (${src}${d ? ", " + d : ""})`, url, grade, tier: "C", date: d, detail: { source: engine, note: grade === "w" ? "company named in the article body only" : "company named in the headline" } });
     };
-    const named = (t) => same(subject.company, t) || normCompany(t).includes(normCompany(subject.company).split(" ")[0] + " ");
+    // the company's whole name as a phrase ("Sentrylink", not "Fantasy Alarm"); a one-word name must stand alone
+    const phrase = " " + normName(subject.company).replace(/\b(inc|corp|corporation|co|company|ltd|llc|plc|holdings?)\b/g, " ").replace(/\s+/g, " ").trim() + " ";
+    const named = (t) => phrase.trim().length > 1 && (" " + normName(t) + " ").includes(phrase);
     arts.sort((a, b) => named(b.title) - named(a.title));
     for (const a of arts) push(a.title, a.domain, a.url, a.seendate ? `${a.seendate.slice(0, 4)}-${a.seendate.slice(4, 6)}-${a.seendate.slice(6, 8)}` : null, "GDELT", named(a.title) ? "p" : "w");
     if (n) return;
@@ -97,7 +116,7 @@ const gdelt = {
       const link = x.match(/<link>([\s\S]*?)<\/link>/)?.[1];
       const src = decode(x.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1] || "");
       const pd = x.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1];
-      if (!title || !same(subject.company, title.replace(/ - [^-]+$/, ""))) continue;
+      if (!title || !named(title.replace(/ - [^-]+$/, ""))) continue;
       push(title.replace(/ - [^-]+$/, ""), src, link, pd ? new Date(pd).toISOString().slice(0, 10) : null, "Google News RSS");
     }
     if (!n) miss("news.company", `no company-named articles in 90 days: GDELT ${r.data ? "0 hits" : r.status === 429 || /limit requests/i.test(r.text || "") ? "rate-limited (one call per 5 s)" : r.status || r.error}; Google News RSS ${g.ok ? "no title naming the company" : g.status || g.error}`);
@@ -136,10 +155,11 @@ const form5500 = {
       if (!n) {
         const nz = lastNonZero(p);
         if (nz) {
-          add({ var: "co.benefit_plans", value: `${p.planname}: ${Number(nz.participantsboy).toLocaleString()} participants (plan year ${nz.planyear}); newest filing ${p.planyear} reports none${Number(p.planyear) > Number(nz.planyear) ? " (plan may have closed or moved to a PEO)" : ""}`, url: page, grade: "v", tier: "A", date: nz.datereceived?.slice(0, 10), detail: { latest: p, lastWithParticipants: nz } });
+          const prow = add({ var: "co.benefit_plans", value: `${p.planname}: ${Number(nz.participantsboy).toLocaleString()} participants (plan year ${nz.planyear}); newest filing ${p.planyear} reports none${Number(p.planyear) > Number(nz.planyear) ? " (plan may have closed or moved to a PEO)" : ""}`, url: page, grade: "v", tier: "A", date: nz.datereceived?.slice(0, 10), detail: { latest: p, lastWithParticipants: nz } });
           if (Number(p.pn) < 500 && !shared.employeesFallback) {
             shared.employeesFallback = Number(nz.participantsboy);
             shared.employeesFallbackSource = `Form 5500 participants ${nz.planyear} (stale)`;
+            if (prow?.id) (shared.refs ||= {}).employeesFallback = prow.id;
           }
           continue;
         }
@@ -150,11 +170,13 @@ const form5500 = {
     if (ret) {
       shared.planParticipants = Number(ret.participantsboy);
       shared.ein = ret.ein;
-      if (!shared.employeesFallback) {
+      const own = !shared.employeesFallback;
+      if (own) {
         shared.employeesFallback = Number(ret.participantsboy);
         shared.employeesFallbackSource = `Form 5500 ${ret.planname} participants ${ret.planyear} (includes former staff with balances)`;
       }
-      add({ var: "co.facts", value: `EIN ${ret.ein}; ~${Number(ret.participantsboy).toLocaleString()} retirement-plan participants (${ret.planyear}): headcount check`, url: page, grade: "p", tier: "A", detail: { note: "participants include former employees still holding balances; treat as an upper bound on headcount", plan: ret } });
+      const frow = add({ var: "co.facts", value: `EIN ${ret.ein}; ~${Number(ret.participantsboy).toLocaleString()} retirement-plan participants (${ret.planyear}): headcount check`, url: page, grade: "p", tier: "A", detail: { note: "participants include former employees still holding balances; treat as an upper bound on headcount", plan: ret } });
+      if (own && frow?.id) (shared.refs ||= {}).employeesFallback = frow.id;
     }
   },
 };

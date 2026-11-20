@@ -1,22 +1,28 @@
-// Federal political donations (FEC Schedule A, individual contributions). One call by name
-// ("LAST, FIRST"), up to 100 most recent records, matched locally: name + employer is a strong
-// match, name + city/state partial, name alone weak. FEC_API_KEY (free) or the shared DEMO_KEY.
+// Federal political donations (FEC Schedule A, individual contributions). Up to two calls by name
+// ("LAST, FIRST" for the given and the formal first name: Jenny and Jennifer), 100 most recent
+// records each, matched locally with nickname forms. Grade p needs an anchor beyond the name: the
+// employer on the record, or a city/state already tied to the subject; name-only records are weak
+// (possible namesakes). FEC_API_KEY (free at api.data.gov) or the shared DEMO_KEY, nothing else.
+// A 429 is recorded as unknown, never as "no donations".
 
-import { nameParts, companyIn, placeIn, normName } from "../person-lib.mjs";
+import { nameParts, companyIn, placeIn, normName, firstForms, blockedMiss } from "../person-lib.mjs";
 
 const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
 const PARTY = { DEM: "Democratic", REP: "Republican", LIB: "Libertarian", GRE: "Green", IND: "Independent" };
 
 /** Score one Schedule A record against the subject. */
 export function matchDonation(rec, subject, shared = {}) {
-  const { first } = nameParts(subject.name);
+  const { first, last } = nameParts(subject.name);
+  const ln = normName(rec.contributor_last_name || String(rec.contributor_name || "").split(",")[0] || "");
+  if (ln && last && !ln.split(" ").includes(last)) return null;
   const fn = normName(rec.contributor_first_name || String(rec.contributor_name || "").split(",")[1] || "").split(" ")[0];
-  const nick = { rick: "richard", rich: "richard", bob: "robert", bill: "william", jim: "james", mike: "michael", gabe: "gabriel", tom: "thomas", dave: "david", steve: "steven", chris: "christopher", dan: "daniel", matt: "matthew", tony: "anthony" };
-  const firstOk = fn === first || nick[fn] === first || nick[first] === fn || (fn.length === 1 && fn === first[0]);
+  const forms = firstForms(first);
+  const firstOk = forms.includes(fn) || firstForms(fn).some((f) => forms.includes(f)) || (fn.length === 1 && fn === first[0]);
   if (!firstOk) return null;
   const anchors = ["name"];
   if (companyIn(`${rec.contributor_employer || ""}`, subject)) anchors.push("company");
   if (placeIn(`${rec.contributor_city || ""} ${rec.contributor_state || ""}`, subject, shared)) anchors.push("place");
+  // v: employer and place agree; p: one anchor beyond the name; w: the name alone (maybe a namesake).
   const grade = anchors.includes("company") && anchors.includes("place") ? "v" : anchors.length > 1 ? "p" : "w";
   return { anchors, grade };
 }
@@ -47,15 +53,27 @@ export default {
     const { subject, http, env, shared } = ctx;
     const key = env.FEC_API_KEY || "DEMO_KEY";
     const { first, last } = nameParts(subject.name);
-    const names = [`${last}, ${first}`, ...(subject.aliases || []).map((a) => { const p = nameParts(a); return `${p.last}, ${p.first}`; })];
+    const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+    // The given first name, then its formal form (Jenny -> Jennifer), then aliases. Donors file
+    // under their legal name, people are introduced by the short one.
+    const formal = firstForms(first).filter((f) => f !== first && f.length > first.length);
+    const names = [`${cap(last)}, ${cap(first)}`, ...formal.slice(0, 1).map((f) => `${cap(last)}, ${cap(f)}`), ...(subject.aliases || []).map((a) => { const p = nameParts(a); return `${cap(p.last)}, ${cap(p.first)}`; })];
     const recs = [];
+    let checked = 0;
     for (const n of [...new Set(names)].slice(0, 2)) {
       const url = `https://api.open.fec.gov/v1/schedules/schedule_a/?api_key=${key}&contributor_name=${encodeURIComponent(n)}&per_page=100&sort=-contribution_receipt_date&is_individual=true`;
       const r = await http.json(url, { timeout: 15000 });
       if (!r.ok) {
-        ctx.miss("politics.donations", `FEC API HTTP ${r.status || r.error}${r.status === 429 ? ` (${key === "DEMO_KEY" ? "the shared DEMO_KEY allows 40 calls an hour; set FEC_API_KEY, free at api.data.gov" : "rate limited"})` : ""} — donations not checked, unknown rather than none`);
-        return;
+        const fix = key === "DEMO_KEY" ? "set FEC_API_KEY (free at api.data.gov); the shared DEMO_KEY allows about 40 calls an hour" : "rate limited; retry later";
+        if (checked) ctx.miss("politics.donations", `FEC query "${n}": blocked (HTTP ${r.status || r.error}), unknown · fix: ${fix}`);
+        else {
+          blockedMiss(ctx, "politics.donations", "FEC API", r, fix);
+          ctx.miss("cause.political", `FEC donations: blocked (HTTP ${r.status || r.error}), unknown rather than none · fix: ${fix}`);
+          return;
+        }
+        break;
       }
+      checked++;
       recs.push(...(r.data?.results || []));
     }
     const seen = new Set();
@@ -67,12 +85,32 @@ export default {
       if (m) matched.push({ rec, m });
     }
     if (!matched.length) {
-      ctx.add({ var: "cause.political", value: `No federal contributions on record for ${subject.name} (FEC Schedule A, ${recs.length} records under the surname checked)`, url: `https://www.fec.gov/data/receipts/individual-contributions/?contributor_name=${encodeURIComponent(`${last}, ${first}`)}`, grade: "v", tier: "A", detail: { checked: recs.length } });
+      ctx.add({ var: "cause.political", value: `No federal contributions on record for ${subject.name} (FEC Schedule A, ${recs.length} records under ${[...new Set(names)].slice(0, checked).join(" and ")} checked)`, url: `https://www.fec.gov/data/receipts/individual-contributions/?contributor_name=${encodeURIComponent(`${last}, ${first}`)}`, grade: "v", tier: "A", detail: { checked: recs.length, names: [...new Set(names)].slice(0, checked) } });
       return;
     }
     const strong = matched.filter((x) => x.m.anchors.length > 1);
     const use = strong.length ? strong : matched;
-    for (const x of use.slice(0, 25)) ctx.add(donationRow(x.rec, x.m));
+    // Name-only records (no employer, no known place) stay in the summary row as possible namesakes.
+    // Anchored records: one row per committee (a payroll PAC deduction twice a month is one fact,
+    // not 80 rows), with count, total and date range; single gifts keep their own row.
+    if (strong.length) {
+      const byC = new Map();
+      for (const x of strong) {
+        const k = x.rec.committee?.name || x.rec.committee_id;
+        if (!byC.has(k)) byC.set(k, []);
+        byC.get(k).push(x);
+      }
+      for (const list of [...byC.values()].sort((a, b) => b.length - a.length).slice(0, 12)) {
+        if (list.length === 1) {
+          ctx.add(donationRow(list[0].rec, list[0].m));
+          continue;
+        }
+        const row = donationRow(list[0].rec, list[0].m);
+        const amt = list.reduce((a, x) => a + (Number(x.rec.contribution_receipt_amount) || 0), 0);
+        const ds = list.map((x) => String(x.rec.contribution_receipt_date || "").slice(0, 10)).filter(Boolean).sort();
+        ctx.add({ ...row, value: `${money(amt)} to ${row.detail.committee} in ${list.length} contributions, ${ds[0]} to ${ds.at(-1)}`, date: ds.at(-1) || row.date, grade: list.some((x) => x.m.grade === "v") ? "v" : "p", detail: { ...row.detail, count: list.length, amount: amt, first: ds[0], last: ds.at(-1) } });
+      }
+    }
     // Summary: totals by party and top committees.
     const byParty = {}, byCmte = {};
     let total = 0;
@@ -94,7 +132,7 @@ export default {
       grade: strong.length ? (strong.some((x) => x.m.grade === "v") ? "v" : "p") : "w",
       tier: "A",
       anchors: [...new Set(use.flatMap((x) => x.m.anchors))],
-      detail: { byParty, byCommittee: byCmte, total, n: use.length, strong: strong.length, nameOnly: matched.length - strong.length },
+      detail: { byParty, byCommittee: byCmte, total, count: use.length, n: use.length, strong: strong.length, nameOnly: matched.length - strong.length },
     });
     const pl = use.find((x) => x.m.anchors.includes("company"));
     if (pl) {

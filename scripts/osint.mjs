@@ -3,10 +3,15 @@
 //
 //   npm run osint -- --name "Jane Doe" --company "Acme Corp" [--domain acme.com] [--title "VP Ops"]
 //                    [--city Austin --state TX] [--handles janedoe,jdoe] [--photo <url>]
+//                    [--aliases "Janet Doe,J. Doe"] [--ticker ACME]
 //                    [--room <slug>] [--only sec,fec] [--out <dir>] [--open]
 //
+// Nicknames are handled for you: "Dan Holloway" also searches "Daniel Holloway" (and back).
+// --aliases adds other names the person files or publishes under (maiden name, middle name).
+//
 // Writes <out>/ledger.jsonl (one row per finding, with its source), osint.json and dossier.html.
-// With --room the output goes to rooms/<slug>/work/osint/, where the research agents read it as leads.
+// With --room the output goes to rooms/<slug>/work/osint/<person>/, where the research agents
+// and the studio read it. A folder that already holds a different person is moved aside first.
 // Optional free keys in .env make more modules run: FEC_API_KEY, COURTLISTENER_TOKEN,
 // OPENSANCTIONS_API_KEY, BRAVE_API_KEY, GITHUB_TOKEN, SEC_USER_AGENT. See docs/osint.md.
 import { parseArgs } from "node:util";
@@ -16,7 +21,7 @@ import { execFile } from "node:child_process";
 import { runOsint, REPO } from "./osint/run.mjs";
 import { renderDossier } from "./osint/dossier.mjs";
 
-const usage = 'usage: npm run osint -- --name "Full Name" --company "Company" [--domain d] [--title t] [--city c --state ST] [--handles a,b] [--photo url] [--room slug] [--only m1,m2] [--out dir] [--open]';
+const usage = 'usage: npm run osint -- --name "Full Name" --company "Company" [--domain d] [--title t] [--city c --state ST] [--handles a,b] [--aliases "Other Name,..."] [--ticker T] [--photo url] [--room slug] [--only m1,m2] [--out dir] [--open]';
 let values;
 try {
   ({ values } = parseArgs({
@@ -60,7 +65,7 @@ const subject = {
   ticker: values.ticker || null,
 };
 const slugOf = (s) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const outDir = values.out || (values.room ? join(REPO, "rooms", values.room, "work", "osint") : join(REPO, "work", "osint", slugOf(subject.name)));
+const outDir = values.out || (values.room ? join(REPO, "rooms", values.room, "work", "osint", slugOf(subject.name)) : join(REPO, "work", "osint", slugOf(subject.name)));
 
 console.log(`OSINT: ${subject.name}${subject.company ? " · " + subject.company : ""} → ${outDir}`);
 const result = await runOsint(subject, { outDir, only: values.only ? list(values.only) : null });
@@ -68,5 +73,11 @@ const file = join(outDir, "dossier.html");
 writeFileSync(file, renderDossier(result));
 const found = new Set(result.rows.map((r) => r.var)).size;
 console.log(`\n${result.rows.length} findings across ${found} variables in ${result.seconds}s · ${result.http.calls} calls, ${result.http.blocked} blocked`);
+for (const a of result.alerts || []) console.log(`ALERT: ${a.text}${a.url ? ` (${a.url})` : ""}`);
+const blocked = result.modules.filter((m) => m.status === "blocked");
+if (blocked.length) console.log(`blocked, not checked: ${blocked.map((m) => `${m.id}${m.why ? ` (${m.why})` : ""}`).join("; ")}`);
 console.log(`dossier: ${file}`);
-if (values.open) execFile("open", [file]);
+if (values.open) {
+  const [cmd, args] = process.platform === "darwin" ? ["open", [file]] : process.platform === "win32" ? ["cmd", ["/c", "start", "", file]] : ["xdg-open", [file]];
+  execFile(cmd, args, (err) => err && console.log(`could not open a browser (${err.message}); open ${file} yourself`));
+}

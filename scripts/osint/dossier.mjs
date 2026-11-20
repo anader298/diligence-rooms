@@ -7,6 +7,7 @@
 // pinned by a sha256 Content-Security-Policy, and no event handler is ever built from data.
 
 import { createHash } from "node:crypto";
+import { looksLikeEducation } from "./person-lib.mjs";
 
 const GRADE_NAME = { v: "Verified", p: "Partly verified", w: "Weak", i: "Inference", u: "Unknown", np: "Not public", n: "None found" };
 const GRADE_RANK = { v: 0, p: 1, i: 2, w: 3, u: 4, np: 5, n: 6 };
@@ -90,7 +91,74 @@ function normalise(result = {}) {
     misses: Array.isArray(result.misses) ? result.misses : [],
     modules: Array.isArray(result.modules) ? result.modules : [],
     http: result.http || { calls: 0, blocked: 0 },
+    alerts: Array.isArray(result.alerts) ? result.alerts.filter((a) => a && a.text) : [],
   };
+}
+
+// ---- person facts for the top cards
+// Modules whose person facts are only as good as the account or page they came from.
+const ID_DEPENDENT = new Set(["profiles", "accounts", "search", "images", "talks", "person-news", "hn"]);
+const OK_IDENTITY = new Set(["verified", "likely"]);
+const BOILER = /\b(non-gaap|amortization|forward-looking|safe harbor|reconciliation|we exclude|excluding|gaap measure|risk factors|this press release|noted above|included costs|EBITDA|footnote)\b/i;
+
+/** Blocked or not checked (rate limit, bot wall, missing key), as opposed to searched and empty. */
+export function isBlockedMiss(m) {
+  if (!m) return false;
+  if (m.blocked === true) return true;
+  return /\bblocked\b|not checked|not checkable|unknown rather than none|\bnot run\b|rate.?limit|captcha|unusual.traffic|HTTP (?:202|403|429|451|503|999)\b|needs (?:a free )?[A-Z_]{4,}|: timeout/i.test(String(m.searched || ""));
+}
+/** The fix for a blocked source: the module's own words, or a rule by source. */
+export function fixFor(m) {
+  if (m.fix) return m.fix;
+  const t = String(m.searched || "");
+  const own = t.match(/· fix: (.+)$/);
+  if (own) return own[1];
+  const key = t.match(/\b(?:needs|set) (?:a free )?([A-Z][A-Z0-9_]{3,})/);
+  if (key) return `set ${key[1]} in .env (free)`;
+  if (/FEC/i.test(t)) return "set FEC_API_KEY (free at api.data.gov) or retry in an hour";
+  if (/duckduckgo|ddg|searx|web search|site:/i.test(t)) return "set BRAVE_API_KEY (free tier) or retry in a few minutes";
+  if (/GDELT/i.test(t)) return "retry in a minute (one call per 5 s per IP)";
+  if (/patents/i.test(t)) return "retry in an hour, or set PATENTSVIEW_API_KEY (free)";
+  if (/linkedin|999/i.test(t)) return "LinkedIn refuses scripts; read the profile by hand";
+  if (/instagram|threads|facebook|reddit/i.test(t)) return "not readable by script; covered by site: search";
+  if (/429|rate/i.test(t)) return "rate limited: retry later";
+  if (/403|captcha|cloudflare|challenge/i.test(t)) return "the site refuses scripts: check by hand";
+  return "retry later";
+}
+
+/** Rows fit for a top card: graded v or p, not from an unconfirmed identity, best tier first. */
+export function cardRows(rows, varId, { identityOk = new Set(), check = null } = {}) {
+  const norm = (u) => String(u || "").toLowerCase().replace(/\/$/, "");
+  const idOf = (r) => String((r.detail && (r.detail.identity || r.detail.verdict)) || "").toLowerCase();
+  return rows
+    .filter((r) => r.var === varId && (r.grade === "v" || r.grade === "p"))
+    .filter((r) => !/namesake|unconfirmed/i.test(String(r.value)) && !["unclear", "namesake"].includes(idOf(r)))
+    .filter((r) => !ID_DEPENDENT.has(r.module) || OK_IDENTITY.has(idOf(r)) || identityOk.has(norm(r.url)) || (r.anchors || []).includes("company"))
+    .filter((r) => !check || check(text(r.value), r))
+    .sort((a, b) => (TIER_RANK[a.tier] ?? 9) - (TIER_RANK[b.tier] ?? 9) || (OK_IDENTITY.has(idOf(b)) ? 1 : 0) - (OK_IDENTITY.has(idOf(a)) ? 1 : 0) || byBest(a, b));
+}
+
+/** Alerts for the banner: the result's own, rows that carry one, and blocked key sources. */
+export function collectAlerts(R) {
+  const out = [];
+  const seen = new Set();
+  const push = (a) => {
+    const k = String(a.text).toLowerCase().slice(0, 90);
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(a);
+  };
+  for (const a of R.alerts) push({ level: a.level || "red", text: String(a.text), url: a.url || null, ledger: a.ledger || null });
+  for (const r of R.rows) if (r.detail && r.detail.alert) push({ level: r.detail.alert.level || "red", text: r.detail.alert.text || text(r.value), url: r.url, ledger: r.id });
+  // Whole sources that refused us (module status "blocked"); one site in a sweep is not a banner.
+  // Older results without module status fall back to blocked misses on key variables.
+  const KEY = /^(politics\.donations|cause\.political|news\.articles|career\.patents|voice\.talks|rec\.|money\.|role\.|co\.leadership)/;
+  const mods = R.modules.filter((m) => m.status === "blocked");
+  const hasStatus = R.modules.some((m) => m.status === "blocked" || m.status === "partial");
+  const blocked = hasStatus ? [] : R.misses.filter((m) => isBlockedMiss(m) && KEY.test(m.var) && /\bblocked \(HTTP|HTTP (?:403|429|503|999)\b/i.test(String(m.searched)));
+  const names = [...new Set([...mods.map((m) => (m.label || m.id).replace(/\s*\(.*\)$/, "")), ...blocked.map((m) => String(m.searched).split(":")[0].slice(0, 60))])].slice(0, 6);
+  if (names.length) push({ level: "amber", text: `Blocked, so unknown (not "none"): ${names.join("; ")}. The Gaps tab says which free key or retry fixes each.`, url: null, ledger: null, tab: "gaps" });
+  return out;
 }
 
 export function renderDossier(result) {
@@ -108,12 +176,14 @@ export function renderDossier(result) {
   for (const r of R.rows) (byVar.get(r.var) || byVar.set(r.var, []).get(r.var)).push(r);
   for (const list of byVar.values()) list.sort(byBest);
   const best = (id) => byVar.get(id)?.[0] || null;
+  const identityOk = new Set(R.rows.filter((r) => r.var === "social.accounts" && (r.grade === "v" || r.grade === "p")).map((r) => String(r.url || "").toLowerCase().replace(/\/$/, "")));
+  const pick = (id, check) => cardRows(R.rows, id, { identityOk, check })[0] || null;
   const filled = R.variables.filter((v) => byVar.has(v.id)).length;
   const hosts = new Set(R.rows.map((r) => hostOf(r.url)).filter(Boolean));
   const modsRan = R.modules.filter((m) => m.status !== "skipped").length;
 
   // ---- header
-  const title = S.title || best("role.title")?.value;
+  const title = S.title || pick("role.title", (v) => !/see remarks/i.test(v) && v.length < 140)?.value;
   const sub = [title && clip(text(title), 90), S.company, S.domain, [S.city, S.state].filter(Boolean).join(", ")].filter(Boolean);
   const chips = [
     R.ranAt && `Run ${when(R.ranAt)}`,
@@ -135,52 +205,56 @@ export function renderDossier(result) {
     })
     .join("");
 
-  // ---- snapshot
+  // ---- snapshot: person facts only from rows graded v or p, never from an unconfirmed
+  // identity; best source tier first. Company facts must read like what the card claims.
   const tiles = [];
   const tile = (cls, k, r, v, note) =>
     tiles.push(
       `<div class="tile ${cls}"><div class="k">${esc(k)}</div><div class="v">${esc(clip(v ?? text(r.value), 110))}</div><div class="n">${gradeChip(r.grade)} <span>${esc(note ?? [hostOf(r.url) || r.module, r.id].filter(Boolean).join(" · "))}</span></div></div>`
     );
-  const add = (cls, k, id) => {
-    const r = best(id);
+  const add = (cls, k, id, check) => {
+    const r = pick(id, check);
     if (r) tile(cls, k, r);
   };
-  add("pro", "Title", "role.title");
-  add("pro", "In the seat since", "role.start");
-  const scale = best("co.arr") || best("co.facts");
+  add("pro", "Title", "role.title", (v) => !/see remarks|^n\/?a$/i.test(v) && v.length < 140);
+  add("pro", "In the seat since", "role.start", (v) => v.length < 200);
+  const scale = pick("co.arr") || pick("co.facts", (v) => /\$\s?[\d.]+|revenue|employees|headcount/i.test(v));
   if (scale) tile("biz", scale.var === "co.arr" ? "Company ARR" : "Company financials", scale);
-  add("biz", "Named growth priority", "co.growth_line");
-  const dons = byVar.get("politics.donations");
-  if (dons) {
-    const totals = dons.map((r) => Number(r.detail?.total)).filter(Number.isFinite);
-    const amounts = dons.map(amountOf).filter((n) => n != null);
-    const total = totals.length ? Math.max(...totals) : amounts.reduce((a, b) => a + b, 0);
-    const count = totals.length ? Number(dons.find((r) => Number.isFinite(Number(r.detail?.total)))?.detail?.count) || dons.length : dons.length;
-    tile("pol", "Political giving", dons[0], total > 0 ? `${money(total)} on record` : null, `${count} record${count === 1 ? "" : "s"} · ${hostOf(dons[0].url) || dons[0].module}`);
+  add("biz", "Named growth priority", "co.growth_line", (v) => !BOILER.test(v) && v.length < 400);
+  const dons = cardRows(R.rows, "politics.donations", { identityOk });
+  if (dons.length) {
+    // The FEC summary row (cause.political) carries the true total; else sum the rows.
+    const sum = cardRows(R.rows, "cause.political", { identityOk }).find((r) => r.module === dons[0].module && Number.isFinite(Number(r.detail?.total)));
+    const total = sum ? Number(sum.detail.total) : dons.map(amountOf).filter((n) => n != null).reduce((a, b) => a + b, 0);
+    const count = sum ? Number(sum.detail.count ?? sum.detail.n) || dons.length : dons.reduce((a, r) => a + (Number(r.detail?.count) || 1), 0);
+    tile("pol", "Political giving", sum || dons[0], total > 0 ? `${money(total)} on record` : null, `${count} record${count === 1 ? "" : "s"} · ${hostOf(dons[0].url) || dons[0].module}`);
   }
-  const accts = byVar.get("social.accounts");
-  if (accts) {
+  const accts = (byVar.get("social.accounts") || []).filter((r) => r.grade === "v" || r.grade === "p");
+  if (accts.length) {
     const where = [...new Set(accts.map((r) => hostOf(r.url)).filter(Boolean))].slice(0, 5).join(", ");
-    tile("social", "Public accounts", accts[0], `${accts.length} account${accts.length === 1 ? "" : "s"}`, where || accts[0].module);
+    const nv = accts.filter((r) => r.grade === "v").length;
+    tile("social", "Public accounts", accts[0], `${accts.length} tied to ${S.name}`, `${nv} verified · ${where || accts[0].module}`);
   }
-  add("social", "Home metro", "place.home_metro");
-  add("pro", "Education", "career.education");
+  add("social", "Home metro", "place.home_metro", (v) => v.length < 120);
+  add("pro", "Education", "career.education", (v) => looksLikeEducation(v));
   add("money", "Pay", "money.comp");
+  add("pro", "Talks", "voice.talks");
 
-  const cands = [...(byVar.get("social.candidates") || []), ...(accts || [])];
-  const verdictOf = (r) => String(r.detail?.verdict || { v: "verified", p: "partly", n: "namesake" }[r.grade] || "unconfirmed").toLowerCase();
-  const vc = { verified: 0, partly: 0, namesake: 0 };
+  const cands = [...(byVar.get("social.candidates") || []), ...(byVar.get("social.accounts") || [])].filter((r) => r.detail?.verdict !== "summary");
+  const verdictOf = (r) => String(r.detail?.verdict || { v: "verified", p: "likely", i: "namesake" }[r.grade] || "unclear").toLowerCase();
+  const vc = { verified: 0, likely: 0, unclear: 0, namesake: 0 };
   for (const r of cands) {
     const v = verdictOf(r);
     if (v in vc) vc[v]++;
   }
-  const photo = safeUrl(S.photo) || safeUrl(best("pic.headshot")?.image);
-  const where = [S.city, S.state].filter(Boolean).join(", ") || (best("place.home_metro") ? text(best("place.home_metro").value) : "");
+  const photo = safeUrl(S.photo) || safeUrl(pick("pic.headshot")?.image);
+  const metro = pick("place.home_metro", (v) => v.length < 120);
+  const where = [S.city, S.state].filter(Boolean).join(", ") || (metro ? text(metro.value) : "");
   const who = `<div class="who">
     ${photo ? `<img class="avatar" src="${esc(photo)}" alt="" referrerpolicy="no-referrer" loading="lazy">` : `<div class="avatar">${esc(initials(S.name))}</div>`}
     <h2>${esc(S.name)}</h2>
     ${title ? `<p>${esc(clip(text(title), 80))}</p>` : ""}${S.company ? `<p>${esc(S.company)}${S.ticker ? ` (${esc(S.ticker)})` : ""}</p>` : ""}${where ? `<p>${esc(clip(where, 60))}</p>` : ""}
-    <div class="idscore"><b>${cands.length}</b> accounts checked<div class="idb">${vc.verified} verified · ${vc.partly} partly · ${vc.namesake} namesake${vc.namesake === 1 ? "" : "s"}</div></div>
+    <div class="idscore"><b>${cands.length}</b> accounts scored<div class="idb">${vc.verified} verified · ${vc.likely} likely · ${vc.unclear} name only · ${vc.namesake} namesake${vc.namesake === 1 ? "" : "s"}</div></div>
   </div>`;
   const tilesHtml = tiles.length
     ? `<div class="tiles">${tiles.join("")}</div>`
@@ -198,7 +272,17 @@ export function renderDossier(result) {
     .join("");
   const panels = tabList.map((t, i) => `<section class="panel${i === 0 ? " on" : ""}" id="p-${esc(t.id)}" role="tabpanel" aria-labelledby="t-${esc(t.id)}" data-kind="${t.kind}"><h2 class="ptitle">${esc(t.label)}</h2><div class="pb"></div></section>`).join("\n");
 
-  const data = { ...R, tabList };
+  const alerts = collectAlerts(R);
+  const banner = alerts.length
+    ? `<div class="alerts" role="alert">${alerts
+        .map((a) => {
+          const u = safeUrl(a.url);
+          return `<div class="alert a-${a.level === "amber" ? "amber" : "red"}"><b>${a.level === "amber" ? "Not checked" : "Alert"}</b> ${esc(clip(a.text, 260))}${u ? ` <a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(hostOf(u))}</a>` : ""}${a.ledger ? ` <span class="led">${esc(a.ledger)}</span>` : ""}${a.tab ? ` <a href="#${esc(a.tab)}">Gaps</a>` : ""}</div>`;
+        })
+        .join("")}</div>`
+    : "";
+  const misses = R.misses.map((m) => (isBlockedMiss(m) ? { ...m, blocked: true, fix: fixFor(m) } : { ...m, blocked: false }));
+  const data = { ...R, misses, tabList };
   const json = JSON.stringify(data).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
   const js = `(${client.toString()})();`;
   const hash = createHash("sha256").update(js).digest("base64");
@@ -215,6 +299,7 @@ export function renderDossier(result) {
 <style>${CSS}</style>
 </head>
 <body>
+${banner}
 <header class="top"><div class="wrap">
   <div class="eyebrow">Diligence room · OSINT dossier · every line ties back to a ledger row</div>
   <h1>${esc(S.name)}</h1>
@@ -305,7 +390,7 @@ function client() {
 
   for (const t of tabs) {
     if (t.kind === "var") t.rows = rows.filter((r) => r.tab === t.id);
-    else if (t.kind === "pics") t.rows = rows.filter((r) => r.tab === t.id || safeUrl(r.image));
+    else if (t.kind === "pics") t.rows = rows.filter((r) => r.tab === t.id || (safeUrl(r.image) && r.var !== "social.candidates" && (r.grade === "v" || r.grade === "p")));
     else if (t.kind === "other") t.rows = rows.filter((r) => !varTabIds.has(r.tab));
     else if (t.kind === "accounts") t.rows = rows.filter((r) => ACCT.has(r.var));
     else if (t.kind === "timeline") t.rows = rows.filter((r) => r.date);
@@ -329,26 +414,36 @@ function client() {
   const qPass = (s) => !st.q.length || st.q.every((w) => s.toLowerCase().includes(w));
 
   // ---------------------------------------------------------------- building blocks
-  function cell(x) {
+  const CSSDECL = /(?:\b(?:font|margin|padding|color|text|line|border|width|height|display|vertical|background|letter|white|word)[a-z-]*\s*:\s*[^;:<>]{1,60};?\s*){2,}/gi;
+  const cleanStr = (v) => String(v).replace(CSSDECL, " ").replace(/^[\s'",;]*(?:serif|sans-serif)['"]?;?\s*/i, "").replace(/:\s*;\s*/g, ": ").replace(/^\s*;\s*/, "").replace(/;\s*;/g, ";").replace(/\s{2,}/g, " ").trim();
+  // Years, ids and Unix times are not quantities: no thousands separators.
+  function num(x, k) {
+    const key = String(k || "").toLowerCase();
+    if (/(joined|created|last_online|lastonline|timestamp|_at$|^at$|time$|online$|^last$)/.test(key) && x > 1e9 && x < 1e13) return new Date(x < 1e12 ? x * 1000 : x).toISOString().slice(0, 10);
+    if (/^(fy|year|yr|years?|cik|zip|id|offset|pos|at|line|page|ent_num)$/.test(key) || (Number.isInteger(x) && x >= 1900 && x <= 2100)) return String(x);
+    return x.toLocaleString("en-US");
+  }
+  function cell(x, k) {
     if (x == null || x === "") return '<span class="mute">–</span>';
-    if (typeof x === "string") return safeUrl(x) && /^https?:\/\//i.test(x) ? link(x) : esc(clip(x, 400));
-    if (typeof x === "number") return esc(x.toLocaleString("en-US"));
+    if (typeof x === "string") return safeUrl(x) && /^https?:\/\//i.test(x) ? link(x) : esc(clip(cleanStr(x), 400));
+    if (typeof x === "number") return esc(num(x, k));
     if (typeof x === "boolean") return x ? "yes" : "no";
-    if (Array.isArray(x) && x.every((y) => y == null || typeof y !== "object")) return x.map(cell).join(", ");
+    if (Array.isArray(x) && x.every((y) => y == null || typeof y !== "object")) return x.map((y) => cell(y, k)).join(", ");
+    if (Array.isArray(x) && x.every((y) => Array.isArray(y))) return x.slice(0, 12).map((row) => row.map((y) => (y == null ? "" : typeof y === "object" ? JSON.stringify(y) : esc(clip(cleanStr(String(y)), 60)))).filter(Boolean).join(" | ")).join("<br>") + (x.length > 12 ? '<br><span class="mute">+' + (x.length - 12) + " more</span>" : "");
     return '<code class="js">' + esc(clip(JSON.stringify(x), 300)) + "</code>";
   }
   function detailHtml(d, depth) {
     if (d == null || d === "") return "";
-    if (typeof d !== "object") return '<div class="dtx">' + cell(d) + "</div>";
+    if (typeof d !== "object") return '<div class="dtx">' + cell(d, "") + "</div>";
     if (Array.isArray(d)) {
       if (!d.length) return "";
       if (d.every((x) => x && typeof x === "object" && !Array.isArray(x))) return miniTable(d);
-      return '<ul class="dli">' + d.slice(0, 60).map((x) => "<li>" + cell(x) + "</li>").join("") + (d.length > 60 ? "<li class=mute>+" + (d.length - 60) + " more</li>" : "") + "</ul>";
+      return '<ul class="dli">' + d.slice(0, 60).map((x) => "<li>" + cell(x, "") + "</li>").join("") + (d.length > 60 ? "<li class=mute>+" + (d.length - 60) + " more</li>" : "") + "</ul>";
     }
     const keys = Object.keys(d).filter((k) => d[k] != null && d[k] !== "" && !(Array.isArray(d[k]) && !d[k].length) && !(depth === 0 && (k === "title" || k === "image")));
     if (!keys.length) return "";
     const simple = keys.length <= 6 && keys.every((k) => d[k] == null || (typeof d[k] !== "object" && String(d[k]).length < 70));
-    if (simple) return '<div class="kvi">' + keys.map((k) => "<span><i>" + esc(humanKey(k)) + "</i> " + cell(d[k]) + "</span>").join("") + "</div>";
+    if (simple) return '<div class="kvi">' + keys.map((k) => "<span><i>" + esc(humanKey(k)) + "</i> " + cell(d[k], k) + "</span>").join("") + "</div>";
     return (
       '<dl class="kv">' +
       keys
@@ -356,7 +451,7 @@ function client() {
         .map((k) => {
           const v = d[k];
           const deep = v && typeof v === "object" && depth < 2 && !(Array.isArray(v) && v.every((y) => y == null || typeof y !== "object"));
-          return "<dt>" + esc(humanKey(k)) + "</dt><dd>" + (deep ? detailHtml(v, depth + 1) : cell(v)) + "</dd>";
+          return "<dt>" + esc(humanKey(k)) + "</dt><dd>" + (deep ? detailHtml(v, depth + 1) : cell(v, k)) + "</dd>";
         })
         .join("") +
       "</dl>"
@@ -372,7 +467,7 @@ function client() {
       "</tr></thead><tbody>" +
       arr
         .slice(0, lim)
-        .map((o) => "<tr>" + keys.map((k) => "<td>" + cell(o[k]) + "</td>").join("") + "</tr>")
+        .map((o) => "<tr>" + keys.map((k) => "<td>" + cell(o[k], k) + "</td>").join("") + "</tr>")
         .join("") +
       "</tbody></table>" +
       (arr.length > lim ? '<div class="mute small">+' + (arr.length - lim) + " more rows in osint.json</div>" : "") +
@@ -421,20 +516,46 @@ function client() {
       "</div>"
     );
   }
+  // Pictures load from third-party hosts: only for rows tied to the subject, never for a
+  // namesake's avatar.
+  const okImage = (r) => !!safeUrl(r.image) && r.var !== "social.candidates" && (r.grade === "v" || r.grade === "p" || (/^pic\./.test(r.var) && r.grade !== "i"));
+  const ACCT_KEYS = ["score", "verdict", "reasons", "site", "handle", "stage", "sources"];
   function finding(r) {
-    const v = txt(r.value);
-    const img = safeUrl(r.image);
+    const v = cleanStr(txt(r.value));
+    const det = ACCT.has(r.var) && r.detail && typeof r.detail === "object" && !Array.isArray(r.detail) ? Object.fromEntries(Object.entries(r.detail).filter(([k]) => !ACCT_KEYS.includes(k))) : r.detail;
+    const img = okImage(r) ? safeUrl(r.image) : null;
     const title = r.detail && typeof r.detail === "object" && !Array.isArray(r.detail) && typeof r.detail.title === "string" ? r.detail.title : "";
     return (
       '<div class="f">' +
       (img ? '<img class="fi" loading="lazy" referrerpolicy="no-referrer" alt="" src="' + esc(img) + '">' : "") +
       '<div class="fv">' + esc(st.print ? v : clip(v, 700)) + "</div>" +
       (title && title !== v ? '<div class="ftl">' + esc(clip(title, 200)) + "</div>" : "") +
-      detailHtml(r.detail, 0) +
+      detailHtml(det, 0) +
       anchorChips(r.anchors) +
       meta(r) +
+      (r._also && r._also.length ? '<div class="also">Same finding also in ' + r._also.map((x) => '<span class="led">' + esc(x) + "</span>").join(" ") + "</div>" : "") +
       "</div>"
     );
+  }
+  /** Collapse rows of one variable that say the same thing (same value, or same link), keeping the best. */
+  const dkey = (r) => txt(r.value).toLowerCase().replace(/\(.*?\)|https?:\/\/\S+/g, "").replace(/[^a-z0-9]+/g, " ").trim().slice(0, 120);
+  function dedupe(list) {
+    const out = [];
+    const byKey = new Map();
+    for (const r of list) {
+      const k1 = dkey(r);
+      const k2 = r.url ? "u:" + String(r.url).toLowerCase().replace(/[?#].*$|\/$/g, "") : null;
+      const prev = byKey.get(k1) || (k2 && byKey.get(k2));
+      if (prev && k1.length > 8) {
+        (prev._also = prev._also || []).includes(r.id) || prev._also.push(r.id);
+        continue;
+      }
+      r._also = [];
+      out.push(r);
+      byKey.set(k1, r);
+      if (k2) byKey.set(k2, r);
+    }
+    return out;
   }
   function emptyList(vars, title, open) {
     if (!vars.length) return "";
@@ -446,7 +567,7 @@ function client() {
           return (
             "<li><b>" + esc(v.label || v.id) + "</b> <code>" + esc(v.id) + "</code>" +
             (ms.length
-              ? '<div class="searched">' + ms.map((m) => '<span class="mod">' + esc(m.module) + "</span> " + esc(txt(m.searched))).join("<br>") + "</div>"
+              ? '<div class="searched">' + ms.map((m) => (m.blocked ? '<span class="stc s-blocked">blocked</span> ' : "") + '<span class="mod">' + esc(m.module) + "</span> " + esc(txt(m.searched))).join("<br>") + "</div>"
               : '<div class="searched mute">No module searched for this in this run.</div>') +
             "</li>"
           );
@@ -480,7 +601,7 @@ function client() {
         if (qPass(v.label + " " + v.id + " " + (missByVar.get(v.id) || []).map((m) => txt(m.searched)).join(" "))) empty.push(v);
         continue;
       }
-      const shown = all.filter(passes).sort(byBest);
+      const shown = dedupe(all.filter(passes).sort(byBest));
       if (!shown.length) {
         hidden++;
         continue;
@@ -505,11 +626,12 @@ function client() {
       html += "</div></div>";
     }
     if (hidden) html += '<p class="note">' + plural(hidden, "variable") + " with findings hidden by the filter.</p>";
-    html += emptyList(empty, "Searched, none found", !groups.size);
+    html += emptyList(empty.filter((v) => !(missByVar.get(v.id) || []).length || (missByVar.get(v.id) || []).some((m) => !m.blocked)), "Searched, none found", !groups.size);
+    html += emptyList(empty.filter((v) => (missByVar.get(v.id) || []).length && (missByVar.get(v.id) || []).every((m) => m.blocked)), "Blocked / not checked (unknown, not none)", false);
     return html;
   }
   function renderPics(t) {
-    const imgs = t.rows.filter((r) => safeUrl(r.image) && passes(r)).sort(byBest);
+    const imgs = t.rows.filter((r) => okImage(r) && passes(r)).sort(byBest);
     if (!imgs.length) return '<div class="card blank">No pictures' + (filtering() ? " match the filter." : " in this run.") + "</div>";
     return (
       '<div class="pics">' +
@@ -533,14 +655,14 @@ function client() {
       const n = Number(r.detail && (r.detail.score ?? r.detail.identity_score));
       return Number.isFinite(n) ? n : null;
     };
-    const verdict = (r) => String((r.detail && r.detail.verdict) || { v: "verified", p: "partly", n: "namesake" }[r.grade] || "unconfirmed").toLowerCase();
+    const verdict = (r) => String((r.detail && r.detail.verdict) || { v: "verified", p: "likely", i: "namesake" }[r.grade] || "unclear").toLowerCase();
     list.sort((a, b) => (score(b) ?? -99) - (score(a) ?? -99) || byBest(a, b));
     const cnt = {};
     for (const r of list) cnt[verdict(r)] = (cnt[verdict(r)] || 0) + 1;
     const S = D.subject;
-    const searched = [S.name].concat(S.aliases || [], (S.handles || []).map((h) => "@" + h)).filter(Boolean);
+    const searched = [S.name].concat(S.aliases || [], S.foundAliases || [], (S.handles || []).map((h) => "@" + h)).filter(Boolean);
     let html =
-      '<p class="note">Every account a module found for this name, scored on independent anchors (photo, employer, city, links from an official page). Verified and partly verified accounts are the ones to read; namesakes are kept so you can see what was ruled out. Searched as: ' +
+      '<p class="note">Every account a module found for this name, scored on anchors beyond the name (employer, city, a link from an official page, the headshot). Only verified and likely accounts count as the subject\'s; "unclear" means the name alone matched, and namesakes are kept so you can see what was ruled out. Searched as: ' +
       searched.map((s) => "<b>" + esc(s) + "</b>").join(", ") + ".</p>" +
       '<div class="legend">' + Object.keys(cnt).map((k) => '<span class="vd v-' + esc(k.replace(/[^a-z]/g, "")) + '">' + esc(k) + " " + cnt[k] + "</span>").join("") + "</div>";
     if (!list.length) return html + '<div class="card blank">No candidate accounts' + (filtering() ? " match the filter." : " in this run.") + "</div>";
@@ -552,7 +674,7 @@ function client() {
           const d = r.detail && typeof r.detail === "object" && !Array.isArray(r.detail) ? r.detail : {};
           const sc = score(r);
           const v = verdict(r);
-          const col = v === "verified" ? "#2e7d4f" : v === "partly" ? "#7fb069" : v === "namesake" ? "#b0473c" : "#d99a2b";
+          const col = v === "verified" ? "#2e7d4f" : v === "likely" ? "#7fb069" : v === "namesake" ? "#b0473c" : "#d99a2b";
           const extra = Object.assign({}, d);
           for (const k of ["score", "identity_score", "verdict", "platform", "site", "handle", "username", "title", "image"]) delete extra[k];
           return (
@@ -625,10 +747,24 @@ function client() {
   }
   function renderGaps() {
     const empty = D.variables.filter((v) => !allByVar.has(v.id));
-    let html = '<p class="note"><b>' + empty.length + "</b> of " + D.variables.length + " variables have no finding. First, the modules that would do more with a free key or did not finish; then each empty variable with what was searched for it.</p>";
+    const blockedMs = D.misses.filter((m) => m.blocked && qPass(m.module + " " + txt(m.searched) + " " + (m.fix || "")));
+    const onlyBlocked = (v) => (missByVar.get(v.id) || []).length && (missByVar.get(v.id) || []).every((m) => m.blocked);
+    let html = '<p class="note"><b>' + empty.length + "</b> of " + D.variables.length + " variables have no finding. <b>Blocked / not checked</b> means a source refused us or needs a key: the answer is unknown, not none. <b>Searched, none found</b> means the source answered and had nothing.</p>";
+    if (blockedMs.length) {
+      const seenB = new Set();
+      const uniq = blockedMs.filter((m) => {
+        const k = m.module + "|" + String(m.searched).replace(/\s+/g, " ").slice(0, 80);
+        if (seenB.has(k)) return false;
+        seenB.add(k);
+        return true;
+      });
+      html += '<div class="grp"><h3>Blocked / not checked<span>' + plural(uniq.length, "source") + ' · unknown, not none</span></h3><div class="card scroll"><table class="tbl"><thead><tr><th>Module</th><th>Variable</th><th>What happened</th><th>Fix</th></tr></thead><tbody>' +
+        uniq.map((m) => '<tr><td><span class="mod">' + esc(m.module) + "</span></td><td>" + esc((varMeta.get(m.var) || {}).label || m.label || m.var) + "<code class=\"cid\">" + esc(m.var) + "</code></td><td>" + esc(txt(m.searched).replace(/\s*· fix: .*$/, "")) + '</td><td class="fix">' + esc(m.fix || "") + "</td></tr>").join("") +
+        "</tbody></table></div></div>";
+    }
     const keyed = D.modules.filter((m) => Array.isArray(m.env) && m.env.length && qPass(m.id + " " + m.env.join(" ")));
     const skipped = D.modules.filter((m) => m.status === "skipped" && qPass(m.id + " " + (m.why || "")));
-    const failed = D.modules.filter((m) => (m.status === "error" || m.status === "timeout") && qPass(m.id + " " + (m.error || "")));
+    const failed = D.modules.filter((m) => (m.status === "error" || m.status === "timeout" || m.status === "blocked") && qPass(m.id + " " + (m.error || "")));
     html += '<div class="grp"><h3>Unlock more<span>free keys go in .env</span></h3><div class="card scroll">';
     html += keyed.length
       ? '<table class="tbl"><thead><tr><th>Module</th><th>Status</th><th>Set this</th><th>Rows this run</th></tr></thead><tbody>' +
@@ -643,8 +779,9 @@ function client() {
     }
     const tabsWith = tabs.filter((t) => t.kind === "var" || t.kind === "pics" || t.kind === "other");
     let any = false;
+    html += '<div class="grp"><h3>Searched, none found<span>the source answered; nothing on this subject</span></h3></div>';
     for (const t of tabsWith) {
-      const vs = empty.filter((v) => (t.kind === "other" ? !varTabIds.has(v.tab) : v.tab === t.id)).filter((v) => qPass(v.label + " " + v.id + " " + (missByVar.get(v.id) || []).map((m) => txt(m.searched)).join(" ")));
+      const vs = empty.filter((v) => !onlyBlocked(v)).filter((v) => (t.kind === "other" ? !varTabIds.has(v.tab) : v.tab === t.id)).filter((v) => qPass(v.label + " " + v.id + " " + (missByVar.get(v.id) || []).map((m) => txt(m.searched)).join(" ")));
       if (!vs.length) continue;
       vs.sort((x, y) => (missByVar.has(y.id) ? 1 : 0) - (missByVar.has(x.id) ? 1 : 0));
       any = true;
@@ -653,7 +790,7 @@ function client() {
           .map((v) => {
             const ms = missByVar.get(v.id) || [];
             return '<div class="gv"><div><b>' + esc(v.label) + "</b><code>" + esc(v.id) + "</code></div><div>" +
-              (ms.length ? ms.map((m) => '<div class="searched"><span class="mod">' + esc(m.module) + "</span> " + esc(txt(m.searched)) + "</div>").join("") : '<div class="searched mute">Not searched by any module in this run.</div>') +
+              (ms.length ? ms.map((m) => '<div class="searched">' + (m.blocked ? '<span class="stc s-blocked">blocked</span> ' : "") + '<span class="mod">' + esc(m.module) + "</span> " + esc(txt(m.searched)) + "</div>").join("") : '<div class="searched mute">Not searched by any module in this run.</div>') +
               "</div></div>";
           })
           .join("") + "</div></div>";
@@ -673,7 +810,7 @@ function client() {
     for (const m of D.modules) c[m.status || "ok"] = (c[m.status || "ok"] || 0) + 1;
     const stat = (n, l) => '<div class="stat"><b>' + esc(n) + "</b><span>" + esc(l) + "</span></div>";
     let html =
-      '<div class="stats card">' + stat(D.seconds != null ? D.seconds + " s" : "–", "wall time") + stat(D.modules.length, "modules") + stat(c.ok || 0, "ok") + stat((c.error || 0) + (c.timeout || 0), "errors / timeouts") + stat(c.skipped || 0, "skipped") +
+      '<div class="stats card">' + stat(D.seconds != null ? D.seconds + " s" : "–", "wall time") + stat(D.modules.length, "modules") + stat(c.ok || 0, "ok") + stat((c.error || 0) + (c.timeout || 0), "errors / timeouts") + stat(c.blocked || 0, "blocked") + stat(c.skipped || 0, "skipped") +
       stat((D.http.calls || 0).toLocaleString("en-US"), "HTTP calls") + stat(D.http.blocked || 0, "blocked (403/429/999)") + stat(rows.length.toLocaleString("en-US"), "ledger rows") + "</div>";
     if (!mods.length) return html + '<div class="card blank">No modules' + (st.q.length ? " match the filter." : " ran.") + "</div>";
     html +=
@@ -832,7 +969,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--sans)
 a{color:var(--acc2)}a:hover{color:var(--acc)}
 code{font:12px var(--mono);color:var(--ink3)}
 kbd{font:11px var(--mono);border:1px solid var(--rule2);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff;color:var(--ink2)}
-header.top{background:var(--acc);color:#fff;padding:28px 0 76px}
+header.top{background:var(--acc);color:#fff;padding:28px 0 26px}
 .wrap{max-width:1280px;margin:0 auto;padding:0 28px}
 .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
 h1{font:600 34px/1.15 var(--serif);margin:6px 0 6px;overflow-wrap:anywhere}
@@ -846,7 +983,7 @@ h1{font:600 34px/1.15 var(--serif);margin:6px 0 6px;overflow-wrap:anywhere}
 .fb:hover{opacity:1;color:#fff}.fb .fn{font:11.5px var(--mono);opacity:.8}
 .fb .ft{grid-column:1/-1;height:6px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
 .fb .ft i{display:block;height:100%;border-radius:99px;filter:brightness(1.35) saturate(.9)}
-main{margin-top:-60px;padding-bottom:60px}
+main.wrap{margin-top:22px;padding-bottom:60px}
 .card{background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:0 1px 2px rgba(15,61,90,.05),0 8px 24px rgba(15,61,90,.06)}
 .snap{display:grid;grid-template-columns:250px 1fr;overflow:hidden}
 .who{background:linear-gradient(160deg,#123f5d,#1d5a8c);color:#fff;padding:22px}
@@ -855,8 +992,8 @@ main{margin-top:-60px;padding-bottom:60px}
 .who p{margin:2px 0;font-size:13px;opacity:.9;overflow-wrap:anywhere}
 .idscore{margin-top:14px;background:rgba(255,255,255,.1);border-radius:10px;padding:10px;font-size:12px}
 .idscore b{font-size:22px;margin-right:4px}.idscore .idb{opacity:.85;margin-top:2px}
-.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);height:100%;align-content:start}
-.tile{background:var(--surface);padding:16px 18px;min-height:112px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));align-content:start}
+.tile{background:var(--surface);padding:16px 18px;min-height:112px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
 .tile .k{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
 .tile .v{font:600 18px/1.3 var(--serif);margin:4px 0 6px;overflow-wrap:anywhere}
 .tile .n{font-size:12px;color:var(--ink2);display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
@@ -952,7 +1089,14 @@ button.sort{font:inherit;letter-spacing:inherit;text-transform:inherit;color:inh
 button.sort.on{color:var(--acc)}
 code.env{background:#fff4e0;color:#774c03;border-radius:4px;padding:1px 5px}
 .stc{font-size:11.5px;font-weight:600;border-radius:999px;padding:2px 9px;background:#e5f2e9;color:#1e5e3a}
-.stc.s-error,.stc.s-timeout{background:#f8e8e6;color:#8b3830}.stc.s-skipped{background:#f0f2f3;color:#4a535e}
+.stc.s-error,.stc.s-timeout,.stc.s-blocked{background:#f8e8e6;color:#8b3830}.stc.s-skipped{background:#f0f2f3;color:#4a535e}
+.alerts{position:relative;z-index:2}
+.alert{padding:10px 28px;font-size:14px;line-height:1.4;color:#fff;background:#a3271f;border-bottom:1px solid rgba(255,255,255,.25)}
+.alert b{text-transform:uppercase;letter-spacing:.08em;font-size:12px;margin-right:8px}
+.alert a{color:#fff;text-decoration:underline}.alert .led{color:rgba(255,255,255,.8)}
+.alert.a-amber{background:#8a5300}
+.also{font-size:12px;color:var(--ink3);margin-top:4px}
+td.fix{color:var(--g-v-ink);max-width:340px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin-bottom:14px;overflow:hidden;gap:1px;background:var(--rule)}
 .stat{background:#fff;padding:14px 16px}.stat b{display:block;font:600 22px var(--serif);color:var(--acc)}.stat span{font-size:12px;color:var(--ink3)}
 .pics{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:4px 0 22px}

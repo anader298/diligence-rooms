@@ -1,16 +1,30 @@
-// Read the public profiles the sweep confirmed (display name matches): GitHub repos and
+// Read the public profiles that pass the identity score (verified or likely: an anchor beyond the
+// name, such as the employer or a known city). Accounts that only share the name are not read,
+// so a namesake's chess.com town never becomes the subject's home metro. GitHub repos and
 // languages, Bluesky and Mastodon recent posts, Medium and Substack titles, LinkedIn's public
 // summary line, TikTok and other bios. Maps them to place, voice, code, hobbies, themes and the
 // most active platform. Everything here is only as good as the account match; the identity
 // module (late lane) scores each account, and rows carry the account in `detail` for that.
 
-import { companyIn, hobbiesIn, topTerms, pool, stripTags } from "../person-lib.mjs";
+import { companyIn, hobbiesIn, topTerms, pool, stripTags, decodeEntities } from "../person-lib.mjs";
+import { scoreAll } from "./30-identity.mjs";
+
+/** Decode until stable: LinkedIn double-encodes ("G&amp;amp;A"). */
+const decodeAll = (s) => {
+  let x = String(s || "");
+  for (let i = 0; i < 4; i++) {
+    const y = decodeEntities(x);
+    if (y === x) break;
+    x = y;
+  }
+  return x;
+};
 
 const day = (s) => (s ? String(s).slice(0, 10) : null);
 
 /** LinkedIn's public og:description: "... · Experience: X · Education: Y · Location: Z · 500+ connections". */
 export function parseLinkedInDesc(desc) {
-  const d = String(desc || "").replace(/&amp;/g, "&");
+  const d = decodeAll(desc);
   const get = (k) => (d.match(new RegExp(`${k}:\\s*([^·]+?)\\s*(?:·|$)`)) || [])[1]?.trim() || null;
   return { experience: get("Experience"), education: get("Education"), location: get("Location"), connections: (d.match(/(\d[\d,+]*) connections/) || [])[1] || null };
 }
@@ -24,9 +38,19 @@ export default {
   budgetMs: 25000,
   async run(ctx) {
     const { subject, http, shared, env } = ctx;
-    const accts = (shared.accounts || []).filter((a) => a.confirmed);
+    // Identity first: only accounts with an anchor beyond the name are read.
+    const scored = scoreAll(subject, shared);
+    const ok = new Map(scored.filter((c) => c.verdict === "verified" || c.verdict === "likely").map((c) => [`${c.site}|${String(c.handle || c.url).toLowerCase()}`, c]));
+    const verdictOf = (a) => ok.get(`${a.site}|${String(a.handle || a.url).toLowerCase()}`);
+    const accts = (shared.accounts || []).filter((a) => verdictOf(a)).map((a) => ({ ...a, bio: a.bio ? decodeAll(a.bio) : a.bio, identity: verdictOf(a).verdict, anchors: [...new Set([...(a.anchors || []), ...verdictOf(a).families])] }));
+    // LinkedIn profiles seen only in search results: their snippet carries Experience/Education/Location.
+    for (const c of ok.values()) {
+      if (c.site !== "linkedin" || accts.some((a) => a.site === "linkedin" && String(a.handle).toLowerCase() === String(c.handle).toLowerCase())) continue;
+      if (c.snippet) accts.push({ site: "linkedin", handle: c.handle, url: c.url, bio: decodeAll(c.snippet), identity: c.verdict, anchors: c.families, fromSearch: true });
+    }
+    const skipped = scored.filter((c) => !ok.has(`${c.site}|${String(c.handle || c.url).toLowerCase()}`) && c.families.includes("name")).length;
     if (!accts.length) {
-      ctx.miss("social.themes", "no confirmed account to read (username sweep found none matching the name)");
+      ctx.miss("social.themes", `no account passed the identity check (${skipped} account(s) share the name but nothing ties them to ${subject.company || "the subject"}); none read`);
       return;
     }
     const gh = env.GITHUB_TOKEN ? { authorization: `Bearer ${env.GITHUB_TOKEN}` } : {};
@@ -34,14 +58,15 @@ export default {
     const activity = [];
     const places = new Set();
     const anchorsOf = (a) => a.anchors || [];
-    const gradeOf = (a) => (anchorsOf(a).includes("company") || anchorsOf(a).includes("place") ? "p" : "w");
+    // verified or likely accounts only reach this point, so their facts are partly verified.
+    const gradeOf = () => "p";
 
     await pool(accts, 6, async (a) => {
-      const base = { url: a.url, tier: "C", anchors: anchorsOf(a), detail: { site: a.site, handle: a.handle } };
+      const base = { url: a.url, tier: "C", anchors: anchorsOf(a), detail: { site: a.site, handle: a.handle, identity: a.identity } };
       if (a.bio) texts.push({ a, text: a.bio, kind: "bio" });
       if (a.location) {
         ctx.add({ ...base, var: "place.home_metro", value: `${a.location} (${a.site} profile location)`, grade: gradeOf(a) });
-        if (anchorsOf(a).includes("company")) places.add(JSON.stringify({ place: a.location, from: a.url }));
+        places.add(JSON.stringify({ place: a.location, from: a.url }));
       }
       if (a.blog) ctx.add({ ...base, var: "social.linkpage", value: a.blog, url: /^https?:/.test(a.blog) ? a.blog : "https://" + a.blog, grade: gradeOf(a) });
       for (const u of a.extra?.urls || []) ctx.add({ ...base, var: "social.linkpage", value: u, url: u, grade: gradeOf(a) });
@@ -78,11 +103,12 @@ export default {
         const li = parseLinkedInDesc(a.bio);
         if (li.location) {
           ctx.add({ ...base, var: "place.home_metro", value: `${li.location} (LinkedIn public profile)`, grade: gradeOf(a) });
-          if (anchorsOf(a).includes("company")) places.add(JSON.stringify({ place: li.location, from: a.url }));
+          places.add(JSON.stringify({ place: li.location, from: a.url }));
         }
         if (li.education) ctx.add({ ...base, var: "career.education", value: `${li.education} (LinkedIn public profile)`, grade: gradeOf(a) });
         if (li.experience) ctx.add({ ...base, var: "career.timeline", value: `Current per LinkedIn: ${li.experience}`, grade: gradeOf(a) });
-        activity.push({ a, n: Number(String(li.connections || "0").replace(/\D/g, "")) || 0, what: "connections" });
+        const capped = /\+/.test(li.connections || "");
+        activity.push({ a, n: Number(String(li.connections || "0").replace(/\D/g, "")) || 0, what: capped ? "+ connections (LinkedIn shows 500+ at most)" : "connections" });
       } else if (a.followers != null) {
         activity.push({ a, n: a.followers, what: "followers" });
       }

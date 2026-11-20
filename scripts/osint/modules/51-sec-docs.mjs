@@ -2,7 +2,7 @@
 // headcount and legal proceedings from the 10-K, KPIs and theme shifts from the last two
 // earnings releases (8-K item 2.02, exhibit 99.1). Slow lane: these documents are 1-4 MB.
 import { SEC_UA } from "../core.mjs";
-import { htmlText, htmlTables, tableRows, kpisFrom, themeCounts, titleWords, sentences, money } from "../colib.mjs";
+import { htmlText, htmlTables, tableRows, kpisFrom, themeCounts, titleWords, sentences, money, titleFor } from "../colib.mjs";
 import { secBase } from "./50-sec.mjs";
 
 const H = () => ({ "user-agent": SEC_UA() });
@@ -13,12 +13,34 @@ const N = (s) => {
   return Number.isFinite(n) ? n : null;
 };
 
-/** Scale of a table from the text just before it: "(in thousands)". */
-function scaleBefore(html, at) {
-  const t = htmlText(html.slice(Math.max(0, at - 2500), at)).toLowerCase();
-  const i = Math.max(t.lastIndexOf("in thousands"), t.lastIndexOf("in millions"));
-  if (i < 0) return 1e3; // EDGAR financial tables are in thousands far more often than not
-  return t.slice(i).startsWith("in millions") ? 1e6 : 1e3;
+const SCALE_RE = /\(?\s*(?:\$|dollars|amounts|usd)?\s*(?:are\s+)?in\s+(thousands|millions|billions)\b/i;
+const SCALE = { thousands: 1e3, millions: 1e6, billions: 1e9 };
+
+/**
+ * Scale of a table: a header cell inside the table ("In millions", "(in thousands, except per
+ * share)") wins; else the nearest statement in the text just before it. Returns { scale, how }.
+ */
+export function tableScale(html, at, rows = []) {
+  for (const r of rows.slice(0, 6)) for (const c of r) {
+    const m = String(c).match(SCALE_RE);
+    if (m) return { scale: SCALE[m[1].toLowerCase()], how: `table header "${c.slice(0, 40)}"` };
+  }
+  const t = htmlText(html.slice(Math.max(0, at - 2500), at).replace(/^[^<]*>/, "")).toLowerCase();
+  const hits = [...t.matchAll(/in (thousands|millions|billions)\b/g)];
+  if (hits.length) {
+    const m = hits.at(-1);
+    return { scale: SCALE[m[1]], how: `text before the table "${t.slice(Math.max(0, m.index - 20), m.index + 20).trim()}"` };
+  }
+  return { scale: 1e3, how: "no unit stated near the table; assumed thousands (the EDGAR norm)", guessed: true };
+}
+
+/** The period the first number column covers, from the header rows: "Three months ended September 30, 2026". */
+function periodOf(rows, firstData) {
+  const head = rows.slice(0, firstData);
+  const span = head.map((r) => r[0]).find((c) => /(three|six|nine|twelve) months|quarter|year ended|fiscal/i.test(c || ""));
+  const year = head.flatMap((r) => r).find((c) => /^(19|20)\d\d$/.test(c));
+  const date = head.map((r) => r[0]).find((c) => /^[A-Z][a-z]+ \d{1,2},?$/.test(c || ""));
+  return [span, date && !span?.includes(date) ? date.replace(/,$/, "") : null, year].filter(Boolean).join(" ").replace(/\s+/g, " ").trim() || null;
 }
 
 /** Revenue split tables: a "Total revenue" row, no cost/expense rows, a few labelled lines. */
@@ -30,11 +52,15 @@ export function revenueSplits(html, { from = 0 } = {}) {
     const labels = rows.map((r) => r[0]);
     if (!labels.some((l) => /^total (net )?(revenues?|sales|net sales)\b/i.test(l))) continue;
     if (labels.some((l) => /cost of|operating expenses|gross profit|net income|income tax|deferred|contract liabilit|receivable|notes due|thereafter|amortiz/i.test(l))) continue;
-    const lines = rows.filter((r) => r.length >= 2 && !/^\d{4}$/.test(r[0]) && N(r[1]) != null && !/^total/i.test(r[0]) && /[a-z]/i.test(r[0]) && r[0].length < 80);
+    // header rows ("In millions 2026 2025", a lone year, "Three months ended") are not lines
+    const isHeader = (r) => /^\(?\s*(?:\$\s*)?in (thousands|millions|billions)\b/i.test(r[0]) || /^\d{4}$/.test(r[0]) || r.slice(1).every((c) => /^(19|20)\d\d$/.test(c));
+    const lines = rows.filter((r) => r.length >= 2 && !isHeader(r) && N(r[1]) != null && !/^total/i.test(r[0]) && /[a-z]/i.test(r[0]) && r[0].length < 80);
     if (lines.length < 2 || lines.length > 12) continue;
-    const scale = scaleBefore(html, t.at);
-    const ctx = htmlText(html.slice(Math.max(0, t.at - 600), t.at)).slice(-200);
-    out.push({ at: t.at, context: ctx, rows: lines.map((r) => ({ label: r[0], value: N(r[1]) * scale })) });
+    const { scale, how, guessed } = tableScale(html, t.at, rows);
+    const firstData = rows.indexOf(lines[0]);
+    const pre = html.slice(Math.max(0, t.at - 900), t.at).replace(/^[^<]*>/, "");
+    const ctx = htmlText(pre).slice(-200);
+    out.push({ at: t.at, context: ctx, period: periodOf(rows, firstData), scale, scaleFrom: how, scaleGuessed: !!guessed, rows: lines.map((r) => ({ label: r[0], value: N(r[1]) * scale })) });
     if (out.length >= 3) break;
   }
   return out;
@@ -98,10 +124,16 @@ export default {
       const splits = revenueSplits(pDoc, { from: Math.floor(pDoc.length * 0.25) });
       if (count || splits.length) {
         const split = splits[0];
-        const val = [count ? `${count[1].replace(/^single$/i, "one")} reportable segment${/^(one|single|1)$/i.test(count[1]) ? "" : "s"}` : null, names && !/^(one|single)$/i.test(count?.[1] || "") ? names[1].slice(0, 160) : null, split ? "revenue split: " + split.rows.slice(0, 6).map((r) => `${r.label} ${money(r.value)}`).join(", ") : null].filter(Boolean).join("; ");
+        const WORDS = { one: 1, single: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8 };
+        const nSeg = count ? WORDS[count[1].toLowerCase()] || Number(count[1]) : null;
+        // a table is the segment split only when its lines match the segment count; otherwise it is
+        // a breakdown (by product type, market or country) and is labelled as such
+        const kind = (s) => (nSeg && s.rows.length === nSeg && !s.rows.some((r) => /\b(revenues?|sales)$|\b(license|subscription|hardware|services?|products?)\b.*\brevenue/i.test(r.label)) ? "segment revenue" : "revenue breakdown");
+        const line = (s) => `${kind(s)}${s.period ? ` (${s.period})` : ""}: ` + s.rows.slice(0, 6).map((r) => `${r.label} ${money(r.value)}`).join(", ") + (s.scaleGuessed ? " (units assumed thousands)" : "");
+        const val = [count ? `${count[1].replace(/^single$/i, "one")} reportable segment${/^(one|single|1)$/i.test(count[1]) ? "" : "s"}` : null, names && !/^(one|single)$/i.test(count?.[1] || "") ? names[1].slice(0, 160) : null, split ? line(split) : null].filter(Boolean).join("; ");
         shared.segments = { count: count?.[1] || null, splits };
-        add({ var: "co.segments", value: val, url: periodic.url, grade: "v", tier: "A", date: periodic.date, detail: { form: periodic.form, note: near.slice(0, 700), splits } });
-        for (const s of splits.slice(1, 3)) add({ var: "co.segments", value: s.rows.slice(0, 6).map((r) => `${r.label} ${money(r.value)}`).join(", "), url: periodic.url, grade: "v", tier: "A", date: periodic.date, detail: s });
+        add({ var: "co.segments", value: val, url: periodic.url, grade: split?.scaleGuessed ? "p" : "v", tier: "A", date: periodic.date, detail: { form: periodic.form, note: near.slice(0, 700), splits } });
+        for (const s of splits.slice(1, 3)) add({ var: "co.segments", value: line(s), url: periodic.url, grade: s.scaleGuessed ? "p" : "v", tier: "A", date: periodic.date, detail: s });
       } else miss("co.segments", `no segment note or revenue split table found in ${periodic.form} ${periodic.date}`);
     } else miss("co.segments", periodic ? `${periodic.form} fetch failed` : "no 10-Q/10-K filed");
 
@@ -111,11 +143,13 @@ export default {
       const emp = text.match(/(?:approximately|about|had|employed|total of)\s+([\d,]{3,9})\s+(?:full[- ]time\s+)?(?:employees|people|team members|associates)/i);
       if (emp) {
         const n = Number(emp[1].replace(/,/g, ""));
-        if (!shared.employees) {
+        const mine = !shared.employees;
+        if (mine) {
           shared.employees = n;
           shared.employeesSource = `10-K ${tenK.date}`;
         }
-        add({ var: "co.facts", value: `${n.toLocaleString()} employees (10-K ${tenK.date})`, url: tenK.url, grade: "v", tier: "A", date: tenK.date, detail: { quote: text.slice(Math.max(0, emp.index - 120), emp.index + 120) } });
+        const erow = add({ var: "co.facts", value: `${n.toLocaleString()} employees (10-K ${tenK.date})`, url: tenK.url, grade: "v", tier: "A", date: tenK.date, detail: { quote: text.slice(Math.max(0, emp.index - 120), emp.index + 120) } });
+        if (mine && erow?.id) (shared.refs ||= {}).employees = erow.id;
       }
       const i3 = [...text.matchAll(/Item\s*3\.?\s*Legal Proceedings/gi)].map((m) => m.index).at(-1);
       if (i3 != null) {
@@ -138,7 +172,7 @@ export default {
       const kp = kpisFrom(now.text);
       for (const x of kp) add({ var: x.kpi === "ARR" ? "co.arr" : "co.kpis", value: `${x.kpi}: ${x.value} (${now.date} release)`, url: now.url, grade: "v", tier: "A", date: now.date, detail: { context: x.context } });
       if (!kp.some((x) => x.kpi === "ARR")) miss("co.arr", `no ARR figure in the ${now.date} earnings release`);
-      const words = titleWords(shared.roleTitle || subject.title);
+      const words = titleWords(titleFor(shared, subject)?.title);
       const a = themeCounts(now.text, words);
       const p = prev ? themeCounts(prev.text, words) : null;
       const top = Object.entries(a).filter(([, n]) => n > 0).sort((x, y) => y[1] - x[1]);

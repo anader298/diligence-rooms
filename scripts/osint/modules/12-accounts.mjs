@@ -7,7 +7,7 @@
 // Normal browser user agent only; sites that show nothing to it are recorded as misses.
 
 import { metaTags } from "../core.mjs";
-import { nameMatch, nameParts, nameVariants, derivedHandles, handleFromUrl, companyIn, placeIn, pool, stripTags } from "../person-lib.mjs";
+import { nameMatch, nameParts, nameVariants, derivedHandles, handleFromUrl, companyIn, placeIn, pool, stripTags, blockedMiss } from "../person-lib.mjs";
 
 const AZ = /^[a-z0-9]+$/i;
 const AZD = /^[a-z0-9-]+$/i;
@@ -190,19 +190,13 @@ export default {
       // (gabrielvenhaus, gabe.venhaus); short forms like gabrielb or dwhitlock are mostly namesakes.
       if (!a.confirmed && a.source === "derived" && !(a.handle.toLowerCase().includes(last) && firsts.some((f) => a.handle.toLowerCase().includes(f)))) continue;
       accounts.push(a);
-      const what = `${a.site}: @${a.handle}${a.name ? ` — "${a.name}"` : ""}${a.bio ? ` — ${String(a.bio).slice(0, 140)}` : ""}${a.location ? ` (${a.location})` : ""}`;
-      const detail = { site: a.site, handle: a.handle, source: a.source, name: a.name || null, bio: a.bio || null, location: a.location || null, company: a.company || null, followers: a.followers ?? null, avatar: a.avatar || null, nameMatch: a.nameMatch, extra: a.extra || null };
-      // Confirmed (display name matches) -> social.accounts now. Every account, matched or not,
-      // is scored by the identity module (late lane) into social.candidates.
-      if (a.confirmed) ctx.add({ var: "social.accounts", value: what, url: a.url, grade: a.anchors.length > 1 ? "p" : "w", tier: "B", anchors: a.anchors, detail, image: a.avatar || null });
     }
+    // No ledger rows here: a display name that matches is not proof. The identity module (late
+    // lane) scores every account and writes the verified and likely ones to social.accounts.
     const conf = accounts.filter((a) => a.confirmed);
-    const byHandle = {};
-    for (const a of conf) (byHandle[a.handle.toLowerCase()] ||= []).push(a.site);
-    if (conf.length) ctx.add({ var: "social.handles", value: Object.entries(byHandle).map(([h, s]) => `${h} (${s.join(", ")})`).join("; "), grade: "w", tier: "B", detail: byHandle });
-    else ctx.miss("social.accounts", `username sweep: ${handles.length} handles (${handles.map((h) => h.handle).join(", ")}) × ${SITES.length} sites, no account whose display name matches ${subject.name}`);
-    for (const [site, st] of Object.entries(blocked)) if (!found.some((f) => f.site === site)) ctx.miss("social.accounts", `${site}: blocked (${st}) during the sweep`);
-    for (const n of NO_SIGNAL) if (!probes.some((p) => p.site === n.site)) ctx.miss("social.accounts", `${n.site}: not checkable by handle — ${n.why}${n.probed ? ` (probe: ${n.probed})` : ""}`);
+    if (!conf.length) ctx.miss("social.accounts", `username sweep: ${handles.length} handles (${handles.map((h) => h.handle).join(", ")}) × ${SITES.length} sites, no account whose display name matches ${subject.name}`);
+    for (const [site, st] of Object.entries(blocked)) if (!found.some((f) => f.site === site)) blockedMiss(ctx, "social.accounts", `${site} (username sweep)`, { status: typeof st === "number" ? st : 0, error: typeof st === "string" ? st : null }, site === "github" ? "set GITHUB_TOKEN (free) or retry later" : "the site refuses scripts; check by hand", { partial: true });
+    for (const n of NO_SIGNAL) if (!probes.some((p) => p.site === n.site)) ctx.miss("social.accounts", `${n.site}: not checkable by handle (not checked) — ${n.why}${n.probed ? ` (probe: ${n.probed})` : ""}`);
     shared.sweep = { handles, checked: jobs.length };
     // Headshot for the reverse-image module (slow lane): an avatar from an account tied to the company.
     if (!shared.headshot) {

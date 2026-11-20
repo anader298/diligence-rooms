@@ -6,7 +6,7 @@
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { nameParts, normName, companyIn } from "../person-lib.mjs";
+import { nameParts, normName, companyIn, blockedMiss, firstForms } from "../person-lib.mjs";
 import { REPO } from "../run.mjs";
 
 const LISTS = {
@@ -36,17 +36,18 @@ export function csvLine(line) {
 /** Lines of a list whose text holds both the surname and the first name (or its initial for LEIE). */
 export function screen(text, subject, kind) {
   const { first, last } = nameParts(subject.name);
+  const forms = firstForms(first);
   const hits = [];
   for (const line of String(text || "").split(/\r?\n/)) {
     if (!line || !line.toLowerCase().includes(last)) continue;
     const f = csvLine(line);
     if (kind === "leie") {
       const ln = normName(f[0]), fn = normName(f[1]);
-      if (ln === last && (fn === first || fn.split(" ")[0] === first)) hits.push({ name: `${f[1]} ${f[2] || ""} ${f[0]}`.replace(/\s+/g, " ").trim(), detail: { general: f[4], specialty: f[5], city: f[10], state: f[11], type: f[13], date: f[14] } });
+      if (ln === last && (forms.includes(fn) || forms.includes(fn.split(" ")[0]))) hits.push({ name: `${f[1]} ${f[2] || ""} ${f[0]}`.replace(/\s+/g, " ").trim(), detail: { general: f[4], specialty: f[5], city: f[10], state: f[11], type: f[13], date: f[14] } });
     } else {
       const nm = normName(kind === "alt" ? f[3] : f[1]);
       const toks = nm.split(" ");
-      if (toks.includes(last) && toks.includes(first)) hits.push({ name: kind === "alt" ? f[3] : f[1], detail: { ent_num: f[0], type: kind === "alt" ? f[2] : f[2], program: kind === "alt" ? null : f[3], remarks: kind === "alt" ? null : f[11] } });
+      if (toks.includes(last) && forms.some((f) => toks.includes(f))) hits.push({ name: kind === "alt" ? f[3] : f[1], detail: { ent_num: f[0], type: kind === "alt" ? f[2] : f[2], program: kind === "alt" ? null : f[3], remarks: kind === "alt" ? null : f[11] } });
     }
   }
   return hits;
@@ -76,15 +77,18 @@ export default {
     const checked = [];
     const hits = [];
     const lists = await Promise.all(Object.keys(LISTS).map(async (id) => ({ id, ...(await loadList(http, id, log)) })));
+    const perList = [];
     for (const l of lists) {
       if (l.error) {
-        ctx.miss("rec.sanctions", `${LISTS[l.id].label}: download failed (${l.error})`);
+        blockedMiss(ctx, "rec.sanctions", `${LISTS[l.id].label} download`, { status: Number(String(l.error).match(/\d+/)?.[0]) || 0, error: l.error }, "retry later; the list is cached for a day once it downloads");
         continue;
       }
       const h = screen(l.text, subject, l.id);
       const rows = l.text.split("\n").length;
       checked.push(`${LISTS[l.id].label} (${rows.toLocaleString("en-US")} rows)`);
-      ctx.add({ var: "rec.sanctions_detail", value: `${LISTS[l.id].label}: ${h.length ? `${h.length} name match(es): ${h.slice(0, 3).map((x) => x.name).join("; ")}` : "no match"} (${rows.toLocaleString("en-US")} rows screened)`, url: LISTS[l.id].url, grade: "v", tier: "A", detail: { list: l.id, hits: h.slice(0, 10), rows } });
+      perList.push({ list: LISTS[l.id].label, rows, matches: h.length, names: h.slice(0, 3).map((x) => x.name).join("; ") || null, url: LISTS[l.id].url });
+      // A per-list row only when the list names someone: a clean screen lives in the summary.
+      if (h.length) ctx.add({ var: "rec.sanctions_detail", value: `${LISTS[l.id].label}: ${h.length} name match(es): ${h.slice(0, 3).map((x) => x.name).join("; ")} (${rows.toLocaleString("en-US")} rows screened)`, url: LISTS[l.id].url, grade: "p", tier: "A", detail: { list: l.id, hits: h.slice(0, 10), rows } });
       hits.push(...h.map((x) => ({ ...x, list: LISTS[l.id].label })));
     }
 
@@ -103,7 +107,7 @@ export default {
     } else ctx.miss("rec.sanctions", "OpenSanctions (PEPs, global lists) not checked: needs OPENSANCTIONS_API_KEY");
 
     if (checked.length) {
-      ctx.add({ var: "rec.sanctions", value: hits.length ? `Possible match on ${[...new Set(hits.map((h) => h.list))].join(", ")}: ${hits.slice(0, 3).map((h) => h.name).join("; ")} — check identity before relying on it` : `Clear: no match for ${subject.name} on ${checked.join(", ")}`, url: LISTS.sdn.url, grade: hits.length ? "p" : "v", tier: "A", detail: { checked, hits: hits.slice(0, 10) } });
+      ctx.add({ var: "rec.sanctions", value: hits.length ? `Possible match on ${[...new Set(hits.map((h) => h.list))].join(", ")}: ${hits.slice(0, 3).map((h) => h.name).join("; ")} — check identity before relying on it` : `Clear: no match for ${subject.name} on ${checked.join(", ")}`, url: LISTS.sdn.url, grade: hits.length ? "p" : "v", tier: "A", detail: { lists: perList, hits: hits.slice(0, 10) } });
     }
 
     if (env.COURTLISTENER_TOKEN) {

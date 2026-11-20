@@ -1,12 +1,14 @@
 // Shared helpers for the person modules (10-39): name and handle variants, anchor checks,
 // search-result parsers and keyword rules. Pure functions, no network, so tests can cover them.
 
+import * as core from "./core.mjs";
 import { normName, nameIn, stripTags } from "./core.mjs";
 
 export { normName, nameIn, stripTags };
 
-/** Common English nicknames, both ways. Used for name matching and handle variants. */
-const NICK = {
+/** Common English nicknames (formal -> short forms). core.mjs exports the shared table as
+ *  NICKNAMES; this local copy is the fallback so the person modules work on their own. */
+const LOCAL_NICK = {
   richard: ["rick", "rich", "dick"], robert: ["rob", "bob", "bobby"], william: ["will", "bill", "billy"],
   james: ["jim", "jimmy", "jamie"], john: ["jack", "johnny"], joseph: ["joe", "joey"], michael: ["mike", "mick"],
   thomas: ["tom", "tommy"], christopher: ["chris"], daniel: ["dan", "danny"], matthew: ["matt"], anthony: ["tony"],
@@ -17,25 +19,60 @@ const NICK = {
   catherine: ["kate", "cathy"], jennifer: ["jen", "jenny"], margaret: ["maggie", "peggy", "meg"], rebecca: ["becky"],
   susan: ["sue"], deborah: ["deb", "debbie"], patricia: ["pat", "trish"], victoria: ["vicky", "tori"],
   christine: ["chris"], alexandra: ["alex"], samantha: ["sam"], kimberly: ["kim"], jessica: ["jess"],
+  frederick: ["fred"], lawrence: ["larry"], raymond: ["ray"], gerald: ["jerry"], peter: ["pete"], philip: ["phil"],
+  douglas: ["doug"], jeffrey: ["jeff"], zachary: ["zach"], joshua: ["josh"], nathaniel: ["nate"], nathan: ["nate"],
+  abigail: ["abby"], amanda: ["mandy"], barbara: ["barb"], cynthia: ["cindy"], pamela: ["pam"], theresa: ["terri"],
+  judith: ["judy"], kathleen: ["kathy"], melissa: ["missy"], stephanie: ["steph"], suzanne: ["suzy"],
 };
+const NICK = core.NICKNAMES && typeof core.NICKNAMES === "object" ? core.NICKNAMES : LOCAL_NICK;
+
+/** Every form of a first name: itself, its nicknames, and the formal names it is short for. */
+export function firstForms(first) {
+  const f = normName(first);
+  const out = new Set([f]);
+  for (const n of NICK[f] || []) out.add(n);
+  for (const [formal, nicks] of Object.entries(NICK)) if (nicks.includes(f)) out.add(formal);
+  return [...out].filter(Boolean);
+}
 
 export function nameParts(name) {
   const parts = normName(name).split(" ").filter((p) => p.length > 1 && !/^(jr|sr|ii|iii|iv|phd|md|mba)$/.test(p));
   return { first: parts[0] || "", last: parts.at(-1) || "", middle: parts.slice(1, -1) };
 }
 
-/** Names to try: the full name, aliases, and "nickname last". */
+/** Names to try: the full name, aliases (given or found), "nickname last" and "formal last". */
 export function nameVariants(subject) {
-  const out = new Set([subject.name, ...(subject.aliases || [])].filter(Boolean));
-  const { first, last } = nameParts(subject.name);
-  for (const n of NICK[first] || []) out.add(`${n} ${last}`);
+  const out = new Set([subject.name, ...(subject.aliases || []), ...(subject.foundAliases || [])].filter(Boolean));
+  const { first } = nameParts(subject.name);
+  const rest = String(subject.name || "").trim().split(/\s+/).slice(1).filter((w) => !/^[A-Z]\.?$/.test(w)).join(" ");
+  const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+  for (const f of firstForms(first)) if (f !== first && rest) out.add(`${cap(f)} ${rest}`);
   return [...out];
 }
 
-/** True when the text names the subject (full name, alias or nickname + surname). */
+const SEP = " zzsepzz ";
+const JOINERS = new Set(["and", "with", "or", "vs", "x", "zzsepzz", "feat", "ft", "y", "et", "und"]);
+/** True when the name's first and last words stand next to each other (one middle word or initial
+ *  allowed), as "First Last" or "Last, First". "Steve & Ferrante" and "Steve and Ferrante" do not. */
+export function nameAdjacent(text, name) {
+  const { first, last } = nameParts(name);
+  if (!first || !last) return false;
+  const t = normName(String(text || "").replace(/\s*[&+|/•·]\s*/g, SEP)).split(" ");
+  for (let i = 0; i < t.length; i++) {
+    if (t[i] === first) {
+      if (t[i + 1] === last) return true;
+      if (t[i + 2] === last && t[i + 1] && !JOINERS.has(t[i + 1])) return true;
+    }
+    if (t[i] === last && t[i + 1] === first && /,/.test(String(text))) return true;
+  }
+  return false;
+}
+
+/** True when the text names the subject (full name, alias, nickname or formal form + surname), with
+ *  the words adjacent. */
 export function nameMatch(text, subject) {
   if (!text) return false;
-  return nameVariants(subject).some((n) => nameIn(text, n));
+  return nameVariants(subject).some((n) => nameIn(text, n) && nameAdjacent(text, n));
 }
 
 /** Surname alone appears (weak signal, used for rare surnames in image search). */
@@ -99,7 +136,7 @@ export function derivedHandles(subject) {
   if (!first || !last) return [];
   const f = first.replace(/ /g, ""), l = last.replace(/ /g, "");
   const out = [`${f}${l}`, `${f}.${l}`, `${f}_${l}`, `${f[0]}${l}`, `${f}${l[0]}`];
-  for (const n of (NICK[f] || []).slice(0, 2)) out.push(`${n}${l}`);
+  for (const n of firstForms(f).filter((x) => x !== f).slice(0, 2)) out.push(`${n}${l}`);
   return [...new Set(out)];
 }
 
@@ -327,4 +364,39 @@ export function snippetGrade(text, subject, shared) {
   if (companyIn(text, subject)) anchors.push("company");
   if (placeIn(text, subject, shared)) anchors.push("place");
   return { grade: anchors.length ? "p" : "w", anchors };
+}
+
+// ---------------------------------------------------------------- blocked vs absent
+
+/** True when a response is a refusal (rate limit, bot wall, captcha), not an answer. */
+export function isBlocked(res) {
+  if (!res) return true;
+  return [202, 403, 429, 451, 503, 999].includes(res.status) || res.status === 0 || /captcha|unusual traffic|anomaly-modal|challenge-form|cf-chl|Just a moment\.\.\./i.test(String(res.text || "").slice(0, 6000));
+}
+
+/**
+ * Record a source that refused us. The miss text always reads "blocked (HTTP n), unknown" so the
+ * dossier never shows it as "none found", and `fix` says which free key or retry would get it.
+ * Marks the module blocked through ctx.status("blocked", why) (run.mjs), or "partial" when only
+ * one of several sources refused.
+ */
+export function blockedMiss(ctx, varId, source, res, fix = "", { partial = false } = {}) {
+  const code = res?.status ? `HTTP ${res.status}` : res?.error || "no answer";
+  const text = `${source}: blocked (${code}), unknown${fix ? ` · fix: ${fix}` : ""}`;
+  // partial: one of many sources refused (a site in the sweep); the module itself still ran.
+  ctx.miss(varId, text, partial ? undefined : { blocked: true, status: res?.status || 0, fix });
+  if (!partial) {
+    if (typeof ctx.status === "function") ctx.status("blocked", `${source} ${code}`);
+    else if (typeof ctx.block === "function") ctx.block(`${source} ${code}`);
+  } else if (typeof ctx.status === "function") ctx.status("partial", `${source} ${code}`);
+  (ctx.shared.blockedSources ||= []).push({ source, status: res?.status || 0, var: varId, fix });
+  return text;
+}
+
+/** Text that reads like a degree or a school, not a pay or bonus sentence. */
+export const EDU_RE = /\b(B\.?A\.?|B\.?S\.?c?|B\.?B\.?A|M\.?B\.?A|M\.?S\.?c?|M\.?A\.?|Ph\.?D|J\.?D|M\.?D|LL\.?[BM]|bachelor'?s?|master'?s?|doctorate|degree|universit(y|ies|at|é)|college|school|institute|polytechnic|academy)\b/i;
+const NOT_EDU = /\b(our CEO|approved|grant(ed)?|compensation|salary|bonus|incentive|award(ed)?|performance|shares|vest|\$\d|committee|fiscal)\b/i;
+export function looksLikeEducation(s) {
+  const t = String(s || "");
+  return t.length > 3 && t.length < 260 && EDU_RE.test(t) && !NOT_EDU.test(t);
 }
