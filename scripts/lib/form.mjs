@@ -247,7 +247,11 @@ export function computeStates(insts, ledgers, { moduleVars = {}, intake = {} } =
     if (inst.kind === "ai") {
       const checked = rows.map((r) => {
         const cites = r.cites || [];
-        const bad = cites.filter((c) => !resolveRef(ledgers, c, r.ledger));
+        // a cite must be a row that exists and is evidence (not another AI entry)
+        const bad = cites.filter((c) => {
+          const hit = resolveRef(ledgers, c, r.ledger);
+          return !hit || hit.entry === "ai";
+        });
         return { r, ok: cites.length > 0 && !bad.length, bad, none: NONE_GRADES.includes(r.grade) };
       });
       const good = checked.filter((c) => c.ok && !c.none);
@@ -346,7 +350,7 @@ export function formGate(form) {
     else if (b.required && b.state === "no-tool") errors.push(`required bucket "${b.label}"${who} [${b.id}] has no tool and no entry: hand in an entry or a "none found" with what was searched`);
     else if (b.required && b.state === "blocked" && /has not run/.test(b.why || "")) errors.push(`required bucket "${b.label}"${who} [${b.id}]: the scripted pass has not run`);
     else if (b.required && b.kind === "ai" && b.aiOpen) errors.push(`required AI slot "${b.label}"${who} [${b.id}] is not written`);
-    for (const c of b.badCites || []) errors.push(`AI entry ${c.row} in "${b.label}"${who} cites ${c.cite}, which is not in any ledger`);
+    for (const c of b.badCites || []) errors.push(`AI entry ${c.row} in "${b.label}"${who} cites ${c.cite}, which is not an evidence row in any ledger`);
   }
   for (const r of form.other) if (r.unknownBucket) form.warnings.push(`ledger row ${r.ref} names bucket "${r.bucket}", which no selected pack has; shown under Other findings`);
   return { ok: !errors.length, errors: [...new Set(errors)], warnings: form.warnings };

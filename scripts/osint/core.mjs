@@ -292,6 +292,9 @@ export function makeLedger(dir, variables = []) {
       image: f.image || null,
       key,
     };
+    // entries handed in by agents (scripts/lib/entries.mjs) carry their bucket, the grade they
+    // claimed (code decides the grade), a note, and for AI judgement the ledger ids they cite
+    for (const k of ["bucket", "claim", "note", "cites", "entry"]) if (f[k] != null) row[k] = f[k];
     rows.push(row);
     appendFileSync(file, JSON.stringify(row) + "\n");
     return row;
