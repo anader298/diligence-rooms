@@ -956,6 +956,9 @@ export function departureFrom(text, subject) {
     const j = after.match(new RegExp(`\\b${JOIN_VERB}\\b[^.]{0,80}?\\b(?:at|to|by|as [^.]{0,60}? (?:at|of))\\s+${ORG}`));
     return { left: true, newCompany: j && !isOwn(j[2] || j[1]) ? clean(j.at(-1)) : null, why: "described as former" };
   }
+  // 1b. "each of Avery Lund, Kim Varga and Joe Bloggs resigned from the board": a list of names, then the verb
+  const list = after.match(/^[A-Z][\w.'’-]*(?:\s+[A-Z][\w.'’-]*){0,3}(?:,\s*(?:and\s+)?[A-Z][\w.'’-]*(?:\s+[A-Z][\w.'’-]*){0,3}){1,12},?\s+(?:and\s+[A-Z][\w.'’-]*(?:\s+[A-Z][\w.'’-]*){0,3}\s+)?(?:each\s+)?(resigned|stepped down|departed|ceased to serve)\b/);
+  if (list) return { left: true, newCompany: null, why: "named among those who resigned" };
   // 2. "<subject> quits / leaves / resigns" within the same clause, not after "succeed(s) ... who"
   const lv = after.match(new RegExp(`^[^.;]{0,90}?\\b${LEFT_VERB}\\b`, "i"));
   if (lv && !/\b(succeed|replac|follow|after|who|whose)\w*\b/i.test(lv[0].slice(hit.n.length)) && !othersLeave(lv[0].slice(hit.n.length))) {

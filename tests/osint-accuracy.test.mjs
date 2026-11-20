@@ -99,7 +99,8 @@ test("stale seat: once a later source reports a change, older title rows drop to
   const rows = [
     { id: "L-1", module: "sec-person", var: "role.title", value: "EVP, Operations", grade: "v", date: "2026-04-01" },
     { id: "L-2", module: "leadership", var: "role.title", value: "EVP, Operations", grade: "p", date: null },
-    { id: "L-3", module: "sec-person", var: "role.title", value: "Senior Advisor", grade: "v", date: "2026-10-01" },
+    { id: "L-3", module: "sec-person", var: "role.title", value: "Senior Advisor", grade: "v", date: "2026-11-01" },
+    { id: "L-5", module: "sec-person", var: "role.title", value: "EVP, Operations", grade: "v", date: "2026-09-12" },
     { id: "L-4", module: "departure", var: "role.title", value: "Stepping down", grade: "p", date: "2026-09-08" },
   ];
   markStale(rows, "2026-09-08", "L-4");
@@ -108,7 +109,8 @@ test("stale seat: once a later source reports a change, older title rows drop to
   assert.match(rows[0].grade_basis, /out of date/);
   assert.equal(rows[1].grade, "w");
   assert.equal(rows[2].grade, "v", "a title filed after the change stays");
-  assert.equal(rows[3].grade, "p");
+  assert.equal(rows.find((r) => r.id === "L-4").grade, "p");
+  assert.equal(rows.find((r) => r.id === "L-5").grade, "w", "a Form 4 filed at the exit still prints the old title");
 });
 
 test("company names: the record must be the company, not another firm sharing a word", () => {
@@ -254,4 +256,16 @@ test("round 2: a sanctions-list hit on the name alone is Weak, a clean screen is
     if (prev === undefined) delete process.env.OSINT_LISTS_DIR;
     else process.env.OSINT_LISTS_DIR = prev;
   }
+});
+
+test("round 2b: 8-K rows skip the item heading and never stop at 'Inc.'; a resignation list names the subject", async () => {
+  const { wholeSentences } = await import("../scripts/osint/modules/50-sec.mjs");
+  const { departureFrom } = await import("../scripts/osint/colib.mjs");
+  const t = 'On February 6, 2026, the Board of Directors (the "Board") of Tessellate, Inc. ("Tessellate") appointed Kim Varga as President, Product, effective March 10, 2026. ' + "Further detail on pay follows. ".repeat(12);
+  const w = wholeSentences(t, 300);
+  assert.match(w, /appointed Kim Varga as President, Product, effective March 10, 2026\./);
+  assert.ok(w.length <= 300 && /\.$/.test(w));
+  const s = { name: "Mara Quill", company: "Tessellate" };
+  assert.ok(departureFrom("In connection with the Mergers, each of Mara Quill, Jeffrey Hale, Mai Fern and Ray Roth resigned from the board of directors of Tessellate", s)?.left);
+  assert.equal(departureFrom("Mara Quill, our Chief Executive Officer, will present the results", s), null);
 });

@@ -137,7 +137,9 @@ export function markStale(rows, date, ref = null) {
       }
     }
     if (r.var !== "role.title" || r.module === "departure" || r.module === "agent") continue;
-    if (cut && r.date && String(r.date).slice(0, 10) >= cut) continue;
+    // a title filed more than 30 days after the change is the new seat; a Form 4 filed at the exit
+    // (the closing of a merger, the last trades) still prints the old title
+    if (cut && r.date && (Date.parse(String(r.date).slice(0, 10)) - Date.parse(cut)) / 864e5 > 30) continue;
     if (r.grade === "w" || r.grade === "i") continue;
     r.graded_from = r.grade;
     r.grade = "w";

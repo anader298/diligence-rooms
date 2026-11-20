@@ -35,7 +35,13 @@ export function wholeSentences(text, max = 360) {
   const t = String(text || "").replace(/^[-–;,.\s]+/, "").replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   const cut = t.slice(0, max);
-  const end = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("; "));
+  // a sentence end, not an abbreviation ("Tessellate, Inc. ("Tessellate")", "Mr. Lund", "U.S. operations")
+  let end = -1;
+  for (const m of cut.matchAll(/[.;](?=\s)/g)) {
+    const before = cut.slice(Math.max(0, m.index - 6), m.index + 1);
+    if (/\b(Inc|Corp|Co|Ltd|LLC|L\.P|N\.A|Mr|Ms|Mrs|Dr|Jr|Sr|St|No|U\.S|vs|etc)\.$/i.test(before) || /\b[A-Z]\.$/.test(before)) continue;
+    end = m.index;
+  }
   if (end > max * 0.4) return cut.slice(0, end + 1);
   return cut.replace(/\s+\S*$/, "") + "…";
 }
@@ -86,14 +92,24 @@ const company = {
         const t = htmlText(r.text);
         const i = t.search(/Item\s*5\.02/i);
         const body = i >= 0 ? t.slice(i, i + 1600) : t.slice(0, 1600);
-        const lead = body.replace(/^Item\s*5\.02\.?\s*/i, "").replace(/^(?:Departure of Directors[^.]*?Officers|Election of Directors[^.]*?Officers|Appointment of Certain Officers[^.]*?Officers)\s*\.?\s*/i, "").replace(/^[;,.\s]+/, "");
+        // drop the item heading in any of its forms ("Departure of Directors or Certain Officers;
+        // Election of Directors; Appointment of Certain Officers; Compensatory Arrangements of ...")
+        const lead = body
+          .replace(/^Item\s*5\.02\.?\s*/i, "")
+          .replace(/^[-–\s]*(?:(?:Departure of Directors or (?:Certain|Principal) Officers|Election of Directors|Appointment of (?:Certain|Principal) Officers|Compensatory Arrangements of Certain Officers)[;,.]?\s*)+/i, "")
+          .replace(/^\([a-f]\)\s*(?:Departure|Election|Appointment|Compensatory)[^.]{0,80}?(?:Officers?|Directors?)\s*/i, "")
+          .replace(/^[;,.\s]+/, "");
         const what = sentences(lead).filter((s) => /(appoint|resign|retire|depart|named|terminat|elect|promot|succeed|transition|step)/i.test(s)).slice(0, 2).join(" ");
         // the full 8-K text, not the 320-character row, decides whether the subject is leaving
         if (namesSubject(body, ctx.subject)) {
           const d = departureFrom(body, ctx.subject);
           if (d) (shared.departures ||= []).push({ ...d, newCompany: null, date: f.date, url: f.url, text: body.slice(0, 300), source: "sec 8-K item 5.02" });
         }
-        add({ var: "co.exec_changes", value: `${f.date}: ${wholeSentences(what || lead || body, 360)}`, url: f.url, grade: r.ok ? "v" : "w", tier: "A", date: f.date, detail: { items: f.items } });
+        // an annual-meeting vote filed under 5.02/5.07 is not an executive change
+        if (/\b(annual meeting|special meeting)\b[^.]{0,80}\b(stockholders|shareholders)\b[^.]{0,40}\bvot/i.test(lead.slice(0, 300)) && !/(appoint|resign|retire|depart|succeed|step)/i.test(what)) return;
+        let text = wholeSentences(what || lead || body, 360);
+        if (!/[.!?…)"”]$/.test(text)) text += "…"; // the source ran out mid-sentence: say so
+        add({ var: "co.exec_changes", value: `${f.date}: ${text}`, url: f.url, grade: r.ok ? "v" : "w", tier: "A", date: f.date, detail: { items: f.items } });
       }),
     );
     if (!changes.length) miss("co.exec_changes", `no 8-K item 5.02 since ${cutoff} in EDGAR submissions`);
