@@ -300,8 +300,9 @@ export function renderDossier(result) {
 </head>
 <body>
 ${banner}
+<p class="topstrip">Diligence room · OSINT dossier · private</p>
 <header class="top"><div class="wrap">
-  <div class="eyebrow">Diligence room · OSINT dossier · every line ties back to a ledger row</div>
+  <div class="eyebrow">OSINT dossier · every line ties back to a ledger row</div>
   <h1>${esc(S.name)}</h1>
   ${sub.length ? `<div class="sub">${sub.map(esc).join(" · ")}</div>` : ""}
   <div class="chips">${chips.map((c) => `<span class="chip">${c}</span>`).join("")}</div>
@@ -1134,6 +1135,61 @@ details.empty li code{margin-left:4px}
 footer{font-size:12.5px;color:var(--ink3);margin-top:30px;max-width:980px}
 @media (max-width:1000px){.tiles{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:820px){.snap{grid-template-columns:1fr}.var{grid-template-columns:1fr}.vh{border-right:0;border-bottom:1px solid var(--sunk)}.gl .gv{grid-template-columns:1fr}details.empty ul{columns:1}.toolbar .hint{display:none}.toolbar input[type=search]{min-width:0;width:100%}}
+/* Dandoun skin: the same look as the rooms (templates/room.css). Navy #10122b, purple #8b2fd6 / #7220b4,
+   the system sans, "// Label" eyebrows, lavender panels, white cards, purple pills. Grade colours match the room. */
+:root{--acc:#8b2fd6;--acc2:#7220b4;--navy:#10122b;--paper:#fff;--surface:#fff;--sunk:#f7f6fa;--lav:#faf7ff;--soft:#f3ecfb;
+--ink:#1c1e33;--ink2:#5d6076;--ink3:#66697f;--rule:#e6e1f0;--rule2:#d9d1ea;
+--g-v-ink:#1d5a37;--g-v-bg:#e3f3e9;--g-p-ink:#1d3f8a;--g-p-bg:#e9f1ff;--g-w-ink:#8a3a00;--g-w-bg:#fde6d6;--g-i-ink:#5c4700;--g-i-bg:#fff3c4;
+--g-n-ink:#3d3f55;--g-n-bg:#eceaf2;--g-np-ink:#4b2a86;--g-np-bg:#ece5fa;
+--serif:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+--shadow:0 1px 2px rgba(16,18,43,.04),0 8px 24px rgba(16,18,43,.05)}
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+a{color:var(--acc2);text-underline-offset:3px}a:hover{color:var(--acc)}
+.topstrip{margin:0;background:var(--navy);color:#e7e4f1;font:500 13px/1 var(--sans);text-align:center;padding:8px 12px;letter-spacing:.01em}
+header.top{background:var(--paper);color:var(--ink);border-bottom:1px solid var(--rule);padding:30px 0 24px}
+.eyebrow{font:700 13px/1.4 var(--sans);letter-spacing:.02em;text-transform:none;opacity:1;color:var(--navy)}
+.eyebrow::before{content:"// ";color:var(--acc)}
+h1{font:400 44px/1.1 var(--sans);letter-spacing:-.02em;color:var(--navy);margin:8px 0 6px}
+.sub{opacity:1;color:var(--ink2);font-size:17px}
+.chip{background:var(--soft);border:1px solid transparent;color:var(--acc2);font-weight:600}
+.fh{opacity:1;color:var(--navy);font-weight:700;letter-spacing:.02em;text-transform:none;font-size:13px}
+.fh::before{content:"// ";color:var(--acc)}
+.fb,.fb:hover{color:var(--ink);opacity:1}.fb:hover{color:var(--acc2)}.fb .fn{color:var(--ink3);opacity:1}
+.fb .ft{background:var(--sunk)}.fb .ft i{filter:none}
+.card{border-color:var(--rule);border-radius:16px;box-shadow:var(--shadow)}
+.who{background:var(--navy)}
+.avatar{background:var(--soft);color:var(--acc2);border-color:#c79bf0}
+.idscore{background:rgba(199,155,240,.14);border:1px solid rgba(199,155,240,.28)}
+.tile .k,.tile.social .k,.tile.pro .k,.tile.biz .k,.tile.pol .k,.tile.money .k{color:var(--acc2);font-weight:600}
+.tile .v{color:var(--navy)}
+nav.tabs button{border-color:var(--rule2)}
+nav.tabs button:hover{border-color:var(--acc);color:var(--acc2)}
+nav.tabs button:focus-visible{outline-color:var(--acc)}
+nav.tabs button[aria-selected=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+.toolbar input[type=search]{border-color:var(--rule2)}
+.toolbar input[type=search]:focus{outline-color:var(--acc);border-color:var(--acc)}
+button.ghost:hover,button.more:hover{border-color:var(--acc);color:var(--acc2)}
+.status{color:var(--acc2)}
+.grp h3{font:700 13px var(--sans);letter-spacing:.02em;text-transform:none;color:var(--navy)}
+.grp h3::before{content:"// ";color:var(--acc);margin-right:-6px}
+.var{border-top-color:var(--rule)}
+.vh{background:var(--lav);border-right-color:var(--rule)}
+.f{border-top:1px dashed var(--rule)}
+.mt{border-color:var(--rule)}.mt th,.tbl th{background:var(--lav)}.mt td{border-top-color:var(--rule)}
+.tbl td{border-bottom-color:var(--rule)}.tbl tr:hover td{background:var(--lav)}
+.mod,.bit{background:var(--soft);color:var(--acc2)}
+.bit.neg{background:#fbe6ec;color:#8a1638}
+.t-A{background:#e3f3e9;color:#1d5a37}.t-B{background:#e9f1ff;color:#1d3f8a}.t-C{background:var(--soft);color:var(--acc2)}.t-D{background:#fde6d6;color:#8a3a00}.t-E{background:#eceaf2;color:#3d3f55}
+.g-u{background:#fbe6ec;color:#8a1638}
+.vd{background:#fde6d6;color:#8a3a00}.vd.v-verified{background:#e3f3e9;color:#1d5a37}.vd.v-partly{background:#e9f1ff;color:#1d3f8a}.vd.v-namesake{background:#fbe6ec;color:#8a1638}
+.stc{background:#e3f3e9;color:#1d5a37}.stc.s-error,.stc.s-timeout,.stc.s-blocked{background:#fbe6ec;color:#8a1638}.stc.s-skipped{background:#eceaf2;color:#3d3f55}
+.alert{background:#8a1638}.alert.a-amber{background:#8a3a00}
+.stats{background:var(--rule)}.stat b{color:var(--acc2)}
+.thumb{border-color:var(--rule)}.thumb:hover{border-color:var(--acc);box-shadow:var(--shadow)}
+.thumb .ph{background:linear-gradient(135deg,#f3ecfb,#e6dcf6)}.thumb .cap b{color:var(--acc2)}
+.yr{color:var(--acc2)}.tl{border-top-color:var(--rule)}
+details.empty{background:var(--lav);border-color:var(--rule2)}details.empty li{border-top-color:var(--rule)}
+code.env{background:#fff3c4;color:#5c4700}
 @media print{
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body{background:#fff;font-size:12px}
